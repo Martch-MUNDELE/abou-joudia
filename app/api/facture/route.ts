@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   if (!order || !order.customer_email) return NextResponse.json({ error: 'Pas d\'email' }, { status: 400 })
 
   const pdfBuffer = await renderToBuffer(
-    React.createElement(FacturePDF, { order, items: order.order_items, slot: order.delivery_slots })
+    React.createElement(FacturePDF as any, { order, items: order.order_items, slot: order.delivery_slots })
   )
 
   await resend.emails.send({
