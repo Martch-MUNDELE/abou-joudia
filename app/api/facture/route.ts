@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { FacturePDF } from '@/lib/pdf'
 import { Resend } from 'resend'
-import React from 'react'
+
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   if (!order || !order.customer_email) return NextResponse.json({ error: 'Pas d\'email' }, { status: 400 })
 
   const pdfBuffer = await renderToBuffer(
-    React.createElement(FacturePDF as any, { order, items: order.order_items, slot: order.delivery_slots })
+    FacturePDF({ order, items: order.order_items, slot: order.delivery_slots }) as any
   )
 
   await resend.emails.send({
