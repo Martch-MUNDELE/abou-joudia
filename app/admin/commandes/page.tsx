@@ -152,24 +152,16 @@ export default function CommandesAdmin() {
                   </a>
                 )}
               </div>
-              {order.status !== 'livrée' && order.status !== 'annulée' && (
-                <div style={{ display: 'flex', gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                  <button
-                    onClick={() => updateStatus(order.id, 'annulée')}
-                    style={{ padding: '10px 16px', borderRadius: 50, border: '1px solid rgba(255,107,107,0.25)', background: 'rgba(255,107,107,0.06)', color: '#FF6B6B', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'DM Sans, sans-serif' }}
-                  >Annuler</button>
-                  <button
-                    onClick={() => {
-                      const next = { nouvelle: 'confirmée', confirmée: 'en_preparation', en_preparation: 'en_livraison', en_livraison: 'livrée' }
-                      const n = next[order.status]
-                      if (n) updateStatus(order.id, n)
-                    }}
-                    style={{ flex: 1, padding: '10px 16px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', cursor: 'pointer', fontSize: 12, fontWeight: 800, fontFamily: 'DM Sans, sans-serif' }}
-                  >
-                    { order.status === 'nouvelle' ? 'Confirmer' : order.status === 'confirmée' ? 'En preparation' : order.status === 'en_preparation' ? 'En livraison' : 'Marquer livree' }
-                  </button>
-                </div>
-              )}
+<div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 11, color: '#7A6E58', fontFamily: 'DM Sans, sans-serif' }}>Statut</span>
+                <select
+                  value={order.status}
+                  onChange={e => updateStatus(order.id, e.target.value)}
+                  style={{ background: '#1A1510', border: '1px solid rgba(232,160,32,0.2)', color: STATUS_COLORS[order.status]?.color || '#E8A020', borderRadius: 50, padding: '6px 12px', fontSize: 12, fontWeight: 700, outline: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', appearance: 'none', WebkitAppearance: 'none', textAlign: 'center' }}
+                >
+                  {STATUSES.map(s => <option key={s} value={s} style={{ background: '#131009', color: '#F5EDD6' }}>{STATUS_LABELS[s]}</option>)}
+                </select>
+              </div>
 
             </div>
           )
