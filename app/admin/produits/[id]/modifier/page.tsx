@@ -36,8 +36,13 @@ export default function ModifierProduit() {
   const save = async () => {
     setSaving(true)
     const cat = ['chaudes', 'froides'].includes(form.subcategory) ? 'boissons' : 'nourriture'
-    await supabase.from('products').update({ ...form, category: cat }).eq('id', params.id)
-    router.push('/admin/produits'); router.refresh()
+    const { error } = await supabase.from('products').update({ ...form, category: cat }).eq('id', params.id)
+    if (error) {
+      alert('Erreur: ' + error.message)
+      setSaving(false)
+      return
+    }
+    window.location.href = '/admin/produits'
   }
 
   return (
