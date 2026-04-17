@@ -64,7 +64,7 @@ export default function CreneauxAdmin() {
           </div>
         )}
         {daySlots.map(slot => (
-          <div key={slot.id} style={{ background: '#131009', border: `1px solid ${slot.blocked ? 'rgba(255,107,107,0.15)' : 'rgba(232,160,32,0.1)'}`, borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 16, opacity: slot.blocked ? 0.6 : 1 }}>
+          <div key={slot.id} style={{ background: '#131009', border: `1px solid ${slot.blocked ? 'rgba(255,107,107,0.15)' : 'rgba(232,160,32,0.1)'}`, borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 16, opacity: slot.blocked ? 0.6 : 1, flexWrap: 'wrap' as const }}>
             <div style={{ fontWeight: 700, fontSize: 14, color: slot.blocked ? '#C8B99A' : '#F5EDD6', minWidth: 110, textDecoration: slot.blocked ? 'line-through' : 'none', fontFamily: 'DM Sans, sans-serif' }}>
               {slot.time_start.slice(0,5)} – {slot.time_end.slice(0,5)}
             </div>
@@ -91,7 +91,7 @@ export default function CreneauxAdmin() {
 
             <button
               onClick={() => toggle(slot)}
-              style={{ padding: '7px 14px', borderRadius: 50, border: '1px solid', borderColor: slot.blocked ? 'rgba(91,197,122,0.3)' : 'rgba(255,107,107,0.3)', background: slot.blocked ? 'rgba(91,197,122,0.08)' : 'rgba(255,107,107,0.08)', color: slot.blocked ? '#5BC57A' : '#FF6B6B', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'DM Sans, sans-serif' }}
+              style={{ padding: '7px 14px', borderRadius: 50, border: '1px solid', borderColor: slot.blocked ? 'rgba(91,197,122,0.3)' : 'rgba(255,107,107,0.3)', background: slot.blocked ? 'rgba(91,197,122,0.08)' : 'rgba(255,107,107,0.08)', color: slot.blocked ? '#5BC57A' : '#FF6B6B', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'DM Sans, sans-serif', width: '100%', marginTop: 4 }}
             >
               {slot.blocked ? 'Débloquer' : 'Bloquer'}
             </button>
