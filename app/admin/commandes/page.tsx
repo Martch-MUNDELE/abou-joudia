@@ -115,7 +115,7 @@ export default function CommandesAdmin() {
                   <div style={{ fontSize: 10, color: '#A89880', marginTop: 2 }}>#{order.id.slice(0,8).toUpperCase()} · {new Date(order.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: '#F5C842', fontFamily: 'DM Sans, sans-serif' }}>{order.total.toFixed(2)} <span style={{ fontSize: 13 }}>DH</span></div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: '#F5C842', fontFamily: 'DM Sans, sans-serif', whiteSpace: 'nowrap' }}>{order.total.toFixed(2)} <span style={{ fontSize: 13 }}>DH</span></div>
                   <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 50, background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`, display: 'inline-block', marginTop: 4 }}>{STATUS_LABELS[order.status]}</span>
                 </div>
               </div>
