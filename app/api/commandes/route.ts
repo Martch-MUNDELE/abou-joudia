@@ -9,6 +9,11 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
+
+  const { data: shopStatus } = await supabase.from('settings').select('value').eq('key', 'status').single()
+  if (shopStatus?.value === 'closed') {
+    return NextResponse.json({ error: 'Le shop est actuellement fermé' }, { status: 403 })
+  }
   const { name, phone, address, note, slot_id, items, total, lat, lng, geo_address, email, wantFacture } = body
 
   const { data: slot } = await supabase.from('delivery_slots').select('*').eq('id', slot_id).single()
