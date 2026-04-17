@@ -1,12 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 import type { Product } from '@/lib/types'
 
-const SUBCATS = ['chaudes', 'froides', 'sandwichs_chauds', 'sandwichs_froids', 'salades']
-const SUBCAT_LABELS: Record<string, string> = { chaudes: 'Boissons Chaudes', froides: 'Boissons Froides', sandwichs_chauds: 'Sandwichs Chauds', sandwichs_froids: 'Sandwichs Froids', salades: 'Salades' }
-const empty = { name: '', description: '', ingredients: '', price: 0, category: 'nourriture', subcategory: 'sandwichs_chauds', image_url: '', active: true, stock: 0 }
+const SUBCATS: Record<string, string> = { chaudes: 'Boissons Chaudes', froides: 'Boissons Froides', sandwichs_chauds: 'Sandwichs Chauds', sandwichs_froids: 'Sandwichs Froids', salades: 'Salades' }
 
 const IconEdit = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -22,192 +20,40 @@ const IconTrash = () => (
   </svg>
 )
 
-const inputStyle = { width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontSize: 13, outline: 'none', fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const }
-const labelStyle = { fontSize: 11, fontWeight: 700, color: '#C8B99A', display: 'block', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.8px' }
-
-interface SheetProps {
-  isNew: boolean
-  editing: Partial<Product>
-  uploading: boolean
-  onClose: () => void
-  onSave: () => void
-  onUpload: (file: File) => void
-  onChange: (patch: Partial<Product>) => void
-}
-
-function BottomSheet({ isNew, editing, uploading, onClose, onSave, onUpload, onChange }: SheetProps) {
-  return createPortal(
-    <>
-      {/* Backdrop */}
-      <div
-        onClick={onClose}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', zIndex: 9998 }}
-      />
-      {/* Sheet */}
-      <div style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 9999,
-        background: '#131009',
-        borderRadius: '20px 20px 0 0',
-        border: '1px solid rgba(232,160,32,0.15)',
-        borderBottom: 'none',
-        maxHeight: '92dvh',
-        display: 'flex',
-        flexDirection: 'column',
-      }}>
-        {/* Drag handle */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)' }} />
-        </div>
-
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 16px 16px' }}>
-          <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, fontWeight: 900, color: '#F5EDD6', margin: 0 }}>
-            {isNew ? 'Nouveau produit' : 'Modifier'}
-          </h2>
-          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 50, width: 32, height: 32, color: '#C8B99A', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>×</button>
-        </div>
-
-        {/* Scrollable content */}
-        <div style={{
-          overflowY: 'auto',
-          WebkitOverflowScrolling: 'touch' as any,
-          flex: 1,
-          padding: '0 16px',
-          paddingBottom: 'calc(100px + env(safe-area-inset-bottom))',
-        }}>
-          {[{ key: 'name', label: 'Nom', type: 'text' }, { key: 'description', label: 'Description', type: 'text' }, { key: 'ingredients', label: 'Ingrédients', type: 'text' }, { key: 'price', label: 'Prix (DH)', type: 'number' }].map(f => (
-            <div key={f.key} style={{ marginBottom: 16 }}>
-              <label style={labelStyle}>{f.label}</label>
-              <input type={f.type} value={(editing as any)[f.key] || ''} onChange={e => onChange({ [f.key]: f.type === 'number' ? parseFloat(e.target.value) : e.target.value })} style={inputStyle} />
-            </div>
-          ))}
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Image</label>
-            {editing.image_url && (
-              <img src={editing.image_url} alt="preview" style={{ width: '100%', height: 130, objectFit: 'cover', borderRadius: 10, marginBottom: 10 }} />
-            )}
-            <label style={{ display: 'block', width: '100%', padding: '12px', borderRadius: 10, border: '1.5px dashed rgba(232,160,32,0.3)', background: 'rgba(232,160,32,0.04)', color: '#E8A020', cursor: 'pointer', textAlign: 'center', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const }}>
-              {uploading ? 'Upload en cours...' : 'Choisir une image'}
-              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) onUpload(e.target.files[0]) }} />
-            </label>
-            {!editing.image_url && (
-              <div style={{ marginTop: 8 }}>
-                <label style={{ ...labelStyle, marginTop: 8 }}>Ou URL</label>
-                <input type="text" placeholder="https://..." value={editing.image_url || ''} onChange={e => onChange({ image_url: e.target.value })} style={inputStyle} />
-              </div>
-            )}
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Sous-catégorie</label>
-            <select value={editing.subcategory} onChange={e => onChange({ subcategory: e.target.value as any })} style={{ ...inputStyle, cursor: 'pointer' }}>
-              {SUBCATS.map(s => <option key={s} value={s}>{SUBCAT_LABELS[s]}</option>)}
-            </select>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22, padding: '10px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 10, border: '1px solid rgba(232,160,32,0.1)' }}>
-            <input type="checkbox" checked={editing.active} id="active" onChange={e => onChange({ active: e.target.checked })} style={{ accentColor: '#E8A020' }} />
-            <label htmlFor="active" style={{ fontSize: 13, color: '#C8B890', cursor: 'pointer' }}>Produit actif (visible sur le site)</label>
-          </div>
-        </div>
-
-        {/* Sticky action buttons */}
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          padding: '12px 16px',
-          paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
-          background: 'linear-gradient(to bottom, transparent, #131009 30%)',
-          display: 'flex',
-          gap: 10,
-        }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '13px', borderRadius: 50, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(19,16,9,0.95)', color: '#C8B99A', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 13 }}>Annuler</button>
-          <button onClick={onSave} disabled={uploading} style={{ flex: 2, padding: '13px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 13 }}>Enregistrer</button>
-        </div>
-      </div>
-    </>,
-    document.body
-  )
-}
-
 export default function ProduitsAdmin() {
   const [products, setProducts] = useState<Product[]>([])
-  const [editing, setEditing] = useState<Partial<Product> | null>(null)
-  const [isNew, setIsNew] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [mounted, setMounted] = useState(false)
   const supabase = createClient()
+  const router = useRouter()
 
-  useEffect(() => { setMounted(true) }, [])
-
-  const load = async () => { const { data } = await supabase.from('products').select('*').order('subcategory'); setProducts(data || []) }
+  const load = async () => {
+    const { data } = await supabase.from('products').select('*').order('subcategory')
+    setProducts(data || [])
+  }
   useEffect(() => { load() }, [])
 
-  const uploadImage = async (file: File) => {
-    setUploading(true)
-    const ext = file.name.split('.').pop()
-    const fileName = `${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('products').upload(fileName, file, { upsert: true })
-    if (!error) {
-      const { data } = supabase.storage.from('products').getPublicUrl(fileName)
-      setEditing(p => ({ ...p, image_url: data.publicUrl }))
-    }
-    setUploading(false)
-  }
-
-  const save = async () => {
-    if (!editing) return
-    const cat = ['chaudes','froides'].includes(editing.subcategory || '') ? 'boissons' : 'nourriture'
-    if (isNew) await supabase.from('products').insert({ ...editing, category: cat })
-    else await supabase.from('products').update({ ...editing, category: cat }).eq('id', editing.id)
-    setEditing(null); load()
-  }
-
   const del = async (id: string) => {
-    if (!confirm('Supprimer ce produit ?')) return
-    await supabase.from('products').delete().eq('id', id); load()
+    await supabase.from('products').delete().eq('id', id)
+    load()
   }
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 900, color: '#F5EDD6' }}>Produits</h1>
-        <button onClick={() => { setEditing({...empty} as any); setIsNew(true) }} style={{ padding: '9px 18px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>
+        <button onClick={() => router.push('/admin/produits/nouveau')} style={{ padding: '9px 18px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>
           + Ajouter
         </button>
       </div>
-
-      {mounted && editing && (
-        <BottomSheet
-          isNew={isNew}
-          editing={editing}
-          uploading={uploading}
-          onClose={() => setEditing(null)}
-          onSave={save}
-          onUpload={uploadImage}
-          onChange={patch => setEditing(p => ({ ...p, ...patch }))}
-        />
-      )}
-
-      {/* LISTE */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {products.map(p => (
           <div key={p.id} style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.1)', borderRadius: 14, padding: '14px 16px', display: 'flex', gap: 14, alignItems: 'center' }}>
             <img src={p.image_url} alt={p.name} style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(232,160,32,0.1)' }} />
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 14, color: '#F5EDD6' }}>{p.name}</div>
-              <div style={{ fontSize: 11, color: '#C8B99A', marginTop: 2 }}>{SUBCAT_LABELS[p.subcategory]} · {p.price} DH</div>
-              {!p.active && <span style={{ fontSize: 10, background: 'rgba(255,107,107,0.1)', color: '#FF6B6B', padding: '2px 8px', borderRadius: 50, display: 'inline-block', marginTop: 4 }}>Inactif</span>}
+              <div style={{ fontSize: 11, color: '#C8B99A', marginTop: 2 }}>{SUBCATS[p.subcategory]} · {p.price} DH</div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => { setEditing(p); setIsNew(false) }} style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.06)', color: '#E8A020', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <button onClick={() => router.push('/admin/produits/' + p.id + '/modifier')} style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.06)', color: '#E8A020', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <IconEdit />
               </button>
               <button onClick={() => del(p.id)} style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(255,107,107,0.2)', background: 'rgba(255,107,107,0.06)', color: '#FF6B6B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
