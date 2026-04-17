@@ -73,13 +73,6 @@ export default function PanierPage() {
   useEffect(() => { if (items.length === 0) router.replace('/') }, [items.length])
 
   if (items.length === 0) return null
-    <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-      <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.3 }}>—</div>
-      <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 22, fontWeight: 800, marginBottom: 10, color: '#F5EDD6' }}>Panier vide</h2>
-      <p style={{ color: '#C8B99A', marginBottom: 28, fontSize: 13 }}>Ajoutez des produits depuis notre catalogue</p>
-      <Link href="/" style={{ textDecoration: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', padding: '13px 28px', borderRadius: 50, fontWeight: 700, fontSize: 14, fontFamily: 'DM Sans, sans-serif' }}>Voir le menu</Link>
-    </div>
-  )
 
   const stepIndex = ['cart', 'info', 'slot'].indexOf(step)
   const stepLabels = ['Panier', 'Infos', 'Horaire']
