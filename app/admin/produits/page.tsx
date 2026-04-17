@@ -70,8 +70,8 @@ export default function ProduitsAdmin() {
 
       {/* MODAL */}
       {editing && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 }}>
-          <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.15)', borderRadius: 20, width: '100%', maxWidth: 480, maxHeight: '90vh', overflow: 'auto', padding: 28 }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 100, padding: '12px 12px 0', overflowY: 'auto' }}>
+          <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.15)', borderRadius: 20, width: '100%', maxWidth: 480, padding: '20px 16px 24px', marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
               <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, fontWeight: 900, color: '#F5EDD6' }}>{isNew ? 'Nouveau produit' : 'Modifier'}</h2>
               <button onClick={() => setEditing(null)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 50, width: 32, height: 32, color: '#C8B99A', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
