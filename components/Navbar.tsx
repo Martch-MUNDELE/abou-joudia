@@ -31,7 +31,7 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {isOpen && (
+        {isOpen && mounted && count > 0 && (
           <Link href="/panier" style={{ textDecoration: 'none' }}>
             <div style={{ background: mounted && count > 0 ? 'linear-gradient(135deg,#F5C842,#FF6B20)' : 'rgba(255,255,255,0.05)', color: mounted && count > 0 ? '#0A0804' : '#C8B99A', border: mounted && count > 0 ? 'none' : '1px solid rgba(232,160,32,0.15)', padding: '9px 18px', borderRadius: 50, display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 13, transition: 'all 0.25s', boxShadow: mounted && count > 0 ? '0 4px 16px rgba(232,160,32,0.28)' : 'none' }}>
               <span>Panier</span>
