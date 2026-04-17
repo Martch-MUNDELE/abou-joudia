@@ -71,7 +71,7 @@ export default function ProduitsAdmin() {
       {/* MODAL */}
       {editing && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', overflowY: 'scroll', WebkitOverflowScrolling: 'touch', zIndex: 100, padding: '12px 12px 24px' }}>
-          <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.15)', borderRadius: 20, width: '100%', maxWidth: 480, padding: '20px 16px 24px', marginBottom: 12 }}>
+          <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.15)', borderRadius: 20, width: '100%', maxWidth: 480, padding: '20px 16px 24px', marginBottom: 12, margin: '0 auto 24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
               <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, fontWeight: 900, color: '#F5EDD6' }}>{isNew ? 'Nouveau produit' : 'Modifier'}</h2>
               <button onClick={() => setEditing(null)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 50, width: 32, height: 32, color: '#C8B99A', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
