@@ -53,7 +53,15 @@ export default async function HomePage() {
       <div style={{ height: 1, background: 'linear-gradient(90deg,rgba(232,160,32,0.25),transparent)', margin: '0 20px 24px' }} />
 
       {/* CATALOGUE avec sous-menus */}
-      <CatalogueClient products={products || []} isOpen={isOpen} />
+      {isOpen ? (
+        <CatalogueClient products={products || []} isOpen={isOpen} />
+      ) : (
+        <div style={{ margin: '0 16px 40px', background: '#131009', border: '1px solid rgba(255,107,107,0.2)', borderRadius: 16, padding: '32px 24px', textAlign: 'center' }}>
+          <div style={{ fontSize: 32, marginBottom: 14 }}>🔒</div>
+          <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, fontWeight: 700, color: '#F5EDD6', marginBottom: 8 }}>Nous sommes fermés</div>
+          <div style={{ fontSize: 13, color: '#7A6E58', lineHeight: 1.6 }}>{statusMessage}</div>
+        </div>
+      )}
 
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
     </div>
