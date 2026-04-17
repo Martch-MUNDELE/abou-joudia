@@ -37,7 +37,7 @@ export default function ModifierProduit() {
     setSaving(true)
     const cat = ['chaudes', 'froides'].includes(form.subcategory) ? 'boissons' : 'nourriture'
     await supabase.from('products').update({ ...form, category: cat }).eq('id', params.id)
-    router.push('/admin/produits')
+    router.push('/admin/produits'); router.refresh()
   }
 
   return (

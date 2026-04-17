@@ -31,6 +31,7 @@ export default function ProduitsAdmin() {
     setProducts(data || [])
   }
   useEffect(() => { load() }, [])
+if (typeof window !== 'undefined') { window.addEventListener('focus', load) }
 
   const del = async (id) => {
     if (!window.confirm('Supprimer ce produit ?')) return
