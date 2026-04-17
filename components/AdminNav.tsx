@@ -63,7 +63,7 @@ export default function AdminNav() {
       </div>
 
       {/* LIGNE 2 : Menu */}
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 16px 10px', display: 'flex', alignItems: 'center', gap: 4, overflowX: 'auto', scrollbarWidth: 'none' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 20px 10px', display: 'flex', alignItems: 'center', gap: 4, overflowX: 'auto', scrollbarWidth: 'none' }}>
         {LINKS.map(l => (
           <Link key={l.href} href={l.href} style={{ textDecoration: 'none', flexShrink: 0 }}>
             <div style={{ padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', color: isActive(l.href, l.exact) ? '#0A0804' : '#E8DCC8', background: isActive(l.href, l.exact) ? 'linear-gradient(135deg,#F5C842,#FF6B20)' : 'transparent', whiteSpace: 'nowrap' as const }}>
