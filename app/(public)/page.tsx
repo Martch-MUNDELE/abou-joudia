@@ -33,7 +33,7 @@ export default async function HomePage() {
 
         <div style={{ position: 'relative', zIndex: 2, width: '100%' }}>
           {/* Badge statut */}
-          <div style={{ display: isOpen ? 'none' : 'flex', justifyContent: 'flex-end', width: '100%', marginBottom: 22 }}><div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#C41E1E', padding: '6px 14px', borderRadius: 50, fontSize: 10, color: '#FFFFFF', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase' as const }}>
+          <div style={{ display: isOpen ? 'none' : 'flex', justifyContent: 'flex-end', width: '100%', marginBottom: 22 }}><div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#C41E1E', padding: '6px 14px', borderRadius: 50, fontSize: 10, color: '#000000', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase' as const }}>
             <span style={{ width: 6, height: 6, background: isOpen ? '#7DD87A' : '#FF6B6B', borderRadius: '50%', display: 'inline-block' }} />
             {statusMessage}
           </div></div>
