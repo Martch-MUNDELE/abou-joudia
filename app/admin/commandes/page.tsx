@@ -154,13 +154,16 @@ export default function CommandesAdmin() {
               </div>
 <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 11, color: '#7A6E58', fontFamily: 'DM Sans, sans-serif' }}>Statut</span>
-                <select
-                  value={order.status}
-                  onChange={e => updateStatus(order.id, e.target.value)}
-                  style={{ background: '#1A1510', border: '1px solid rgba(232,160,32,0.2)', color: STATUS_COLORS[order.status]?.color || '#E8A020', borderRadius: 50, padding: '6px 12px', fontSize: 12, fontWeight: 700, outline: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', appearance: 'none', WebkitAppearance: 'none', textAlign: 'center' }}
-                >
-                  {STATUSES.map(s => <option key={s} value={s} style={{ background: '#131009', color: '#F5EDD6' }}>{STATUS_LABELS[s]}</option>)}
-                </select>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    value={order.status}
+                    onChange={e => updateStatus(order.id, e.target.value)}
+                    style={{ background: '#1A1510', border: '1px solid rgba(232,160,32,0.25)', color: STATUS_COLORS[order.status]?.color || '#E8A020', borderRadius: 8, padding: '7px 32px 7px 12px', fontSize: 12, fontWeight: 700, outline: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', appearance: 'none', WebkitAppearance: 'none' }}
+                  >
+                    {STATUSES.map(s => <option key={s} value={s} style={{ background: '#131009', color: '#F5EDD6' }}>{STATUS_LABELS[s]}</option>)}
+                  </select>
+                  <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: STATUS_COLORS[order.status]?.color || '#E8A020', fontSize: 10 }}>▾</span>
+                </div>
               </div>
 
             </div>
