@@ -166,7 +166,7 @@ export default function CommandesAdmin() {
                     }}
                     style={{ flex: 1, padding: '10px 16px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', cursor: 'pointer', fontSize: 12, fontWeight: 800, fontFamily: 'DM Sans, sans-serif' }}
                   >
-                    { order.status === 'nouvelle' ? '✓ Confirmer la commande' : order.status === 'confirmée' ? '👨‍🍳 Passer en préparation' : order.status === 'en_preparation' ? '🛵 Passer en livraison' : '✓ Marquer livrée' }
+                    { order.status === 'nouvelle' ? 'Confirmer' : order.status === 'confirmée' ? 'En preparation' : order.status === 'en_preparation' ? 'En livraison' : 'Marquer livree' }
                   </button>
                 </div>
               )}
