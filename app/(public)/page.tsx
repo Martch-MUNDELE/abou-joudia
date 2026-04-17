@@ -33,10 +33,10 @@ export default async function HomePage() {
 
         <div style={{ position: 'relative', zIndex: 2, maxWidth: 300 }}>
           {/* Badge statut */}
-          <div style={{ display: isOpen ? 'none' : 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(220,50,50,0.12)', border: '1px solid rgba(220,50,50,0.3)', padding: '6px 14px', borderRadius: 50, fontSize: 10, color: '#FF6B6B', fontWeight: 600, letterSpacing: '0.8px', marginBottom: 22, textTransform: 'uppercase' as const }}>
+          <div style={{ display: isOpen ? 'none' : 'flex', justifyContent: 'flex-end', marginBottom: 22 }}><div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(220,50,50,0.12)', border: '1px solid rgba(220,50,50,0.3)', padding: '6px 14px', borderRadius: 50, fontSize: 10, color: '#FF6B6B', fontWeight: 600, letterSpacing: '0.8px', textTransform: 'uppercase' as const }}>
             <span style={{ width: 6, height: 6, background: isOpen ? '#7DD87A' : '#FF6B6B', borderRadius: '50%', display: 'inline-block' }} />
             {statusMessage}
-          </div>
+          </div></div>
 
           <h1 style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: 'clamp(36px,8vw,52px)', lineHeight: 0.97, letterSpacing: '-2px', margin: '0 0 10px' }}>
             <span style={{ display: 'block', background: 'linear-gradient(135deg,#FFD060 0%,#F5A020 35%,#FF6020 70%,#FF3500 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Saveurs du</span>
@@ -53,15 +53,7 @@ export default async function HomePage() {
       <div style={{ height: 1, background: 'linear-gradient(90deg,rgba(232,160,32,0.25),transparent)', margin: '0 20px 24px' }} />
 
       {/* CATALOGUE avec sous-menus */}
-      {isOpen ? (
-        <CatalogueClient products={products || []} isOpen={isOpen} />
-      ) : (
-        <div style={{ margin: '0 16px 40px', background: '#131009', border: '1px solid rgba(255,107,107,0.2)', borderRadius: 16, padding: '32px 24px', textAlign: 'center' }}>
-          <div style={{ fontSize: 32, marginBottom: 14 }}>🔒</div>
-          <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, fontWeight: 700, color: '#F5EDD6', marginBottom: 8 }}>Nous sommes fermés</div>
-          <div style={{ fontSize: 13, color: '#C8B99A', lineHeight: 1.6 }}>{statusMessage}</div>
-        </div>
-      )}
+      <CatalogueClient products={products || []} isOpen={isOpen} />
 
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
     </div>
