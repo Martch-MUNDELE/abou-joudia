@@ -151,24 +151,25 @@ export default function CommandesAdmin() {
                     <IconPin /> Maps
                   </a>
                 )}
-                {order.status !== 'livrée' && order.status !== 'annulée' && (
+</div>
+              {order.status !== 'livrée' && order.status !== 'annulée' && (
+                <div style={{ display: 'flex', gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <button
+                    onClick={() => updateStatus(order.id, 'annulée')}
+                    style={{ padding: '10px 16px', borderRadius: 50, border: '1px solid rgba(255,107,107,0.25)', background: 'rgba(255,107,107,0.06)', color: '#FF6B6B', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'DM Sans, sans-serif' }}
+                  >Annuler</button>
                   <button
                     onClick={() => {
                       const next = { nouvelle: 'confirmée', confirmée: 'en_preparation', en_preparation: 'en_livraison', en_livraison: 'livrée' }
                       const n = next[order.status]
                       if (n) updateStatus(order.id, n)
                     }}
-                    style={{ marginLeft: 'auto', padding: '7px 16px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', cursor: 'pointer', fontSize: 11, fontWeight: 800, fontFamily: 'DM Sans, sans-serif', whiteSpace: 'nowrap' }}
+                    style={{ flex: 1, padding: '10px 16px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', cursor: 'pointer', fontSize: 12, fontWeight: 800, fontFamily: 'DM Sans, sans-serif' }}
                   >
-                    { order.status === 'nouvelle' ? '✓ Confirmer' : order.status === 'confirmée' ? '👨‍🍳 Préparer' : order.status === 'en_preparation' ? '🛵 Livrer' : '✓ Livrée' }
+                    { order.status === 'nouvelle' ? '✓ Confirmer la commande' : order.status === 'confirmée' ? '👨‍🍳 Passer en préparation' : order.status === 'en_preparation' ? '🛵 Passer en livraison' : '✓ Marquer livrée' }
                   </button>
-                )}
-                {order.status !== 'annulée' && order.status !== 'livrée' && (
-                  <button
-                    onClick={() => updateStatus(order.id, 'annulée')}
-                    style={{ padding: '7px 12px', borderRadius: 50, border: '1px solid rgba(255,107,107,0.25)', background: 'rgba(255,107,107,0.06)', color: '#FF6B6B', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'DM Sans, sans-serif' }}
-                  >✕</button>
-                )}
+                </div>
+              )}
               </div>
 
             </div>
