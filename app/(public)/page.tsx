@@ -21,18 +21,15 @@ export default async function HomePage() {
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
-      {/* Badge FERMÉ fixed */}
-      {!isOpen && (
-        <div style={{ position: 'fixed', top: 0, right: 0, zIndex: 100, height: 60, display: 'flex', alignItems: 'center', paddingRight: 20 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#C41E1E', padding: '8px 18px', borderRadius: 50, fontSize: 12, color: '#000000', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>
-            <span style={{ width: 7, height: 7, background: '#FF6B6B', borderRadius: '50%', display: 'inline-block' }} />
-            {statusMessage}
-          </div>
-        </div>
-      )}
+
 
       {/* HERO */}
       <div style={{ position: 'relative', overflow: 'hidden', padding: '36px 20px 32px', minHeight: 400 }}>
+        {!isOpen && (
+          <div style={{ position: 'absolute', top: 18, right: 20, zIndex: 10, background: '#C41E1E', padding: '5px 14px', borderRadius: 50, fontSize: 11, color: '#FFFFFF', fontWeight: 600, letterSpacing: '0.8px', textTransform: 'uppercase' as const }}>
+            {statusMessage}
+          </div>
+        )}
         {heroImage && (
           <img src={heroImage} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'right bottom', opacity: 1, mixBlendMode: 'lighten', pointerEvents: 'none', zIndex: 0 }} />
         )}
