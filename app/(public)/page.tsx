@@ -21,6 +21,15 @@ export default async function HomePage() {
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
+      {/* Badge FERMÉ fixed */}
+      {!isOpen && (
+        <div style={{ position: 'fixed', top: 0, right: 0, zIndex: 100, height: 60, display: 'flex', alignItems: 'center', paddingRight: 20 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#C41E1E', padding: '8px 18px', borderRadius: 50, fontSize: 12, color: '#000000', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>
+            <span style={{ width: 7, height: 7, background: '#FF6B6B', borderRadius: '50%', display: 'inline-block' }} />
+            {statusMessage}
+          </div>
+        </div>
+      )}
 
       {/* HERO */}
       <div style={{ position: 'relative', overflow: 'hidden', padding: '36px 20px 32px', minHeight: 400 }}>
@@ -33,10 +42,7 @@ export default async function HomePage() {
 
         <div style={{ position: 'relative', zIndex: 2, width: '100%' }}>
           {/* Badge statut */}
-          <div style={{ display: isOpen ? 'none' : 'flex', justifyContent: 'flex-end', width: '100%', marginBottom: 22 }}><div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#C41E1E', padding: '6px 14px', borderRadius: 50, fontSize: 10, color: '#000000', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase' as const }}>
-            <span style={{ width: 6, height: 6, background: isOpen ? '#7DD87A' : '#FF6B6B', borderRadius: '50%', display: 'inline-block' }} />
-            {statusMessage}
-          </div></div>
+
 
           <h1 style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: 'clamp(36px,8vw,52px)', lineHeight: 0.97, letterSpacing: '-2px', margin: '0 0 10px' }}>
             <span style={{ display: 'block', background: 'linear-gradient(135deg,#FFD060 0%,#F5A020 35%,#FF6020 70%,#FF3500 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Saveurs du</span>
