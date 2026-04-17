@@ -40,7 +40,7 @@ export default function AdminNav() {
     <nav style={{ background: 'rgba(8,6,3,0.97)', borderBottom: '1px solid rgba(232,160,32,0.1)', position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(20px)' }}>
 
       {/* LIGNE 1 : Logo + Déconnexion */}
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '10px 20px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '10px 20px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link href="/admin" style={{ textDecoration: 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Logo size={36} />
@@ -63,7 +63,7 @@ export default function AdminNav() {
       </div>
 
       {/* LIGNE 2 : Menu */}
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 20px 10px', display: 'flex', alignItems: 'center', gap: 4, overflowX: 'auto', scrollbarWidth: 'none' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 20px 10px', display: 'flex', alignItems: 'center', gap: 4, overflowX: 'auto', scrollbarWidth: 'none' }}>
         {LINKS.map(l => (
           <Link key={l.href} href={l.href} style={{ textDecoration: 'none', flexShrink: 0 }}>
             <div style={{ padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', color: isActive(l.href, l.exact) ? '#0A0804' : '#E8DCC8', background: isActive(l.href, l.exact) ? 'linear-gradient(135deg,#F5C842,#FF6B20)' : 'transparent', whiteSpace: 'nowrap' as const }}>
