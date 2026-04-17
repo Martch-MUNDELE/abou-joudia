@@ -46,10 +46,13 @@ export default function ProduitsAdmin() {
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {products.map(p => (
-          <div key={p.id} style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.1)', borderRadius: 14, padding: '14px 16px', display: 'flex', gap: 14, alignItems: 'center' }}>
+          <div key={p.id} style={{ background: '#131009', border: p.active ? '1px solid rgba(232,160,32,0.1)' : '1px solid rgba(255,107,107,0.2)', borderRadius: 14, padding: '14px 16px', display: 'flex', gap: 14, alignItems: 'center', opacity: p.active ? 1 : 0.55 }}>
             <img src={p.image_url} alt={p.name} style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(232,160,32,0.1)' }} />
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#F5EDD6' }}>{p.name}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#F5EDD6' }}>{p.name}</div>
+                {!p.active && <span style={{ fontSize: 10, background: 'rgba(255,107,107,0.15)', color: '#FF6B6B', padding: '2px 8px', borderRadius: 50, fontWeight: 700, whiteSpace: 'nowrap' }}>Inactif</span>}
+              </div>
               <div style={{ fontSize: 11, color: '#C8B99A', marginTop: 2 }}>{SUBCATS[p.subcategory]} · {p.price} DH</div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
