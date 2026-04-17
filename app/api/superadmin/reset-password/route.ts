@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL as string, process.env.SUPABASE_SERVICE_ROLE_KEY as string)
 export async function POST(req: NextRequest) {
   const { adminId, newPassword, performedBy } = await req.json()
   const { data } = await supabase.from('admins').select('email').eq('id', adminId).single()

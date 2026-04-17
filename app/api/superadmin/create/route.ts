@@ -1,5 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string
+const supabase = createClient(supabaseUrl, supabaseKey)
+
 export async function POST(req: NextRequest) {
   const { email, password, performedBy } = await req.json()
   if (password.length < 8) return NextResponse.json({ error: 'Mot de passe trop court' }, { status: 400 })
