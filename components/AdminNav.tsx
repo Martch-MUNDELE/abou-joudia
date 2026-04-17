@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
 
 const LINKS = [
   { href: '/admin', label: 'Dashboard', exact: true },
@@ -20,44 +21,67 @@ const IconLogout = () => (
 )
 
 export default function AdminNav() {
-  const path = usePathname()
+  const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data.user?.email) {
+        const { data: admin } = await supabase.from('admins').select('role').eq('email', data.user.email).single()
+        setIsSuperAdmin(admin?.role === 'superadmin')
+      }
+    })
+  }, [])
 
   const isActive = (href: string, exact?: boolean) =>
-    exact ? path === href : path.startsWith(href)
+    exact ? pathname === href : pathname.startsWith(href)
 
   const logout = async () => {
     await supabase.auth.signOut()
     router.push('/admin/login')
   }
 
+  const linkStyle = (href: string, exact?: boolean) => ({
+    padding: '7px 14px',
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: 600,
+    fontFamily: 'DM Sans, sans-serif',
+    color: isActive(href, exact) ? '#0A0804' : '#E8DCC8',
+    background: isActive(href, exact) ? 'linear-gradient(135deg,#F5C842,#FF6B20)' : 'transparent',
+    transition: 'all 0.15s',
+    whiteSpace: 'nowrap' as const,
+  })
+
   return (
     <nav style={{ background: 'rgba(8,6,3,0.97)', borderBottom: '1px solid rgba(232,160,32,0.1)', position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(20px)' }}>
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', gap: 4, height: 56, overflowX: 'auto', scrollbarWidth: 'none' }}>
-
         <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: 14, background: 'linear-gradient(90deg,#FFD060,#E8901A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginRight: 16, flexShrink: 0, letterSpacing: '-0.3px' }}>
           Admin
         </div>
 
         {LINKS.map(l => (
           <Link key={l.href} href={l.href} style={{ textDecoration: 'none', flexShrink: 0 }}>
-            <div style={{ padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', color: isActive(l.href, l.exact) ? '#0A0804' : '#D4C5A0', background: isActive(l.href, l.exact) ? 'linear-gradient(135deg,#F5C842,#FF6B20)' : 'transparent', transition: 'all 0.15s', whiteSpace: 'nowrap' as const }}>
-              {l.label}
-            </div>
+            <div style={linkStyle(l.href, l.exact)}>{l.label}</div>
           </Link>
         ))}
 
+        {isSuperAdmin && (
+          <Link href="/admin/superadmin" style={{ textDecoration: 'none', flexShrink: 0 }}>
+            <div style={{ padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', color: pathname.startsWith('/admin/superadmin') ? '#0A0804' : '#F5C842', background: pathname.startsWith('/admin/superadmin') ? 'linear-gradient(135deg,#F5C842,#FF6B20)' : 'rgba(245,200,66,0.08)', border: pathname.startsWith('/admin/superadmin') ? 'none' : '1px solid rgba(245,200,66,0.2)', whiteSpace: 'nowrap' as const }}>
+              Super Admin
+            </div>
+          </Link>
+        )}
+
         <div style={{ marginLeft: 'auto', flexShrink: 0 }}>
-          <button
-            onClick={logout}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', color: '#FF6B6B', background: 'rgba(255,107,107,0.06)', border: '1px solid rgba(255,107,107,0.2)', cursor: 'pointer' }}
-          >
+          <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', color: '#FF6B6B', background: 'rgba(255,107,107,0.06)', border: '1px solid rgba(255,107,107,0.2)', cursor: 'pointer' }}>
             <IconLogout />
             Déconnexion
           </button>
         </div>
-
       </div>
     </nav>
   )
