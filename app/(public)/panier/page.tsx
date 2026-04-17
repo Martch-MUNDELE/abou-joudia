@@ -70,7 +70,9 @@ export default function PanierPage() {
     setLoading(false)
   }
 
-  if (items.length === 0) return (
+  useEffect(() => { if (items.length === 0) router.replace('/') }, [items.length])
+
+  if (items.length === 0) return null
     <div style={{ textAlign: 'center', padding: '80px 20px' }}>
       <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.3 }}>—</div>
       <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 22, fontWeight: 800, marginBottom: 10, color: '#F5EDD6' }}>Panier vide</h2>
