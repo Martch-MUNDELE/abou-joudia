@@ -12,6 +12,7 @@ export default function PanierPage() {
   const [step, setStep] = useState<'cart' | 'info' | 'slot'>('cart')
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [orderError, setOrderError] = useState('')
   const [form, setForm] = useState(() => {
     if (typeof window === 'undefined') return { name: '', phone: '', address: '', note: '', email: '', wantFacture: false, lat: null as number | null, lng: null as number | null, geo_address: '' }
     try {
@@ -63,7 +64,7 @@ export default function PanierPage() {
         body: JSON.stringify({ ...form, slot_id: selectedSlot, items: items.map(i => ({ product_id: i.product.id, product_name: i.product.name, quantity: i.quantity, unit_price: i.product.price })), total: total() })
       })
       const data = await res.json()
-      if (data.error) { alert(data.error); return }
+      if (data.error) { setOrderError(data.error); setLoading(false); return }
       if (data.id) { clear(); router.push(`/confirmation/${data.id}`) }
     } catch (e) { console.error(e) }
     setLoading(false)
