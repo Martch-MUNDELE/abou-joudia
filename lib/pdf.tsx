@@ -4,7 +4,7 @@ const gold = '#E8A020'
 const dark = '#0F0B04'
 const card = '#1A1510'
 const cream = '#F5EDD6'
-const muted = '#A89880'
+const muted = '#C8B99A'
 const border = '#2A2318'
 
 const styles = StyleSheet.create({

@@ -30,12 +30,12 @@ export default function ConfirmationPage() {
   }, [params.id])
 
   if (loading) return (
-    <div style={{ textAlign: 'center', padding: '80px 20px', color: '#A89880' }}>Chargement...</div>
+    <div style={{ textAlign: 'center', padding: '80px 20px', color: '#C8B99A' }}>Chargement...</div>
   )
 
   if (!order) return (
     <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-      <p style={{ color: '#A89880' }}>Commande introuvable</p>
+      <p style={{ color: '#C8B99A' }}>Commande introuvable</p>
       <Link href="/" style={{ color: '#E8A020' }}>Retour à l'accueil</Link>
     </div>
   )
@@ -85,7 +85,7 @@ export default function ConfirmationPage() {
 
       {slot && (
         <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.15)', borderRadius: 18, padding: '20px', marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#A89880', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: 14 }}>Livraison prévue</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: 14 }}>Livraison prévue</div>
 
           {/* Date */}
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 14 }}>
@@ -135,7 +135,7 @@ export default function ConfirmationPage() {
       )}
 
       <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.1)', borderRadius: 18, padding: '20px', marginBottom: 24 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#A89880', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: 14 }}>Récapitulatif</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: 14 }}>Récapitulatif</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
           {items.map((item, i) => (
             <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: i < items.length - 1 ? '1px solid rgba(232,160,32,0.06)' : 'none' }}>

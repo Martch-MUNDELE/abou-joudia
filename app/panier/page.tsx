@@ -74,7 +74,7 @@ export default function PanierPage() {
     <div style={{ textAlign: 'center', padding: '80px 20px' }}>
       <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.3 }}>—</div>
       <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 22, fontWeight: 800, marginBottom: 10, color: '#F5EDD6' }}>Panier vide</h2>
-      <p style={{ color: '#A89880', marginBottom: 28, fontSize: 13 }}>Ajoutez des produits depuis notre catalogue</p>
+      <p style={{ color: '#C8B99A', marginBottom: 28, fontSize: 13 }}>Ajoutez des produits depuis notre catalogue</p>
       <Link href="/" style={{ textDecoration: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', padding: '13px 28px', borderRadius: 50, fontWeight: 700, fontSize: 14, fontFamily: 'DM Sans, sans-serif' }}>Voir le menu</Link>
     </div>
   )
@@ -96,10 +96,10 @@ export default function PanierPage() {
           {stepLabels.map((label, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', flex: i < 2 ? 1 : 'none' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-                <div style={{ width: 30, height: 30, borderRadius: '50%', background: stepIndex >= i ? 'linear-gradient(135deg,#F5C842,#FF6B20)' : 'rgba(255,255,255,0.05)', border: stepIndex >= i ? 'none' : '1.5px solid rgba(232,160,32,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: stepIndex >= i ? '#0A0804' : '#A89880', transition: 'all 0.3s', fontFamily: 'DM Sans, sans-serif' }}>
+                <div style={{ width: 30, height: 30, borderRadius: '50%', background: stepIndex >= i ? 'linear-gradient(135deg,#F5C842,#FF6B20)' : 'rgba(255,255,255,0.05)', border: stepIndex >= i ? 'none' : '1.5px solid rgba(232,160,32,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: stepIndex >= i ? '#0A0804' : '#C8B99A', transition: 'all 0.3s', fontFamily: 'DM Sans, sans-serif' }}>
                   {stepIndex > i ? '✓' : i + 1}
                 </div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: stepIndex >= i ? '#E8A020' : '#A89880', letterSpacing: '0.3px', textTransform: 'none' as const, whiteSpace: 'nowrap' as const }}>{label}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: stepIndex >= i ? '#E8A020' : '#C8B99A', letterSpacing: '0.3px', textTransform: 'none' as const, whiteSpace: 'nowrap' as const }}>{label}</div>
               </div>
               {i < 2 && <div style={{ flex: 1, height: 1.5, background: stepIndex > i ? 'linear-gradient(90deg,#F5C842,#FF6B20)' : 'rgba(232,160,32,0.1)', margin: '0 6px 16px', transition: 'background 0.3s', borderRadius: 2 }} />}
             </div>
@@ -137,7 +137,7 @@ export default function PanierPage() {
           </div>
 
           {/* Livraison gratuite */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid rgba(232,160,32,0.06)', fontSize: 12, color: '#A89880' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid rgba(232,160,32,0.06)', fontSize: 12, color: '#C8B99A' }}>
             <span>Livraison</span>
             <span style={{ color: '#7DD87A', fontWeight: 600 }}>Gratuite</span>
           </div>
@@ -148,15 +148,15 @@ export default function PanierPage() {
       {step === 'info' && (
         <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#A89880', textTransform: 'uppercase' as const, letterSpacing: '0.8px', marginBottom: 8 }}>Nom complet <span style={{ color: '#FF6B20' }}>*</span></label>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#C8B99A', textTransform: 'uppercase' as const, letterSpacing: '0.8px', marginBottom: 8 }}>Nom complet <span style={{ color: '#FF6B20' }}>*</span></label>
             <input type="text" placeholder="Mohamed Amine..." value={form.name} onChange={e => updateForm(f => ({ ...f, name: e.target.value }))} style={{ width: '100%', padding: '13px 16px', borderRadius: 12, border: `1.5px solid ${form.name ? 'rgba(232,160,32,0.4)' : 'rgba(232,160,32,0.15)'}`, background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontFamily: 'DM Sans, sans-serif', fontSize: 14, outline: 'none', boxSizing: 'border-box' as const }} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#A89880', textTransform: 'uppercase' as const, letterSpacing: '0.8px', marginBottom: 8 }}>Téléphone <span style={{ color: '#FF6B20' }}>*</span></label>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#C8B99A', textTransform: 'uppercase' as const, letterSpacing: '0.8px', marginBottom: 8 }}>Téléphone <span style={{ color: '#FF6B20' }}>*</span></label>
             <div style={{ display: 'flex', gap: 8 }}><PhoneInput value={form.phone} initialValue={form.phone} onChange={v => updateForm(f => ({ ...f, phone: v }))} /></div>
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#A89880', textTransform: 'uppercase' as const, letterSpacing: '0.8px', marginBottom: 8 }}>Adresse de livraison <span style={{ color: '#FF6B20' }}>*</span></label>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#C8B99A', textTransform: 'uppercase' as const, letterSpacing: '0.8px', marginBottom: 8 }}>Adresse de livraison <span style={{ color: '#FF6B20' }}>*</span></label>
             <button type="button" onClick={localize} disabled={geoLoading} style={{ width: '100%', padding: '13px 16px', borderRadius: 12, border: '1.5px dashed rgba(232,160,32,0.3)', background: form.lat ? 'rgba(125,216,122,0.06)' : 'rgba(232,160,32,0.04)', color: form.lat ? '#7DD87A' : '#E8A020', cursor: geoLoading ? 'wait' : 'pointer', fontSize: 13, fontWeight: 600, textAlign: 'center' as const, marginBottom: 10, fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const }}>
               {geoLoading ? 'Localisation...' : form.lat ? '✓ Position détectée' : 'Me localiser automatiquement'}
             </button>
@@ -172,7 +172,7 @@ export default function PanierPage() {
             <textarea placeholder="Ou saisissez votre adresse..." value={form.address} onChange={e => updateForm(f => ({ ...f, address: e.target.value, lat: null, lng: null }))} rows={3} style={{ width: '100%', padding: '13px 16px', borderRadius: 12, border: '1.5px solid rgba(232,160,32,0.15)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontFamily: 'DM Sans, sans-serif', fontSize: 13, outline: 'none', resize: 'none' as const, lineHeight: 1.6, boxSizing: 'border-box' as const }} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#A89880', textTransform: 'uppercase' as const, letterSpacing: '0.8px', marginBottom: 8 }}>Note (optionnel)</label>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#C8B99A', textTransform: 'uppercase' as const, letterSpacing: '0.8px', marginBottom: 8 }}>Note (optionnel)</label>
             <input type="text" placeholder="Étage, sonnette, instructions..." value={form.note} onChange={e => updateForm(f => ({ ...f, note: e.target.value }))} style={{ width: '100%', padding: '13px 16px', borderRadius: 12, border: '1.5px solid rgba(232,160,32,0.15)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontFamily: 'DM Sans, sans-serif', fontSize: 14, outline: 'none', boxSizing: 'border-box' as const }} />
           </div>
 
@@ -184,7 +184,7 @@ export default function PanierPage() {
               </div>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#C8B890' }}>Recevoir une facturette PDF</div>
-                <div style={{ fontSize: 11, color: '#A89880', marginTop: 2 }}>Envoyée par email après commande</div>
+                <div style={{ fontSize: 11, color: '#C8B99A', marginTop: 2 }}>Envoyée par email après commande</div>
               </div>
             </div>
             {form.wantFacture && (
@@ -198,7 +198,7 @@ export default function PanierPage() {
       {step === 'slot' && (
         <div style={{ padding: '0 20px' }}>
           <SlotPicker onSelect={setSelectedSlot} />
-          <p style={{ textAlign: 'center', color: '#A89880', fontSize: 11, marginTop: 16, letterSpacing: '0.3px' }}>Paiement en cash à la livraison uniquement</p>
+          <p style={{ textAlign: 'center', color: '#C8B99A', fontSize: 11, marginTop: 16, letterSpacing: '0.3px' }}>Paiement en cash à la livraison uniquement</p>
         </div>
       )}
 
@@ -208,7 +208,7 @@ export default function PanierPage() {
           {/* Total visible sur step panier */}
           {step === 'cart' && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <span style={{ fontSize: 13, color: '#A89880', fontWeight: 500 }}>{items.reduce((acc, i) => acc + i.quantity, 0)} article{items.reduce((acc, i) => acc + i.quantity, 0) > 1 ? 's' : ''}</span>
+              <span style={{ fontSize: 13, color: '#C8B99A', fontWeight: 500 }}>{items.reduce((acc, i) => acc + i.quantity, 0)} article{items.reduce((acc, i) => acc + i.quantity, 0) > 1 ? 's' : ''}</span>
               <span style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 22, color: '#F5C842', letterSpacing: '-0.5px' }}>{total().toFixed(2)} DH</span>
             </div>
           )}

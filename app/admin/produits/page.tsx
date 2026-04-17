@@ -22,7 +22,7 @@ const IconTrash = () => (
 )
 
 const inputStyle = { width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontSize: 13, outline: 'none', fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const }
-const labelStyle = { fontSize: 11, fontWeight: 700, color: '#A89880', display: 'block', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.8px' }
+const labelStyle = { fontSize: 11, fontWeight: 700, color: '#C8B99A', display: 'block', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.8px' }
 
 export default function ProduitsAdmin() {
   const [products, setProducts] = useState<Product[]>([])
@@ -74,7 +74,7 @@ export default function ProduitsAdmin() {
           <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.15)', borderRadius: 20, width: '100%', maxWidth: 480, maxHeight: '90vh', overflow: 'auto', padding: 28 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
               <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 20, fontWeight: 900, color: '#F5EDD6' }}>{isNew ? 'Nouveau produit' : 'Modifier'}</h2>
-              <button onClick={() => setEditing(null)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 50, width: 32, height: 32, color: '#A89880', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+              <button onClick={() => setEditing(null)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 50, width: 32, height: 32, color: '#C8B99A', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
             </div>
 
             {[{ key: 'name', label: 'Nom', type: 'text' }, { key: 'description', label: 'Description', type: 'text' }, { key: 'ingredients', label: 'Ingrédients', type: 'text' }, { key: 'price', label: 'Prix (DH)', type: 'number' }].map(f => (
@@ -114,7 +114,7 @@ export default function ProduitsAdmin() {
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setEditing(null)} style={{ flex: 1, padding: '11px', borderRadius: 50, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#A89880', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 13 }}>Annuler</button>
+              <button onClick={() => setEditing(null)} style={{ flex: 1, padding: '11px', borderRadius: 50, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#C8B99A', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 13 }}>Annuler</button>
               <button onClick={save} disabled={uploading} style={{ flex: 2, padding: '11px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 13 }}>Enregistrer</button>
             </div>
           </div>
@@ -128,7 +128,7 @@ export default function ProduitsAdmin() {
             <img src={p.image_url} alt={p.name} style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(232,160,32,0.1)' }} />
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 14, color: '#F5EDD6' }}>{p.name}</div>
-              <div style={{ fontSize: 11, color: '#A89880', marginTop: 2 }}>{SUBCAT_LABELS[p.subcategory]} · {p.price} DH</div>
+              <div style={{ fontSize: 11, color: '#C8B99A', marginTop: 2 }}>{SUBCAT_LABELS[p.subcategory]} · {p.price} DH</div>
               {!p.active && <span style={{ fontSize: 10, background: 'rgba(255,107,107,0.1)', color: '#FF6B6B', padding: '2px 8px', borderRadius: 50, display: 'inline-block', marginTop: 4 }}>Inactif</span>}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>

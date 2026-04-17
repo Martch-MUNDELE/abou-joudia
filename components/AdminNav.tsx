@@ -42,7 +42,7 @@ export default function AdminNav() {
 
         {LINKS.map(l => (
           <Link key={l.href} href={l.href} style={{ textDecoration: 'none', flexShrink: 0 }}>
-            <div style={{ padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', color: isActive(l.href, l.exact) ? '#0A0804' : '#A89880', background: isActive(l.href, l.exact) ? 'linear-gradient(135deg,#F5C842,#FF6B20)' : 'transparent', transition: 'all 0.15s', whiteSpace: 'nowrap' as const }}>
+            <div style={{ padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', color: isActive(l.href, l.exact) ? '#0A0804' : '#D4C5A0', background: isActive(l.href, l.exact) ? 'linear-gradient(135deg,#F5C842,#FF6B20)' : 'transparent', transition: 'all 0.15s', whiteSpace: 'nowrap' as const }}>
               {l.label}
             </div>
           </Link>

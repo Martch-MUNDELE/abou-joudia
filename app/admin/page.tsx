@@ -20,7 +20,7 @@ export default async function AdminDashboard() {
     <div>
       <div style={{ marginBottom: 32 }}>
         <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, fontWeight: 800, color: '#F5EDD6', margin: '0 0 4px', letterSpacing: '-0.5px' }}>Dashboard</h1>
-        <p style={{ color: '#A89880', fontSize: 13, margin: 0 }}>{new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+        <p style={{ color: '#C8B99A', fontSize: 13, margin: 0 }}>{new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
       </div>
 
       {/* Stats */}
@@ -29,7 +29,7 @@ export default async function AdminDashboard() {
           <div key={stat.label} style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.1)', borderRadius: 16, padding: '20px 20px 16px' }}>
             <div style={{ fontSize: 32, fontFamily: 'Playfair Display, serif', fontWeight: 800, color: stat.color, lineHeight: 1, marginBottom: 8 }}>{stat.value}</div>
             <div style={{ fontSize: 13, fontWeight: 600, color: '#F5EDD6', marginBottom: 3 }}>{stat.label}</div>
-            <div style={{ fontSize: 11, color: '#A89880' }}>{stat.sub}</div>
+            <div style={{ fontSize: 11, color: '#C8B99A' }}>{stat.sub}</div>
           </div>
         ))}
       </div>
@@ -44,7 +44,7 @@ export default async function AdminDashboard() {
           <div key={o.id} style={{ padding: '14px 20px', borderBottom: i < Math.min((orders?.length || 0), 6) - 1 ? '1px solid rgba(232,160,32,0.06)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontWeight: 600, fontSize: 14, color: '#F5EDD6', marginBottom: 2 }}>{o.customer_name}</div>
-              <div style={{ fontSize: 11, color: '#A89880' }}>{o.customer_phone} · {new Date(o.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>
+              <div style={{ fontSize: 11, color: '#C8B99A' }}>{o.customer_phone} · {new Date(o.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: 15, color: '#F5C842' }}>{o.total?.toFixed(2)} DH</span>
@@ -53,7 +53,7 @@ export default async function AdminDashboard() {
           </div>
         ))}
         {(!orders || orders.length === 0) && (
-          <div style={{ padding: '40px 20px', textAlign: 'center', color: '#A89880', fontSize: 13 }}>Aucune commande pour l'instant</div>
+          <div style={{ padding: '40px 20px', textAlign: 'center', color: '#C8B99A', fontSize: 13 }}>Aucune commande pour l'instant</div>
         )}
       </div>
     </div>

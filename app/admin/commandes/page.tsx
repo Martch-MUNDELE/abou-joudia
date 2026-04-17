@@ -12,7 +12,7 @@ const STATUS_COLORS: Record<string, { bg: string; color: string; border: string 
   confirmée:      { bg: 'rgba(91,197,122,0.1)',   color: '#5BC57A', border: 'rgba(91,197,122,0.25)' },
   en_preparation: { bg: 'rgba(255,107,32,0.1)',   color: '#FF6B20', border: 'rgba(255,107,32,0.25)' },
   en_livraison:   { bg: 'rgba(56,182,255,0.1)',   color: '#38B6FF', border: 'rgba(56,182,255,0.25)' },
-  livrée:         { bg: 'rgba(122,110,88,0.1)',   color: '#A89880', border: 'rgba(122,110,88,0.2)'  },
+  livrée:         { bg: 'rgba(122,110,88,0.1)',   color: '#C8B99A', border: 'rgba(122,110,88,0.2)'  },
   annulée:        { bg: 'rgba(255,107,107,0.1)',  color: '#FF6B6B', border: 'rgba(255,107,107,0.2)' },
 }
 
@@ -81,7 +81,7 @@ export default function CommandesAdmin() {
       <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 24, paddingBottom: 4 }}>
         <button
           onClick={() => setFilter('all')}
-          style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 50, border: '1px solid', borderColor: filter === 'all' ? 'rgba(232,160,32,0.4)' : 'rgba(232,160,32,0.12)', background: filter === 'all' ? 'rgba(232,160,32,0.12)' : 'transparent', color: filter === 'all' ? '#E8A020' : '#A89880', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}
+          style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 50, border: '1px solid', borderColor: filter === 'all' ? 'rgba(232,160,32,0.4)' : 'rgba(232,160,32,0.12)', background: filter === 'all' ? 'rgba(232,160,32,0.12)' : 'transparent', color: filter === 'all' ? '#E8A020' : '#C8B99A', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}
         >
           Toutes
         </button>
@@ -89,7 +89,7 @@ export default function CommandesAdmin() {
           const sc = STATUS_COLORS[s]
           const active = filter === s
           return (
-            <button key={s} onClick={() => setFilter(s)} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 50, border: '1px solid', borderColor: active ? sc.border : 'rgba(255,255,255,0.06)', background: active ? sc.bg : 'transparent', color: active ? sc.color : '#A89880', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}>
+            <button key={s} onClick={() => setFilter(s)} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 50, border: '1px solid', borderColor: active ? sc.border : 'rgba(255,255,255,0.06)', background: active ? sc.bg : 'transparent', color: active ? sc.color : '#C8B99A', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}>
               {STATUS_LABELS[s]}
               {counts[s] ? <span style={{ background: active ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)', padding: '0 6px', borderRadius: 50, fontSize: 10 }}>{counts[s]}</span> : null}
             </button>
@@ -100,7 +100,7 @@ export default function CommandesAdmin() {
       {/* LISTE */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {orders.length === 0 && (
-          <div style={{ textAlign: 'center', color: '#A89880', padding: '40px 0', fontSize: 14 }}>Aucune commande</div>
+          <div style={{ textAlign: 'center', color: '#C8B99A', padding: '40px 0', fontSize: 14 }}>Aucune commande</div>
         )}
         {orders.map(order => {
           const sc = STATUS_COLORS[order.status] || STATUS_COLORS['nouvelle']
@@ -111,8 +111,8 @@ export default function CommandesAdmin() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 15, color: '#F5EDD6' }}>{order.customer_name}</div>
-                  <div style={{ fontSize: 11, color: '#A89880', marginTop: 3 }}>{order.customer_phone} · {order.customer_address?.slice(0, 40)}{order.customer_address?.length > 40 ? '…' : ''}</div>
-                  <div style={{ fontSize: 10, color: '#3A3020', marginTop: 2 }}>#{order.id.slice(0,8).toUpperCase()} · {new Date(order.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>
+                  <div style={{ fontSize: 11, color: '#C8B99A', marginTop: 3 }}>{order.customer_phone} · {order.customer_address?.slice(0, 40)}{order.customer_address?.length > 40 ? '…' : ''}</div>
+                  <div style={{ fontSize: 10, color: '#A89880', marginTop: 2 }}>#{order.id.slice(0,8).toUpperCase()} · {new Date(order.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: 20, fontWeight: 800, color: '#F5C842', fontFamily: 'DM Sans, sans-serif' }}>{order.total.toFixed(2)} <span style={{ fontSize: 13 }}>DH</span></div>
