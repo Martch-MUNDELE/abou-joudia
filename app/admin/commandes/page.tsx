@@ -151,7 +151,7 @@ export default function CommandesAdmin() {
                     <IconPin /> Maps
                   </a>
                 )}
-</div>
+              </div>
               {order.status !== 'livrée' && order.status !== 'annulée' && (
                 <div style={{ display: 'flex', gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                   <button
