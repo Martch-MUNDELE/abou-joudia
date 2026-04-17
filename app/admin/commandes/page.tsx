@@ -170,7 +170,6 @@ export default function CommandesAdmin() {
                   </button>
                 </div>
               )}
-              </div>
 
             </div>
           )
