@@ -2,6 +2,13 @@ import type { Metadata } from 'next'
 import './globals.css'
 import Navbar from '@/components/Navbar'
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+}
+
 export const metadata: Metadata = {
   title: 'Abou Joudia — Sandwichs & Boissons Agadir',
   description: 'Sandwichs frais, salades et boissons. Livraison à Agadir. Paiement à la livraison.',
