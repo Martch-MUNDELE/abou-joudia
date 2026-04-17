@@ -151,15 +151,24 @@ export default function CommandesAdmin() {
                     <IconPin /> Maps
                   </a>
                 )}
-                <div style={{ marginLeft: 'auto' }}>
-                  <select
-                    value={order.status}
-                    onChange={e => updateStatus(order.id, e.target.value)}
-                    style={{ background: '#1A1510', border: '1px solid rgba(232,160,32,0.15)', color: '#E8A020', borderRadius: 50, padding: '6px 14px', fontSize: 11, fontWeight: 600, outline: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}
+                {order.status !== 'livrée' && order.status !== 'annulée' && (
+                  <button
+                    onClick={() => {
+                      const next = { nouvelle: 'confirmée', confirmée: 'en_preparation', en_preparation: 'en_livraison', en_livraison: 'livrée' }
+                      const n = next[order.status]
+                      if (n) updateStatus(order.id, n)
+                    }}
+                    style={{ marginLeft: 'auto', padding: '7px 16px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', cursor: 'pointer', fontSize: 11, fontWeight: 800, fontFamily: 'DM Sans, sans-serif', whiteSpace: 'nowrap' }}
                   >
-                    {STATUSES.map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
-                  </select>
-                </div>
+                    { order.status === 'nouvelle' ? '✓ Confirmer' : order.status === 'confirmée' ? '👨‍🍳 Préparer' : order.status === 'en_preparation' ? '🛵 Livrer' : '✓ Livrée' }
+                  </button>
+                )}
+                {order.status !== 'annulée' && order.status !== 'livrée' && (
+                  <button
+                    onClick={() => updateStatus(order.id, 'annulée')}
+                    style={{ padding: '7px 12px', borderRadius: 50, border: '1px solid rgba(255,107,107,0.25)', background: 'rgba(255,107,107,0.06)', color: '#FF6B6B', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'DM Sans, sans-serif' }}
+                  >✕</button>
+                )}
               </div>
 
             </div>
