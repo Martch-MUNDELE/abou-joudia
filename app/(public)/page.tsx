@@ -31,9 +31,9 @@ export default async function HomePage() {
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '40%', background: 'linear-gradient(to top, #080603 0%, transparent 100%)', pointerEvents: 'none', zIndex: 1 }} />
         <div style={{ position: 'absolute', top: -40, right: -60, width: '80%', height: '130%', background: 'radial-gradient(ellipse 70% 80% at 75% 45%, rgba(232,120,20,0.18) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 1 }} />
 
-        <div style={{ position: 'relative', zIndex: 2, maxWidth: 300 }}>
+        <div style={{ position: 'relative', zIndex: 2, width: '100%' }}>
           {/* Badge statut */}
-          <div style={{ display: isOpen ? 'none' : 'flex', justifyContent: 'flex-end', width: '100%', marginBottom: 22 }}><div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(180,30,30,0.85)', border: '1px solid rgba(220,50,50,0.6)', padding: '6px 14px', borderRadius: 50, fontSize: 10, color: '#FF9999', fontWeight: 600, letterSpacing: '0.8px', textTransform: 'uppercase' as const }}>
+          <div style={{ display: isOpen ? 'none' : 'flex', justifyContent: 'flex-end', width: '100%', marginBottom: 22 }}><div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#C41E1E', padding: '6px 14px', borderRadius: 50, fontSize: 10, color: '#FFFFFF', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase' as const }}>
             <span style={{ width: 6, height: 6, background: isOpen ? '#7DD87A' : '#FF6B6B', borderRadius: '50%', display: 'inline-block' }} />
             {statusMessage}
           </div></div>
@@ -53,7 +53,7 @@ export default async function HomePage() {
       <div style={{ height: 1, background: 'linear-gradient(90deg,rgba(232,160,32,0.25),transparent)', margin: '0 20px 24px' }} />
 
       {/* CATALOGUE avec sous-menus */}
-      <CatalogueClient products={products || []} isOpen={isOpen} />
+      {isOpen && <CatalogueClient products={products || []} isOpen={isOpen} />}
 
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
     </div>
