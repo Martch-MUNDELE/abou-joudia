@@ -73,7 +73,7 @@ export default function PhoneInput({ value, onChange, initialValue }: { value: s
         <span style={{ fontSize: 18 }}>{country.flag}</span>
         <span style={{ color: '#C8B890' }}>{country.dial}</span>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-          <path d="M2 4L6 8L10 4" stroke="#7A6E58" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M2 4L6 8L10 4" stroke="#A89880" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </button>
 
@@ -108,7 +108,7 @@ export default function PhoneInput({ value, onChange, initialValue }: { value: s
               >
                 <span style={{ fontSize: 18 }}>{c.flag}</span>
                 <span style={{ flex: 1 }}>{c.name}</span>
-                <span style={{ color: '#7A6E58', fontSize: 12 }}>{c.dial}</span>
+                <span style={{ color: '#A89880', fontSize: 12 }}>{c.dial}</span>
               </button>
             ))}
           </div>

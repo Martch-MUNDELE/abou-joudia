@@ -26,14 +26,14 @@ export default function Navbar() {
             <Logo size={36} />
             <div>
               <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: 15, background: 'linear-gradient(90deg,#FFD060,#E8901A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.3px', lineHeight: 1.1 }}>Abou Joudia</div>
-              <div style={{ fontSize: 8, color: '#7A6E58', letterSpacing: '2px', textTransform: 'uppercase', lineHeight: 1, marginTop: 2 }}>Agadir · Livraison</div>
+              <div style={{ fontSize: 8, color: '#A89880', letterSpacing: '2px', textTransform: 'uppercase', lineHeight: 1, marginTop: 2 }}>Agadir · Livraison</div>
             </div>
           </div>
         </Link>
 
         {isOpen && (
           <Link href="/panier" style={{ textDecoration: 'none' }}>
-            <div style={{ background: mounted && count > 0 ? 'linear-gradient(135deg,#F5C842,#FF6B20)' : 'rgba(255,255,255,0.05)', color: mounted && count > 0 ? '#0A0804' : '#7A6E58', border: mounted && count > 0 ? 'none' : '1px solid rgba(232,160,32,0.15)', padding: '9px 18px', borderRadius: 50, display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 13, transition: 'all 0.25s', boxShadow: mounted && count > 0 ? '0 4px 16px rgba(232,160,32,0.28)' : 'none' }}>
+            <div style={{ background: mounted && count > 0 ? 'linear-gradient(135deg,#F5C842,#FF6B20)' : 'rgba(255,255,255,0.05)', color: mounted && count > 0 ? '#0A0804' : '#A89880', border: mounted && count > 0 ? 'none' : '1px solid rgba(232,160,32,0.15)', padding: '9px 18px', borderRadius: 50, display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 13, transition: 'all 0.25s', boxShadow: mounted && count > 0 ? '0 4px 16px rgba(232,160,32,0.28)' : 'none' }}>
               <span>Panier</span>
               {mounted && count > 0 && (
                 <span style={{ background: '#0A0804', color: '#FFFFFF', borderRadius: 50, padding: '2px 8px', fontSize: 11, fontWeight: 800, lineHeight: 1.4 }}>{count}</span>

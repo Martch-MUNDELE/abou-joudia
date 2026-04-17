@@ -50,7 +50,7 @@ export default function CreneauxAdmin() {
         {dates.map(date => {
           const active = selectedDate === date
           return (
-            <button key={date} onClick={() => setSelectedDate(date)} style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 50, border: '1px solid', borderColor: active ? 'rgba(232,160,32,0.4)' : 'rgba(232,160,32,0.12)', background: active ? 'rgba(232,160,32,0.12)' : 'transparent', color: active ? '#E8A020' : '#7A6E58', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 12 }}>
+            <button key={date} onClick={() => setSelectedDate(date)} style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 50, border: '1px solid', borderColor: active ? 'rgba(232,160,32,0.4)' : 'rgba(232,160,32,0.12)', background: active ? 'rgba(232,160,32,0.12)' : 'transparent', color: active ? '#E8A020' : '#A89880', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 12 }}>
               {format(new Date(date + 'T12:00:00'), 'EEE d/MM', { locale: fr })}
             </button>
           )
@@ -59,17 +59,17 @@ export default function CreneauxAdmin() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {daySlots.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#7A6E58', fontSize: 14 }}>
+          <div style={{ textAlign: 'center', padding: '40px', color: '#A89880', fontSize: 14 }}>
             Aucun créneau. Cliquez "Générer" pour créer les créneaux.
           </div>
         )}
         {daySlots.map(slot => (
           <div key={slot.id} style={{ background: '#131009', border: `1px solid ${slot.blocked ? 'rgba(255,107,107,0.15)' : 'rgba(232,160,32,0.1)'}`, borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 16, opacity: slot.blocked ? 0.6 : 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: slot.blocked ? '#7A6E58' : '#F5EDD6', minWidth: 110, textDecoration: slot.blocked ? 'line-through' : 'none', fontFamily: 'DM Sans, sans-serif' }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: slot.blocked ? '#A89880' : '#F5EDD6', minWidth: 110, textDecoration: slot.blocked ? 'line-through' : 'none', fontFamily: 'DM Sans, sans-serif' }}>
               {slot.time_start.slice(0,5)} – {slot.time_end.slice(0,5)}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, color: '#7A6E58' }}>{slot.booked}/{slot.capacity} réservations</div>
+              <div style={{ fontSize: 11, color: '#A89880' }}>{slot.booked}/{slot.capacity} réservations</div>
               <div style={{ width: '100%', height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, marginTop: 5 }}>
                 <div style={{ width: `${pct(slot)}%`, height: '100%', background: barColor(slot), borderRadius: 2 }} />
               </div>
@@ -77,7 +77,7 @@ export default function CreneauxAdmin() {
 
             {/* BOUTONS +/- */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 11, color: '#7A6E58' }}>Cap.</span>
+              <span style={{ fontSize: 11, color: '#A89880' }}>Cap.</span>
               <button
                 onClick={() => slot.capacity > slot.booked && updateCapacity(slot.id, slot.capacity - 1)}
                 style={{ width: 28, height: 28, borderRadius: 50, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.06)', color: '#E8A020', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}

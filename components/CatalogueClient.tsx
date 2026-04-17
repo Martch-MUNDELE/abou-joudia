@@ -134,12 +134,12 @@ export default function CatalogueClient({ products, isOpen }: { products: Produc
             <span style={{ display: 'inline-flex', width: 32, height: 32, borderRadius: 9, background: 'rgba(232,160,32,0.1)', border: '1px solid rgba(232,160,32,0.2)', alignItems: 'center', justifyContent: 'center', color: '#E8A020' }}>
               {renderIcon(currentEmoji, 16)}
             </span>
-            <span style={{ fontStyle: hasSelected ? 'normal' : 'italic', color: hasSelected ? '#F5EDD6' : '#7A6E58' }}>
+            <span style={{ fontStyle: hasSelected ? 'normal' : 'italic', color: hasSelected ? '#F5EDD6' : '#A89880' }}>
               {hasSelected ? currentLabel : "Qu'est-ce qui te fait envie ?"}
             </span>
           </span>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ transform: openDropdown ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }}>
-            <path d="M3 6L8 11L13 6" stroke="#7A6E58" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M3 6L8 11L13 6" stroke="#A89880" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
 
@@ -147,7 +147,7 @@ export default function CatalogueClient({ products, isOpen }: { products: Produc
           <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0, background: '#1A1510', border: '1px solid rgba(232,160,32,0.2)', borderRadius: 14, overflow: 'hidden', zIndex: 50, boxShadow: '0 16px 48px rgba(0,0,0,0.6)' }}>
             {GROUPES.map((g, gi) => (
               <div key={g.id}>
-                <div style={{ padding: '10px 16px 6px', fontSize: 10, fontWeight: 700, color: '#7A6E58', letterSpacing: '1.5px', textTransform: 'uppercase' as const, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ padding: '10px 16px 6px', fontSize: 10, fontWeight: 700, color: '#A89880', letterSpacing: '1.5px', textTransform: 'uppercase' as const, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ color: '#E8A020' }}>{renderIcon(g.emoji, 11)}</span>
                   {g.label} · {countGroupe(g)} produits
                 </div>
@@ -162,7 +162,7 @@ export default function CatalogueClient({ products, isOpen }: { products: Produc
                         </span>
                         {s.label}
                       </span>
-                      <span style={{ fontSize: 11, color: '#7A6E58', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 50 }}>{count}</span>
+                      <span style={{ fontSize: 11, color: '#A89880', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 50 }}>{count}</span>
                     </button>
                   )
                 }) : (
@@ -173,7 +173,7 @@ export default function CatalogueClient({ products, isOpen }: { products: Produc
                       </span>
                       {g.label}
                     </span>
-                    <span style={{ fontSize: 11, color: '#7A6E58', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 50 }}>{countGroupe(g)}</span>
+                    <span style={{ fontSize: 11, color: '#A89880', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 50 }}>{countGroupe(g)}</span>
                   </button>
                 )}
                 {gi < GROUPES.length - 1 && <div style={{ height: 1, background: 'rgba(232,160,32,0.08)', margin: '4px 0' }} />}
@@ -187,7 +187,7 @@ export default function CatalogueClient({ products, isOpen }: { products: Produc
       {hasSelected && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 16px' }}>
           {filtered.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#7A6E58', padding: '40px 0', fontSize: 14 }}>Aucun produit disponible</div>
+            <div style={{ textAlign: 'center', color: '#A89880', padding: '40px 0', fontSize: 14 }}>Aucun produit disponible</div>
           ) : filtered.map((p, i) => (
             <ProductCard key={p.id} product={p} featured={i === 0 && activeGroupe === 'sandwichs' && activeSous === 'sandwichs_chauds'} isOpen={isOpen} />
           ))}

@@ -89,7 +89,7 @@ export default function SlotPicker({ onSelect }: { onSelect: (id: string) => voi
   }
 
   if (loading) return (
-    <div style={{ padding: '40px 0', textAlign: 'center', color: '#7A6E58', fontSize: 13 }}>
+    <div style={{ padding: '40px 0', textAlign: 'center', color: '#A89880', fontSize: 13 }}>
       Chargement des disponibilités...
     </div>
   )
@@ -97,7 +97,7 @@ export default function SlotPicker({ onSelect }: { onSelect: (id: string) => voi
   if (slots.length === 0) return (
     <div style={{ padding: '40px 0', textAlign: 'center' }}>
       <div style={{ fontSize: 32, marginBottom: 12 }}>📅</div>
-      <div style={{ color: '#7A6E58', fontSize: 14 }}>Aucun créneau disponible</div>
+      <div style={{ color: '#A89880', fontSize: 14 }}>Aucun créneau disponible</div>
     </div>
   )
 
@@ -106,7 +106,7 @@ export default function SlotPicker({ onSelect }: { onSelect: (id: string) => voi
 
       {/* SÉLECTEUR DE DATE */}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#7A6E58', letterSpacing: '0.8px', textTransform: 'uppercase' as const, marginBottom: 12 }}>Choisir un jour</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#A89880', letterSpacing: '0.8px', textTransform: 'uppercase' as const, marginBottom: 12 }}>Choisir un jour</div>
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 4 }}>
           {dates.map(date => {
             const { day, num, month, isToday } = formatDate(date)
@@ -145,13 +145,13 @@ export default function SlotPicker({ onSelect }: { onSelect: (id: string) => voi
 
       {/* CRÉNEAUX DU JOUR */}
       <div>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#7A6E58', letterSpacing: '0.8px', textTransform: 'uppercase' as const, marginBottom: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#A89880', letterSpacing: '0.8px', textTransform: 'uppercase' as const, marginBottom: 12 }}>
           Choisir un horaire
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {daySlots.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '24px', color: '#7A6E58', fontSize: 13 }}>Aucun créneau ce jour</div>
+            <div style={{ textAlign: 'center', padding: '24px', color: '#A89880', fontSize: 13 }}>Aucun créneau ce jour</div>
           ) : daySlots.map(slot => {
             const status = getDispoStatus(slot)
             const isSelected = selectedSlot === slot.id
@@ -196,7 +196,7 @@ export default function SlotPicker({ onSelect }: { onSelect: (id: string) => voi
                 {/* Dispo */}
                 <div style={{ textAlign: 'right' as const, flexShrink: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: status.color }}>{status.label}</div>
-                  <div style={{ fontSize: 10, color: '#7A6E58', marginTop: 2 }}>
+                  <div style={{ fontSize: 10, color: '#A89880', marginTop: 2 }}>
                     {slot.capacity - slot.booked === 0 ? 'Indisponible' : 'disponible'}
                   </div>
                 </div>

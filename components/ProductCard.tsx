@@ -25,7 +25,7 @@ export default function ProductCard({ product, featured = false }: { product: Pr
         </div>
       </div>
       <div style={{ padding: '12px 14px 14px' }}>
-        <div style={{ fontSize: 12, color: '#7A6E58', marginBottom: 12, lineHeight: 1.5 }}>{product.description}</div>
+        <div style={{ fontSize: 12, color: '#A89880', marginBottom: 12, lineHeight: 1.5 }}>{product.description}</div>
         <button onClick={handleAdd} style={{ width: '100%', background: added ? 'rgba(232,160,32,0.15)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', color: added ? '#E8A020' : '#080603', border: 'none', borderRadius: 12, padding: '13px', fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s', boxShadow: added ? 'none' : '0 4px 16px rgba(232,160,32,0.25)' }}>
           {added ? '✓ Ajouté au panier !' : 'Ajouter au panier'}
         </button>
@@ -46,7 +46,7 @@ export default function ProductCard({ product, featured = false }: { product: Pr
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 14, marginBottom: 3, color: '#F5EDD6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</div>
-        <div style={{ fontSize: 11, color: '#7A6E58', marginBottom: 8, lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{product.description}</div>
+        <div style={{ fontSize: 11, color: '#A89880', marginBottom: 8, lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{product.description}</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 15, background: 'linear-gradient(90deg,#F5C842,#E8901A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{product.price} DH</div>
           <button onClick={handleAdd} style={{ width: 34, height: 34, background: added ? 'rgba(232,160,32,0.15)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', border: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: added ? 14 : 20, fontWeight: 700, color: added ? '#E8A020' : '#080603', cursor: 'pointer', flexShrink: 0, boxShadow: added ? 'none' : '0 3px 12px rgba(232,160,32,0.3)', transition: 'all 0.2s' }}>
