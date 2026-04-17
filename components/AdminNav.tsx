@@ -41,8 +41,14 @@ export default function AdminNav() {
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 20px', display: 'flex', alignItems: 'center', gap: 4, height: 56, overflowX: 'auto', scrollbarWidth: 'none' }}>
 
         {/* LOGO */}
-        <Link href="/admin" style={{ textDecoration: 'none', flexShrink: 0, marginRight: 12 }}>
-          <Logo size={32} />
+        <Link href="/admin" style={{ textDecoration: 'none', flexShrink: 0, marginRight: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Logo size={36} />
+            <div>
+              <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: 15, background: 'linear-gradient(90deg,#FFD060,#E8901A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.3px', lineHeight: 1.1 }}>Abou Joudia</div>
+              <div style={{ fontSize: 8, color: '#A89880', letterSpacing: '2px', textTransform: 'uppercase', lineHeight: 1, marginTop: 2 }}>Agadir · Livraison</div>
+            </div>
+          </div>
         </Link>
 
         {/* LIENS */}
