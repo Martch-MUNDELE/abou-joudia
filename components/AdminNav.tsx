@@ -45,6 +45,7 @@ export default function AdminNav() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Logo size={36} />
             <div>
+              <div style={{ fontSize: 8, color: '#E8A020', letterSpacing: '2px', textTransform: 'uppercase', lineHeight: 1, marginBottom: 3, fontWeight: 700 }}>Admin</div>
               <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: 15, background: 'linear-gradient(90deg,#FFD060,#E8901A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.3px', lineHeight: 1.1 }}>Abou Joudia</div>
               <div style={{ fontSize: 8, color: '#A89880', letterSpacing: '2px', textTransform: 'uppercase', lineHeight: 1, marginTop: 2 }}>Agadir · Livraison</div>
             </div>
