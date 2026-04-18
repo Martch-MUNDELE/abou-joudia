@@ -24,7 +24,7 @@ export default function BackgroundSmoke() {
 
         {/* Background Agadir nuit — zIndex 0 */}
         <img
-          src="/background-home.png"
+          src="/background-home.jpg"
           alt=""
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', opacity: 0.35, zIndex: 0 }}
         />
