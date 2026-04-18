@@ -78,7 +78,7 @@ export default function Navbar() {
     <nav style={{ background: 'rgba(8,6,3,0.94)', backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 50 }}>
       {/* LIGNE 1 — logo + panier */}
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '0 clamp(12px, 4vw, 24px)', height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" style={{ textDecoration: 'none' }}>
+        <Link href="/" style={{ textDecoration: 'none' }} onClick={() => { setHasSelected(false) }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {siteLogo === null ? <div style={{ width: 64, height: 64, flexShrink: 0 }} /> : siteLogo ? (
                 <img src={siteLogo} alt={siteName} style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 8, flexShrink: 0 }} />

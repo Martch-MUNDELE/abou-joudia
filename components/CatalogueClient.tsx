@@ -13,9 +13,11 @@ export default function CatalogueClient({ products, isOpen }: { products: Produc
   const { activeGroupe, activeSous, hasSelected } = useCatalogue()
   const groupe = GROUPES.find(g => g.id === activeGroupe)!
 
-  const filtered = groupe.sous.length === 0
+  const popularId = products.find(p => p.subcategory === activeSous && p.popular)?.id
+  const filtered = (groupe.sous.length === 0
     ? products.filter(p => p.subcategory === activeGroupe)
     : products.filter(p => p.subcategory === activeSous)
+  ).filter(p => p.id !== popularId)
 
   if (!hasSelected) return null
 
@@ -24,7 +26,7 @@ export default function CatalogueClient({ products, isOpen }: { products: Produc
       {filtered.length === 0 ? (
         <div style={{ textAlign: 'center', color: '#C8B99A', padding: '40px 0', fontSize: 14 }}>Aucun produit disponible</div>
       ) : filtered.map((p, i) => (
-        <ProductCard key={p.id} product={p} featured={i === 0 && activeGroupe === 'sandwichs' && activeSous === 'sandwichs_chauds'} isOpen={isOpen} allProducts={products} />
+        <ProductCard key={p.id} product={p} featured={false} isOpen={isOpen} allProducts={products} />
       ))}
     </div>
   )
