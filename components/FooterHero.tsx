@@ -5,7 +5,7 @@ export default function FooterHero() {
   const pathname = usePathname()
   if (pathname !== '/') return null
   return (
-    <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 11, pointerEvents: 'none', height: 320, overflow: 'hidden' }}>
+    <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 0, pointerEvents: 'none', height: 320, overflow: 'hidden' }}>
       <div style={{ maxWidth: 600, margin: '0 auto', position: 'relative', height: '100%' }}>
         {/* Fondu bas */}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '100%', background: 'linear-gradient(to top, rgba(8,6,3,0.9) 0%, rgba(8,6,3,0.5) 40%, transparent 100%)', zIndex: 1 }} />

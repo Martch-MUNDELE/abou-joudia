@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-type Product = { id: string; name: string; price: number; image_url: string; subcategory: string; active: boolean }
+type Product = { id: string; name: string; price: number; image_url: string; subcategory: string; active: boolean; featured: boolean }
 
 const SUBCAT_LABELS: Record<string, string> = { chaudes: 'Boissons Chaudes', froides: 'Boissons Froides', sandwichs_chauds: 'Sandwichs Chauds', sandwichs_froids: 'Sandwichs Froids', salades: 'Salades' }
 const SUBCAT_ORDER = ['sandwichs_chauds', 'sandwichs_froids', 'salades', 'chaudes', 'froides']
@@ -32,12 +32,21 @@ export default function ProduitsAdmin() {
     const { data } = await supabase.from('products').select('*').order('subcategory')
     setProducts((data as Product[]) || [])
   }
-  useEffect(() => { load() }, [])
-if (typeof window !== 'undefined') { window.addEventListener('focus', load) }
+  useEffect(() => {
+    load()
+    window.addEventListener('focus', load)
+    return () => window.removeEventListener('focus', load)
+  }, [])
 
   const del = async (id: string) => {
     if (!window.confirm('Supprimer ce produit ?')) return
     await supabase.from('products').delete().eq('id', id)
+    load()
+  }
+
+  const setFeatured = async (id: string) => {
+    await supabase.from('products').update({ featured: false }).neq('id', id)
+    await supabase.from('products').update({ featured: true }).eq('id', id)
     load()
   }
 
@@ -88,7 +97,10 @@ if (typeof window !== 'undefined') { window.addEventListener('focus', load) }
                   <div style={{ fontWeight: 700, fontSize: 14, color: '#F5EDD6' }}>{p.name}</div>
                   <div style={{ fontSize: 11, color: '#C8B99A', marginTop: 2 }}>{p.price} DH</div>
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <button onClick={() => setFeatured(p.id)} title="Mettre à la une" style={{ width: 34, height: 34, borderRadius: 8, border: p.featured ? '1px solid rgba(245,200,66,0.6)' : '1px solid rgba(255,255,255,0.08)', background: p.featured ? 'rgba(245,200,66,0.15)' : 'transparent', color: p.featured ? '#F5C842' : '#555', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
+                    ★
+                  </button>
                   <button onClick={() => router.push('/admin/produits/' + p.id + '/modifier')} style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.06)', color: '#E8A020', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <IconEdit />
                   </button>

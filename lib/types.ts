@@ -13,6 +13,7 @@ export interface Product {
   image_url: string
   stock: number
   active: boolean
+  featured?: boolean
 }
 
 export interface DeliverySlot {

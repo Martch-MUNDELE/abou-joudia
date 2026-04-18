@@ -1,10 +1,12 @@
 'use client'
 import { useState } from 'react'
+import ProductOverlay from '@/components/ProductOverlay'
 import { useCart } from '@/store/cart'
 import type { Product } from '@/lib/types'
 
 export default function ProductCard({ product, featured = false, isOpen }: { product: Product, featured?: boolean, isOpen: boolean }) {
   const [added, setAdded] = useState(false)
+  const [showOverlay, setShowOverlay] = useState(false)
   const add = useCart(s => s.add)
 
   const handleAdd = () => {
@@ -35,11 +37,12 @@ export default function ProductCard({ product, featured = false, isOpen }: { pro
   )
 
   return (
+    <>
     <div style={{ background: '#0F0C07', borderRadius: 16, border: '1px solid rgba(232,160,32,0.18)', padding: '12px 14px', display: 'flex', gap: 12, alignItems: 'center', cursor: 'default', transition: 'border-color 0.2s, box-shadow 0.2s' }}
       onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(232,160,32,0.25)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 0 20px rgba(232,160,32,0.06)' }}
       onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(232,160,32,0.08)'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none' }}
     >
-      <div style={{ width: 72, height: 72, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: '#1E1A10' }}>
+      <div onClick={() => setShowOverlay(true)} style={{ width: 72, height: 72, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: '#1E1A10', cursor: 'pointer' }}>
         {product.image_url
           ? <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>🥙</div>
@@ -56,5 +59,7 @@ export default function ProductCard({ product, featured = false, isOpen }: { pro
         </div>
       </div>
     </div>
+    {showOverlay && <ProductOverlay product={product} onClose={() => setShowOverlay(false)} />}
+    </>
   )
 }
