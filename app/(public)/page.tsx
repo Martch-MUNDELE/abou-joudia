@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import ProductCard from '@/components/ProductCard'
 import CatalogueClient from '@/components/CatalogueClient'
 import FeaturedCard from '@/components/FeaturedCard'
+import PopularCard from '@/components/PopularCard'
 import type { Product } from '@/lib/types'
 
 export const revalidate = 0
@@ -19,8 +20,8 @@ export default async function HomePage() {
   return (
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
 
-      {/* FEATURED CARD */}
-      {isOpen && <FeaturedCard />}
+      {/* FEATURED ou POPULAR selon sélection */}
+      {isOpen && <PopularCard fallback={<FeaturedCard />} />}
 
       {/* CATALOGUE avec sous-menus */}
       {isOpen && <CatalogueClient products={products || []} isOpen={isOpen} />}

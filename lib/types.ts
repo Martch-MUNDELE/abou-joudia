@@ -14,6 +14,7 @@ export interface Product {
   stock: number
   active: boolean
   featured?: boolean
+  popular?: boolean
 }
 
 export interface DeliverySlot {

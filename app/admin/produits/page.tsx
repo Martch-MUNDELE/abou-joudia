@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-type Product = { id: string; name: string; price: number; image_url: string; subcategory: string; active: boolean; featured: boolean }
+type Product = { id: string; name: string; price: number; image_url: string; subcategory: string; active: boolean; featured: boolean; popular: boolean }
 
 const SUBCAT_LABELS: Record<string, string> = { chaudes: 'Boissons Chaudes', froides: 'Boissons Froides', sandwichs_chauds: 'Sandwichs Chauds', sandwichs_froids: 'Sandwichs Froids', salades: 'Salades' }
 const SUBCAT_ORDER = ['sandwichs_chauds', 'sandwichs_froids', 'salades', 'chaudes', 'froides']
@@ -53,7 +53,16 @@ export default function ProduitsAdmin() {
   const setFeatured = async (id: string) => {
     await supabase.from('products').update({ featured: false }).neq('id', id)
     await supabase.from('products').update({ featured: true }).eq('id', id)
-    load()
+    setProducts(prev => prev.map(p => ({ ...p, featured: p.id === id })))
+  }
+
+  const setPopular = async (id: string, subcategory: string) => {
+    await supabase.from('products').update({ popular: false }).eq('subcategory', subcategory)
+    await supabase.from('products').update({ popular: true }).eq('id', id)
+    setProducts(prev => prev.map(p => ({
+      ...p,
+      popular: p.subcategory === subcategory ? p.id === id : p.popular
+    })))
   }
 
   const filtered = products.filter(p => tab === 'actifs' ? p.active : !p.active)
@@ -107,6 +116,7 @@ export default function ProduitsAdmin() {
                   <button onClick={() => setFeatured(p.id)} title="Mettre à la une" style={{ width: 34, height: 34, borderRadius: 8, border: p.featured ? '1px solid rgba(245,200,66,0.6)' : '1px solid rgba(255,255,255,0.08)', background: p.featured ? 'rgba(245,200,66,0.15)' : 'transparent', color: p.featured ? '#F5C842' : '#555', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
                     ★
                   </button>
+                  <button onClick={() => setPopular(p.id, p.subcategory)} title="Populaire" style={{ width: 34, height: 34, borderRadius: 8, border: p.popular ? '1px solid rgba(255,107,32,0.6)' : '1px solid rgba(255,255,255,0.08)', background: p.popular ? 'rgba(255,107,32,0.15)' : 'transparent', color: p.popular ? '#FF6B20' : '#555', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🔥</button>
                   <button onClick={() => router.push('/admin/produits/' + p.id + '/modifier')} style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.06)', color: '#E8A020', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <IconEdit />
                   </button>
