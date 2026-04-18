@@ -1,14 +1,38 @@
 'use client'
 import Link from 'next/link'
 import { useCart } from '@/store/cart'
-import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
+import { useCatalogue } from '@/store/catalogue'
+import { useEffect, useState, useRef } from 'react'
 import Logo from '@/components/Logo'
 import { createClient } from '@/lib/supabase/client'
+
+const GROUPES = [
+  { id: 'boissons', label: 'Boissons', emoji: 'boissons', sous: [{ id: 'chaudes', label: 'Boissons Chaudes', emoji: 'chaudes' }, { id: 'froides', label: 'Boissons Froides', emoji: 'froides' }] },
+  { id: 'sandwichs', label: 'Sandwichs', emoji: 'sandwichs', sous: [{ id: 'sandwichs_chauds', label: 'Sandwichs Chauds', emoji: 'chauds' }, { id: 'sandwichs_froids', label: 'Sandwichs Froids', emoji: 'froids' }] },
+  { id: 'salades', label: 'Salades', emoji: 'salades', sous: [] },
+]
+
+const renderIcon = (id: string, size = 16): React.ReactNode => {
+  const s = size < 20 ? 20 : size
+  const flamme = <svg width={s} height={s} viewBox='0 0 38 38' fill='none'><path d='M19 9 C17 14 12 17 12 22 C12 27.5 15 32 19 33 C23 32 26 27.5 26 22 C26 17 21 14 19 9Z' stroke='currentColor' strokeWidth='2' fill='rgba(232,160,32,0.2)' strokeLinecap='round' strokeLinejoin='round'/></svg>
+  const flocon = <svg width={s} height={s} viewBox='0 0 40 40' fill='none'><line x1='20' y1='4' x2='20' y2='36' stroke='currentColor' strokeWidth='2.2' strokeLinecap='round'/><line x1='4' y1='20' x2='36' y2='20' stroke='currentColor' strokeWidth='2.2' strokeLinecap='round'/><line x1='8' y1='8' x2='32' y2='32' stroke='currentColor' strokeWidth='2.2' strokeLinecap='round'/><line x1='32' y1='8' x2='8' y2='32' stroke='currentColor' strokeWidth='2.2' strokeLinecap='round'/><circle cx='20' cy='20' r='2.5' fill='currentColor'/></svg>
+  const burger = <svg width={s} height={s} viewBox='0 0 40 40' fill='none'><path d='M8 19 Q8 7 20 7 Q32 7 32 19Z' stroke='currentColor' strokeWidth='2' fill='rgba(232,160,32,0.15)' strokeLinecap='round' strokeLinejoin='round'/><path d='M7 21 Q10 18.5 13 21 Q16 18.5 20 21 Q24 18.5 27 21 Q30 18.5 33 21' stroke='currentColor' strokeWidth='2' fill='none' strokeLinecap='round'/><rect x='8' y='23' width='24' height='3.5' rx='1.8' stroke='currentColor' strokeWidth='2' fill='rgba(232,160,32,0.15)'/><path d='M8 28.5 Q8 35 20 35 Q32 35 32 28.5Z' stroke='currentColor' strokeWidth='2' fill='rgba(232,160,32,0.15)' strokeLinecap='round' strokeLinejoin='round'/></svg>
+  const tasse = <svg width={s} height={s} viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M17 8h1a4 4 0 0 1 0 8h-1'/><path d='M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z'/><line x1='6' y1='2' x2='6' y2='4'/><line x1='10' y1='2' x2='10' y2='4'/><line x1='14' y1='2' x2='14' y2='4'/></svg>
+  const salade = <svg width={s} height={s} viewBox='0 0 38 38' fill='none'><path d='M19 4 C21 4 23 5 23 7 C25 5 28 6 28 9 C31 8 33 11 31 14 C34 14 35 18 33 20 C35 22 33 26 30 26 C31 29 29 32 26 31 C25 34 22 35 19 34 C16 35 13 34 12 31 C9 32 7 29 8 26 C5 26 3 22 5 20 C3 18 4 14 7 14 C5 11 7 8 10 9 C10 6 13 5 15 7 C15 5 17 4 19 4Z' stroke='currentColor' strokeWidth='2' fill='rgba(232,160,32,0.1)' strokeLinejoin='round'/><circle cx='19' cy='19' r='2.5' fill='currentColor' opacity='0.85'/></svg>
+  const map: Record<string, React.ReactNode> = { boissons: tasse, chaudes: flamme, froides: flocon, sandwichs: burger, chauds: flamme, froids: flocon, salades: salade }
+  return map[id] ?? null
+}
 
 export default function Navbar() {
   const count = useCart(s => s.count())
   const [mounted, setMounted] = useState(false)
-  const [isOpen, setIsOpen] = useState(true)
+  const [isOpen, setIsOpen] = useState(false)
+  const { activeGroupe, activeSous, hasSelected, setGroupe, setHasSelected } = useCatalogue()
+  const pathname = usePathname()
+  const isHome = pathname === '/'
+  const [openDropdown, setOpenDropdown] = useState(false)
+  const dropRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -16,10 +40,28 @@ export default function Navbar() {
     supabase.from('settings').select('value').eq('key', 'status').single().then(({ data }) => {
       setIsOpen(data?.value === 'open')
     })
+    const handleClick = (e: MouseEvent) => {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node)) setOpenDropdown(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
+  const handleSelect = (groupeId: string, sousId?: string) => {
+    const g = GROUPES.find(g => g.id === groupeId)!
+    setGroupe(groupeId, sousId || (g.sous[0]?.id ?? groupeId))
+    setHasSelected(true)
+    setOpenDropdown(false)
+  }
+
+  const groupe = GROUPES.find(g => g.id === activeGroupe)!
+  const currentSous = groupe.sous.find(s => s.id === activeSous)
+  const currentLabel = currentSous ? currentSous.label : groupe.label
+  const currentEmoji = currentSous ? currentSous.emoji : groupe.emoji
+
   return (
-    <nav style={{ background: 'rgba(8,6,3,0.94)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(232,160,32,0.08)', position: 'sticky', top: 0, zIndex: 50 }}>
+    <nav style={{ background: 'rgba(8,6,3,0.94)', backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 50 }}>
+      {/* LIGNE 1 — logo + panier */}
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '0 20px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link href="/" style={{ textDecoration: 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -30,18 +72,73 @@ export default function Navbar() {
             </div>
           </div>
         </Link>
-
         {isOpen && mounted && count > 0 && (
           <Link href="/panier" style={{ textDecoration: 'none' }}>
-            <div style={{ background: mounted && count > 0 ? 'linear-gradient(135deg,#F5C842,#FF6B20)' : 'rgba(255,255,255,0.05)', color: mounted && count > 0 ? '#0A0804' : '#C8B99A', border: mounted && count > 0 ? 'none' : '1px solid rgba(232,160,32,0.15)', padding: '9px 18px', borderRadius: 50, display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 13, transition: 'all 0.25s', boxShadow: mounted && count > 0 ? '0 4px 16px rgba(232,160,32,0.28)' : 'none' }}>
+            <div style={{ background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', padding: '9px 18px', borderRadius: 50, display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 13, boxShadow: '0 4px 16px rgba(232,160,32,0.28)' }}>
               <span>Panier</span>
-              {mounted && count > 0 && (
-                <span style={{ background: '#0A0804', color: '#FFFFFF', borderRadius: 50, padding: '2px 8px', fontSize: 11, fontWeight: 800, lineHeight: 1.4 }}>{count}</span>
-              )}
+              <span style={{ background: '#0A0804', color: '#FFFFFF', borderRadius: 50, padding: '2px 8px', fontSize: 11, fontWeight: 800, lineHeight: 1.4 }}>{count}</span>
             </div>
           </Link>
         )}
       </div>
+
+      {/* LIGNE 2 — dropdown menu */}
+      {isOpen && isHome && (
+        <div ref={dropRef} style={{ maxWidth: 600, margin: '0 auto', padding: '0 16px 12px', position: 'relative' }}>
+          <button
+            onClick={() => setOpenDropdown(o => !o)}
+            style={{ width: '100%', padding: '13px 18px', background: '#131009', border: '1px solid rgba(232,160,32,0.2)', borderRadius: 14, color: '#F5EDD6', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left' as const }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ display: 'inline-flex', width: 30, height: 30, borderRadius: 9, background: 'rgba(232,160,32,0.1)', border: '1px solid rgba(232,160,32,0.2)', alignItems: 'center', justifyContent: 'center', color: '#E8A020' }}>
+                {renderIcon(currentEmoji, 15)}
+              </span>
+              <span style={{ fontStyle: hasSelected ? 'normal' : 'italic', color: hasSelected ? '#F5EDD6' : '#C8B99A' }}>
+                {hasSelected ? currentLabel : "Qu'est-ce qui te fait envie ?"}
+              </span>
+            </span>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ transform: openDropdown ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }}>
+              <path d="M3 6L8 11L13 6" stroke="#C8B99A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+
+          {openDropdown && (
+            <div style={{ position: 'absolute', top: 'calc(100% - 12px)', left: 16, right: 16, background: '#1A1510', border: '1px solid rgba(232,160,32,0.2)', borderRadius: 14, overflow: 'hidden', zIndex: 60, boxShadow: '0 16px 48px rgba(0,0,0,0.6)' }}>
+              {GROUPES.map((g, gi) => (
+                <div key={g.id}>
+                  <div style={{ padding: '10px 16px 6px', fontSize: 10, fontWeight: 700, color: '#C8B99A', letterSpacing: '1.5px', textTransform: 'uppercase' as const, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ color: '#E8A020' }}>{renderIcon(g.emoji, 11)}</span>
+                    {g.label}
+                  </div>
+                  {g.sous.length > 0 ? g.sous.map(s => {
+                    const isActive = activeGroupe === g.id && activeSous === s.id && hasSelected
+                    return (
+                      <button key={s.id} onClick={() => handleSelect(g.id, s.id)} style={{ width: '100%', padding: '11px 16px 11px 28px', background: isActive ? 'rgba(232,160,32,0.1)' : 'transparent', border: 'none', borderLeft: isActive ? '3px solid #F5C842' : '3px solid transparent', color: isActive ? '#F5C842' : '#C8B890', fontFamily: 'DM Sans, sans-serif', fontWeight: isActive ? 700 : 500, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left' as const }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ display: 'inline-flex', width: 28, height: 28, borderRadius: 8, background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.15)', alignItems: 'center', justifyContent: 'center', color: '#E8A020', flexShrink: 0 }}>
+                            {renderIcon(s.emoji, 14)}
+                          </span>
+                          {s.label}
+                        </span>
+                      </button>
+                    )
+                  }) : (
+                    <button onClick={() => handleSelect(g.id)} style={{ width: '100%', padding: '11px 16px 11px 28px', background: activeGroupe === g.id && hasSelected ? 'rgba(232,160,32,0.1)' : 'transparent', border: 'none', borderLeft: activeGroupe === g.id && hasSelected ? '3px solid #F5C842' : '3px solid transparent', color: activeGroupe === g.id && hasSelected ? '#F5C842' : '#C8B890', fontFamily: 'DM Sans, sans-serif', fontWeight: activeGroupe === g.id && hasSelected ? 700 : 500, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', textAlign: 'left' as const }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ display: 'inline-flex', width: 28, height: 28, borderRadius: 8, background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.15)', alignItems: 'center', justifyContent: 'center', color: '#E8A020', flexShrink: 0 }}>
+                          {renderIcon(g.emoji, 14)}
+                        </span>
+                        {g.label}
+                      </span>
+                    </button>
+                  )}
+                  {gi < GROUPES.length - 1 && <div style={{ height: 1, background: 'rgba(232,160,32,0.08)', margin: '4px 0' }} />}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </nav>
   )
 }

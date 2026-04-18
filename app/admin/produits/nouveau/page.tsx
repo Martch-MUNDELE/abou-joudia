@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 
 const SUBCATS = ['chaudes', 'froides', 'sandwichs_chauds', 'sandwichs_froids', 'salades']
 const SUBCAT_LABELS = { chaudes: 'Boissons Chaudes', froides: 'Boissons Froides', sandwichs_chauds: 'Sandwichs Chauds', sandwichs_froids: 'Sandwichs Froids', salades: 'Salades' }
-const inputStyle = { width: '100%', padding: '13px 14px', borderRadius: 12, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontSize: 16, outline: 'none', fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' }
+const inputStyle = { width: '100%', padding: '13px 14px', borderRadius: 12, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontSize: 16, outline: 'none', fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const }
 const labelStyle = { fontSize: 11, fontWeight: 700, color: '#C8B99A', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.8px' }
 
 export default function NouveauProduit() {
@@ -15,7 +15,7 @@ export default function NouveauProduit() {
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
 
-  const uploadImage = async (file) => {
+  const uploadImage = async (file: File) => {
     setUploading(true)
     const fileName = Date.now() + '.' + file.name.split('.').pop()
     const { error } = await supabase.storage.from('products').upload(fileName, file, { upsert: true })
@@ -43,7 +43,7 @@ export default function NouveauProduit() {
         {[{ key: 'name', label: 'Nom', type: 'text' }, { key: 'description', label: 'Description', type: 'text' }, { key: 'ingredients', label: 'Ingrédients', type: 'text' }, { key: 'price', label: 'Prix (DH)', type: 'number' }].map(f => (
           <div key={f.key}>
             <label style={labelStyle}>{f.label}</label>
-            <input type={f.type} value={form[f.key] || ''} onChange={e => setForm(p => ({ ...p, [f.key]: f.type === 'number' ? parseFloat(e.target.value) : e.target.value }))} style={inputStyle} />
+            <input type={f.type} value={(form as any)[f.key] || ''} onChange={e => setForm(p => ({ ...p, [f.key]: f.type === 'number' ? parseFloat(e.target.value) : e.target.value }))} style={inputStyle} />
           </div>
         ))}
         <div>
@@ -63,7 +63,7 @@ export default function NouveauProduit() {
         <div>
           <label style={labelStyle}>Sous-catégorie</label>
           <select value={form.subcategory} onChange={e => setForm(f => ({ ...f, subcategory: e.target.value }))} style={{ ...inputStyle, cursor: 'pointer' }}>
-            {SUBCATS.map(s => <option key={s} value={s}>{SUBCAT_LABELS[s]}</option>)}
+            {SUBCATS.map(s => <option key={s} value={s}>{(SUBCAT_LABELS as any)[s]}</option>)}
           </select>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 10, border: '1px solid rgba(232,160,32,0.1)' }}>

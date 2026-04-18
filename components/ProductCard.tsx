@@ -3,18 +3,19 @@ import { useState } from 'react'
 import { useCart } from '@/store/cart'
 import type { Product } from '@/lib/types'
 
-export default function ProductCard({ product, featured = false }: { product: Product, featured?: boolean }) {
+export default function ProductCard({ product, featured = false, isOpen }: { product: Product, featured?: boolean, isOpen: boolean }) {
   const [added, setAdded] = useState(false)
   const add = useCart(s => s.add)
 
   const handleAdd = () => {
+    if (!isOpen) return
     add(product)
     setAdded(true)
     setTimeout(() => setAdded(false), 1500)
   }
 
   if (featured) return (
-    <div style={{ background: '#131009', borderRadius: 18, border: '1px solid rgba(255,107,32,0.2)', overflow: 'hidden', cursor: 'default', position: 'relative', transition: 'border-color 0.2s' }}>
+    <div style={{ background: '#0F0C07', borderRadius: 18, border: '1px solid rgba(255,107,32,0.25)', overflow: 'hidden', cursor: 'default', position: 'relative', transition: 'border-color 0.2s' }}>
       <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 2, background: 'linear-gradient(90deg,#FF6B20,#FF3D00)', color: 'white', padding: '4px 12px', borderRadius: 50, fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.6px' }}>★ Populaire</div>
       <div style={{ height: 160, overflow: 'hidden', position: 'relative' }}>
         <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -26,15 +27,15 @@ export default function ProductCard({ product, featured = false }: { product: Pr
       </div>
       <div style={{ padding: '12px 14px 14px' }}>
         <div style={{ fontSize: 12, color: '#C8B99A', marginBottom: 12, lineHeight: 1.5 }}>{product.description}</div>
-        <button onClick={handleAdd} style={{ width: '100%', background: added ? 'rgba(232,160,32,0.15)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', color: added ? '#E8A020' : '#080603', border: 'none', borderRadius: 12, padding: '13px', fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s', boxShadow: added ? 'none' : '0 4px 16px rgba(232,160,32,0.25)' }}>
-          {added ? '✓ Ajouté au panier !' : 'Ajouter au panier'}
+        <button onClick={handleAdd} disabled={!isOpen} style={{ width: '100%', background: !isOpen ? 'rgba(255,255,255,0.05)' : added ? 'rgba(232,160,32,0.15)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', color: !isOpen ? '#666' : added ? '#E8A020' : '#080603', border: 'none', borderRadius: 12, padding: '13px', fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 13, cursor: isOpen ? 'pointer' : 'not-allowed', transition: 'all 0.2s', boxShadow: (!isOpen || added) ? 'none' : '0 4px 16px rgba(232,160,32,0.25)' }}>
+          {!isOpen ? 'Fermé' : added ? '✓ Ajouté au panier !' : 'Ajouter au panier'}
         </button>
       </div>
     </div>
   )
 
   return (
-    <div style={{ background: '#131009', borderRadius: 16, border: '1px solid rgba(232,160,32,0.08)', padding: '12px 14px', display: 'flex', gap: 12, alignItems: 'center', cursor: 'default', transition: 'border-color 0.2s, box-shadow 0.2s' }}
+    <div style={{ background: '#0F0C07', borderRadius: 16, border: '1px solid rgba(232,160,32,0.18)', padding: '12px 14px', display: 'flex', gap: 12, alignItems: 'center', cursor: 'default', transition: 'border-color 0.2s, box-shadow 0.2s' }}
       onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(232,160,32,0.25)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 0 20px rgba(232,160,32,0.06)' }}
       onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(232,160,32,0.08)'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none' }}
     >
@@ -49,7 +50,7 @@ export default function ProductCard({ product, featured = false }: { product: Pr
         <div style={{ fontSize: 11, color: '#C8B99A', marginBottom: 8, lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{product.description}</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 15, background: 'linear-gradient(90deg,#F5C842,#E8901A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{product.price} DH</div>
-          <button onClick={handleAdd} style={{ width: 34, height: 34, background: added ? 'rgba(232,160,32,0.15)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', border: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: added ? 14 : 20, fontWeight: 700, color: added ? '#E8A020' : '#080603', cursor: 'pointer', flexShrink: 0, boxShadow: added ? 'none' : '0 3px 12px rgba(232,160,32,0.3)', transition: 'all 0.2s' }}>
+          <button onClick={handleAdd} disabled={!isOpen} style={{ width: 34, height: 34, background: !isOpen ? 'rgba(255,255,255,0.05)' : added ? 'rgba(232,160,32,0.15)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', border: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: added ? 14 : 20, fontWeight: 700, color: !isOpen ? '#555' : added ? '#E8A020' : '#080603', cursor: isOpen ? 'pointer' : 'not-allowed', flexShrink: 0, boxShadow: (!isOpen || added) ? 'none' : '0 3px 12px rgba(232,160,32,0.3)', transition: 'all 0.2s' }}>
             {added ? '✓' : '+'}
           </button>
         </div>

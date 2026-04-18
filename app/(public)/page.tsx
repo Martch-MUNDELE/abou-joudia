@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import ProductCard from '@/components/ProductCard'
-import SmokeEffect from '@/components/SmokeEffect'
 import CatalogueClient from '@/components/CatalogueClient'
 import type { Product } from '@/lib/types'
 
@@ -11,49 +10,13 @@ export default async function HomePage() {
   const supabase = await createClient()
   const [{ data: products }, { data: settings }] = await Promise.all([
     supabase.from('products').select('*').eq('active', true).order('category'),
-    supabase.from('settings').select('*'),
+    supabase.from('settings').select('*').eq('key', 'status'),
   ])
 
-  const getSetting = (key: string) => (settings as any[])?.find?.((s: any) => s.key === key)?.value || ''
-  const isOpen = getSetting('status') === 'open'
-  const statusMessage = getSetting('status_message') || 'Ouvert · Livraison Agadir'
-  const heroImage = getSetting('hero_image')
+  const isOpen = ((settings as any[])?.find?.((s: any) => s.key === 'status')?.value || '') === 'open'
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
-
-
-      {/* HERO */}
-      <div style={{ position: 'relative', overflow: 'hidden', padding: '36px 20px 32px', minHeight: 400 }}>
-        {!isOpen && (
-          <div style={{ position: 'absolute', top: 18, right: 20, zIndex: 10, background: '#C41E1E', padding: '5px 14px', borderRadius: 50, fontSize: 11, color: '#FFFFFF', fontWeight: 600, letterSpacing: '0.8px', textTransform: 'uppercase' as const }}>
-            {statusMessage}
-          </div>
-        )}
-        {heroImage && (
-          <img src={heroImage} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'right bottom', opacity: 1, mixBlendMode: 'lighten', pointerEvents: 'none', zIndex: 0 }} />
-        )}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(8,6,3,0.92) 0%, rgba(8,6,3,0.7) 35%, rgba(8,6,3,0.2) 60%, transparent 80%)', pointerEvents: 'none', zIndex: 1 }} />
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '40%', background: 'linear-gradient(to top, #080603 0%, transparent 100%)', pointerEvents: 'none', zIndex: 1 }} />
-        <div style={{ position: 'absolute', top: -40, right: -60, width: '80%', height: '130%', background: 'radial-gradient(ellipse 70% 80% at 75% 45%, rgba(232,120,20,0.18) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 1 }} />
-
-        <div style={{ position: 'relative', zIndex: 2, width: '100%' }}>
-          {/* Badge statut */}
-
-
-          <h1 style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: 'clamp(36px,8vw,52px)', lineHeight: 0.97, letterSpacing: '-2px', margin: '0 0 10px' }}>
-            <span style={{ display: 'block', background: 'linear-gradient(135deg,#FFD060 0%,#F5A020 35%,#FF6020 70%,#FF3500 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Saveurs du</span>
-            <span style={{ display: 'block', background: 'linear-gradient(135deg,#FFD060 0%,#F5A020 35%,#FF6020 70%,#FF3500 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Souss.</span>
-          </h1>
-          <p style={{ fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: 20, color: '#FFFFFF', margin: '0 0 12px', letterSpacing: '-0.3px', fontStyle: 'italic' }}>Livrées chez toi.</p>
-          <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: 13, lineHeight: 1.7, maxWidth: 260, margin: 0 }}>Sandwichs maison, salades fraîches et boissons du terroir. Préparés à Agadir.</p>
-        </div>
-
-        {heroImage && <SmokeEffect />}
-      </div>
-
-      {/* SÉPARATEUR */}
-      <div style={{ height: 1, background: 'linear-gradient(90deg,rgba(232,160,32,0.25),transparent)', margin: '0 20px 24px' }} />
 
       {/* CATALOGUE avec sous-menus */}
       {isOpen && <CatalogueClient products={products || []} isOpen={isOpen} />}

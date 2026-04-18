@@ -28,7 +28,7 @@ export default function PanierPage() {
 
   // Sauvegarde auto dans localStorage
   const updateForm = (updater: (f: typeof form) => typeof form) => {
-    setForm(prev => {
+    setForm((prev: typeof form) => {
       const next = updater(prev)
       try { localStorage.setItem('aj_customer', JSON.stringify({ name: next.name, phone: next.phone, address: next.address, note: next.note, email: next.email, wantFacture: next.wantFacture })) } catch {}
       return next
@@ -70,7 +70,7 @@ export default function PanierPage() {
     setLoading(false)
   }
 
-  useEffect(() => { if (items.length === 0) router.replace('/') }, [items.length])
+  useEffect(() => { if (items.length === 0) router.replace('/') }, [items.length, router])
 
   if (items.length === 0) return null
 
@@ -198,7 +198,7 @@ export default function PanierPage() {
       )}
 
       {/* ══ BARRE STICKY BAS ══ */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'rgba(8,6,3,0.97)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(232,160,32,0.1)', padding: '16px 20px', zIndex: 40 }}>
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'rgba(8,6,3,0.97)', backdropFilter: 'blur(20px)', padding: '16px 20px', zIndex: 40 }}>
         <div style={{ maxWidth: 520, margin: '0 auto' }}>
           {/* Total visible sur step panier */}
           {step === 'cart' && (

@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-const SUBCAT_LABELS = { chaudes: 'Boissons Chaudes', froides: 'Boissons Froides', sandwichs_chauds: 'Sandwichs Chauds', sandwichs_froids: 'Sandwichs Froids', salades: 'Salades' }
+type Product = { id: string; name: string; price: number; image_url: string; subcategory: string; active: boolean }
+
+const SUBCAT_LABELS: Record<string, string> = { chaudes: 'Boissons Chaudes', froides: 'Boissons Froides', sandwichs_chauds: 'Sandwichs Chauds', sandwichs_froids: 'Sandwichs Froids', salades: 'Salades' }
 const SUBCAT_ORDER = ['sandwichs_chauds', 'sandwichs_froids', 'salades', 'chaudes', 'froides']
 
 const IconEdit = () => (
@@ -21,19 +23,19 @@ const IconTrash = () => (
 )
 
 export default function ProduitsAdmin() {
-  const [products, setProducts] = useState([])
+  const [products, setProducts] = useState<Product[]>([])
   const [tab, setTab] = useState('actifs')
   const supabase = createClient()
   const router = useRouter()
 
   const load = async () => {
     const { data } = await supabase.from('products').select('*').order('subcategory')
-    setProducts(data || [])
+    setProducts((data as Product[]) || [])
   }
   useEffect(() => { load() }, [])
 if (typeof window !== 'undefined') { window.addEventListener('focus', load) }
 
-  const del = async (id) => {
+  const del = async (id: string) => {
     if (!window.confirm('Supprimer ce produit ?')) return
     await supabase.from('products').delete().eq('id', id)
     load()
@@ -41,7 +43,7 @@ if (typeof window !== 'undefined') { window.addEventListener('focus', load) }
 
   const filtered = products.filter(p => tab === 'actifs' ? p.active : !p.active)
 
-  const grouped = SUBCAT_ORDER.reduce((acc, sub) => {
+  const grouped = SUBCAT_ORDER.reduce<Record<string, Product[]>>((acc, sub) => {
     const items = filtered.filter(p => p.subcategory === sub)
     if (items.length > 0) acc[sub] = items
     return acc

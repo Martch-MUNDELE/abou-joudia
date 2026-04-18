@@ -22,10 +22,10 @@ export default function SmokeEffect() {
       constructor(x: number, y: number) {
         this.x = x + (Math.random() - 0.5) * 40
         this.y = y
-        this.size = Math.random() * 28 + 14
-        this.speedX = (Math.random() - 0.5) * 0.5
-        this.speedY = -(Math.random() * 0.8 + 0.4)
-        this.opacity = Math.random() * 0.18 + 0.06
+        this.size = Math.random() * 18 + 8
+        this.speedX = (Math.random() - 0.5) * 0.3
+        this.speedY = -(Math.random() * 0.5 + 0.25)
+        this.opacity = Math.random() * 0.12 + 0.04
         this.life = 0
         this.maxLife = Math.random() * 120 + 80
         this.wobble = Math.random() * Math.PI * 2
@@ -68,14 +68,15 @@ export default function SmokeEffect() {
 
       // Spawn plusieurs particules depuis différents points du burger
       if (frame % 6 === 0) {
-        const baseY = canvas.height * 0.55
-        // Points de fumée dispersés sur le burger
+        const baseY = canvas.height * 0.82
         const spawnPoints = [
-          canvas.width * 0.52,
-          canvas.width * 0.58,
-          canvas.width * 0.48,
-          canvas.width * 0.62,
-          canvas.width * 0.44,
+          canvas.width * 0.60 - 50,
+          canvas.width * 0.65 - 50,
+          canvas.width * 0.70 - 50,
+          canvas.width * 0.75 - 50,
+          canvas.width * 0.80 - 50,
+          canvas.width * 0.85 - 50,
+          canvas.width * 0.90 - 50,
         ]
         spawnPoints.forEach(x => {
           if (Math.random() > 0.4) {
