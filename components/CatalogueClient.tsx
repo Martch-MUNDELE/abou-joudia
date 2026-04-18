@@ -24,7 +24,7 @@ export default function CatalogueClient({ products, isOpen }: { products: Produc
       {filtered.length === 0 ? (
         <div style={{ textAlign: 'center', color: '#C8B99A', padding: '40px 0', fontSize: 14 }}>Aucun produit disponible</div>
       ) : filtered.map((p, i) => (
-        <ProductCard key={p.id} product={p} featured={i === 0 && activeGroupe === 'sandwichs' && activeSous === 'sandwichs_chauds'} isOpen={isOpen} />
+        <ProductCard key={p.id} product={p} featured={i === 0 && activeGroupe === 'sandwichs' && activeSous === 'sandwichs_chauds'} isOpen={isOpen} allProducts={products} />
       ))}
     </div>
   )

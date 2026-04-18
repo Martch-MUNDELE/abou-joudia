@@ -4,7 +4,7 @@ import ProductOverlay from '@/components/ProductOverlay'
 import { useCart } from '@/store/cart'
 import type { Product } from '@/lib/types'
 
-export default function ProductCard({ product, featured = false, isOpen }: { product: Product, featured?: boolean, isOpen: boolean }) {
+export default function ProductCard({ product, featured = false, isOpen, allProducts = [] }: { product: Product, featured?: boolean, isOpen: boolean, allProducts?: Product[] }) {
   const [added, setAdded] = useState(false)
   const [showOverlay, setShowOverlay] = useState(false)
   const add = useCart(s => s.add)
@@ -59,7 +59,7 @@ export default function ProductCard({ product, featured = false, isOpen }: { pro
         </div>
       </div>
     </div>
-    {showOverlay && <ProductOverlay product={product} onClose={() => setShowOverlay(false)} />}
+    {showOverlay && <ProductOverlay product={product} allProducts={allProducts} onClose={() => setShowOverlay(false)} />}
     </>
   )
 }
