@@ -106,7 +106,7 @@ export default function ProductOverlay({ product, allProducts, onClose }: { prod
                 {related.map(p => (
                   <div key={p.id} onClick={() => { setCurrent(p); setAdded(false) }} style={{ flexShrink: 0, width: 52, cursor: 'pointer', textAlign: 'center' }}>
                     <div style={{ width: 52, height: 52, borderRadius: 8, overflow: 'hidden', background: '#1A1510', marginBottom: 4, border: current.id === p.id ? '1.5px solid rgba(245,200,66,0.5)' : '1px solid rgba(232,160,32,0.08)' }}>
-                      {p.image_url && <img src={p.image_url} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                      {p.image_url && <img src={p.image_url + (p.image_url.includes('supabase.co') ? '?width=100&quality=70' : '')} alt={p.name} loading="eager" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                     </div>
                     <div style={{ fontSize: 10, fontWeight: 600, color: '#C8B99A', fontFamily: 'DM Sans, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
                     <div style={{ fontSize: 10, color: '#E8A020', fontWeight: 700, fontFamily: 'DM Sans, sans-serif' }}>{p.price} DH</div>

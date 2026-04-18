@@ -40,8 +40,13 @@ export default function ProduitsAdmin() {
 
   const del = async (id: string) => {
     if (!window.confirm('Supprimer ce produit ?')) return
+    const product = products.find(p => p.id === id)
     const { error } = await supabase.from('products').delete().eq('id', id)
     if (error) { alert('Erreur : ' + error.message); return }
+    if (product?.image_url && product.image_url.includes('supabase.co')) {
+      const path = product.image_url.split('/products/')[1]?.split('?')[0]
+      if (path) await supabase.storage.from('products').remove([path])
+    }
     await load()
   }
 

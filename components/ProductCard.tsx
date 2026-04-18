@@ -20,7 +20,7 @@ export default function ProductCard({ product, featured = false, isOpen, allProd
     <div style={{ background: '#0F0C07', borderRadius: 18, border: '1px solid rgba(255,107,32,0.25)', overflow: 'hidden', cursor: 'default', position: 'relative', transition: 'border-color 0.2s' }}>
       <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 2, background: 'linear-gradient(90deg,#FF6B20,#FF3D00)', color: 'white', padding: '4px 12px', borderRadius: 50, fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.6px' }}>★ Populaire</div>
       <div style={{ height: 160, overflow: 'hidden', position: 'relative' }}>
-        <img src={product.image_url} alt={product.name} loading="eager" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src={product.image_url + (product.image_url.includes('supabase.co') ? '?width=150&quality=75' : '')} alt={product.name} loading="eager" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top,rgba(19,16,9,0.95) 0%,rgba(19,16,9,0.2) 60%,transparent 100%)' }} />
         <div style={{ position: 'absolute', bottom: 12, left: 14, right: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 17, color: '#F5EDD6' }}>{product.name}</div>
