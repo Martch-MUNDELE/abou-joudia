@@ -25,12 +25,48 @@ export async function POST(req: NextRequest) {
     from: 'Abou Joudia <onboarding@resend.dev>',
     to: order.customer_email,
     subject: `🧾 Votre facture Abou Joudia — ${order.total.toFixed(2)} DH`,
-    html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
-      <h2 style="color:#2D6A4F">🥙 Votre facture Abou Joudia</h2>
-      <p>Bonjour ${order.customer_name},</p>
-      <p>Veuillez trouver ci-joint votre facture pour votre commande de <strong>${order.total.toFixed(2)} DH</strong>.</p>
-      <p style="color:#6B7280;font-size:13px">Paiement à la livraison en cash.</p>
-    </div>`,
+    html: `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#0A0804;font-family:'Helvetica Neue',Arial,sans-serif">
+  <div style="max-width:520px;margin:0 auto;padding:32px 16px">
+
+    <!-- HEADER -->
+    <div style="padding:24px 0 20px;border-bottom:1px solid rgba(232,160,32,0.15);display:flex;align-items:center;gap:14px">
+      <div style="width:52px;height:52px;background:linear-gradient(135deg,#1A1408,#2A1E08);border-radius:12px;border:1px solid rgba(232,160,32,0.2);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🍔</div>
+      <div>
+        <div style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#F5C842;letter-spacing:-0.5px;line-height:1">Abou Joudia</div>
+        <div style="font-size:9px;color:#C8B99A;letter-spacing:3px;text-transform:uppercase;margin-top:3px">Agadir · Livraison</div>
+      </div>
+    </div>
+
+    <!-- CORPS -->
+    <div style="padding:28px 0">
+      <p style="color:#C8B99A;font-size:14px;margin:0 0 8px">Bonjour <strong style="color:#F5EDD6">${order.customer_name}</strong>,</p>
+      <p style="color:#C8B99A;font-size:14px;margin:0 0 24px;line-height:1.6">Merci pour votre commande ! Veuillez trouver ci-joint votre facture.</p>
+
+      <!-- MONTANT -->
+      <div style="background:rgba(232,160,32,0.06);border:1px solid rgba(232,160,32,0.15);border-radius:12px;padding:20px;text-align:center;margin-bottom:24px">
+        <div style="font-size:11px;color:#E8A020;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Total de votre commande</div>
+        <div style="font-family:Georgia,serif;font-size:36px;font-weight:900;color:#F5C842">${order.total.toFixed(2)} <span style="font-size:16px">DH</span></div>
+        <div style="font-size:12px;color:#888;margin-top:6px">Paiement à la livraison en cash</div>
+      </div>
+
+      <p style="color:#7A6E58;font-size:12px;line-height:1.6;margin:0">
+        Votre facture PDF est jointe à cet email. Notre équipe prépare votre commande avec soin et vous livrera dans les meilleurs délais.
+      </p>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="border-top:1px solid rgba(232,160,32,0.1);padding-top:20px;text-align:center">
+      <div style="font-size:11px;color:#555;line-height:1.8">
+        Abou Joudia — Agadir, Maroc<br>
+        <span style="color:#E8A020">Saveurs du Souss, livrées chez toi.</span>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>`,
     attachments: [{ filename: `facture-${order.id.slice(0,8)}.pdf`, content: pdfBuffer }]
   })
 
