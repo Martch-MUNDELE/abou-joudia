@@ -31,13 +31,18 @@ export async function POST(req: NextRequest) {
   <div style="max-width:520px;margin:0 auto;padding:32px 16px">
 
     <!-- HEADER -->
-    <div style="padding:24px 0 20px;border-bottom:1px solid rgba(232,160,32,0.15);display:flex;align-items:center;gap:14px">
-      <div style="width:52px;height:52px;background:linear-gradient(135deg,#1A1408,#2A1E08);border-radius:12px;border:1px solid rgba(232,160,32,0.2);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🍔</div>
-      <div>
-        <div style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#F5C842;letter-spacing:-0.5px;line-height:1">Abou Joudia</div>
-        <div style="font-size:9px;color:#C8B99A;letter-spacing:3px;text-transform:uppercase;margin-top:3px">Agadir · Livraison</div>
-      </div>
-    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid rgba(232,160,32,0.15);padding-bottom:20px;margin-bottom:0">
+      <tr>
+        <td width="56" valign="middle">
+          <img src="https://nrpsqvmdmsfekemtrbcz.supabase.co/storage/v1/object/public/products/logo-abou-joudia.png" alt="Abou Joudia" width="52" height="52" style="border-radius:10px;display:block" onerror="this.style.display='none'" />
+        </td>
+        <td width="12"></td>
+        <td valign="middle">
+          <div style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#F5C842;letter-spacing:-0.5px;line-height:1">Abou Joudia</div>
+          <div style="font-size:9px;color:#C8B99A;letter-spacing:3px;text-transform:uppercase;margin-top:4px">Agadir · Livraison</div>
+        </td>
+      </tr>
+    </table>
 
     <!-- CORPS -->
     <div style="padding:28px 0">

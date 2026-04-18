@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useCart } from '@/store/cart'
 import type { Product } from '@/lib/types'
 
@@ -9,19 +9,6 @@ export default function ProductOverlay({ product, allProducts, onClose }: { prod
   const quantity = items.find(i => i.product.id === current.id)?.quantity || 0
   const [added, setAdded] = useState(false)
   const sheetRef = useRef<HTMLDivElement>(null)
-  const [xPos, setXPos] = useState({ top: 0, right: 0 })
-
-  useEffect(() => {
-    const update = () => {
-      if (sheetRef.current) {
-        const rect = sheetRef.current.getBoundingClientRect()
-        setXPos({ top: rect.top + 16, right: window.innerWidth - rect.right + 16 })
-      }
-    }
-    update()
-    window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
-  }, [])
 
   const handleAdd = () => { add(current); setAdded(true); setTimeout(() => setAdded(false), 800) }
   const handleRemove = () => { if (quantity > 0) update(current.id, quantity - 1) }
@@ -30,9 +17,6 @@ export default function ProductOverlay({ product, allProducts, onClose }: { prod
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', animation: 'fadeIn 0.2s ease' }}>
-      <button
-        onClick={e => { e.stopPropagation(); onClose() }}
-        style={{ position: 'fixed', top: xPos.top, right: xPos.right, zIndex: 500, width: 36, height: 36, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1.5px solid rgba(255,255,255,0.25)', color: '#FFFFFF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 300 }}>×</button>
       <style>{`
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
@@ -41,14 +25,15 @@ export default function ProductOverlay({ product, allProducts, onClose }: { prod
 
       <div ref={sheetRef} onClick={e => e.stopPropagation()} style={{ background: '#0F0C07', borderRadius: '24px 24px 0 0', maxWidth: 600, width: '100%', margin: '0 auto', animation: 'slideUp 0.3s cubic-bezier(0.32,0.72,0,1)', height: '88vh', maxHeight: '88vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
 
-        {/* IMAGE — grande, avec X en overlay */}
-        <div style={{ position: 'relative', flex: '0 0 400px', background: '#080603', margin: '0', borderRadius: '0 0 16px 16px', overflow: 'hidden', flexShrink: 0 }}>
+        {/* IMAGE — adaptative avec bouton X intégré */}
+        <div style={{ position: 'relative', flex: '0 0 clamp(180px, 40vh, 400px)', background: '#080603', borderRadius: '0 0 16px 16px', overflow: 'hidden', flexShrink: 0 }}>
           {current.image_url && (
             <img src={current.image_url} alt={current.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
           )}
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '35%', background: 'linear-gradient(to top, #0F0C07 0%, transparent 100%)' }} />
-
-
+          <button
+            onClick={e => { e.stopPropagation(); onClose() }}
+            style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, width: 36, height: 36, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1.5px solid rgba(255,255,255,0.25)', color: '#FFFFFF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 300, lineHeight: 1 }}>×</button>
         </div>
 
         {/* ZONE INFOS */}
@@ -69,7 +54,6 @@ export default function ProductOverlay({ product, allProducts, onClose }: { prod
             <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: 20, color: '#F5EDD6', lineHeight: 1.1, flex: 1 }}>
               {current.name}
             </div>
-            {/* Bouton +/- sur la même ligne */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
               {quantity > 0 && (
                 <>
@@ -104,8 +88,8 @@ export default function ProductOverlay({ product, allProducts, onClose }: { prod
               <div style={{ fontSize: 9, color: '#888', letterSpacing: '2px', textTransform: 'uppercase', fontWeight: 700, fontFamily: 'DM Sans, sans-serif', marginBottom: 4 }}>Dans la même catégorie</div>
               <div className="related-scroll" style={{ display: 'flex', gap: 10, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 8 }}>
                 {related.map(p => (
-                  <div key={p.id} onClick={() => { setCurrent(p); setAdded(false) }} style={{ flexShrink: 0, width: 52, cursor: 'pointer', textAlign: 'center' }}>
-                    <div style={{ width: 52, height: 52, borderRadius: 8, overflow: 'hidden', background: '#1A1510', marginBottom: 4, border: current.id === p.id ? '1.5px solid rgba(245,200,66,0.5)' : '1px solid rgba(232,160,32,0.08)' }}>
+                  <div key={p.id} onClick={() => { setCurrent(p); setAdded(false) }} style={{ flexShrink: 0, width: 'clamp(64px, 14vw, 80px)', cursor: 'pointer', textAlign: 'center' }}>
+                    <div style={{ width: 'clamp(64px, 14vw, 80px)', height: 'clamp(64px, 14vw, 80px)', borderRadius: 8, overflow: 'hidden', background: '#1A1510', marginBottom: 4, border: current.id === p.id ? '1.5px solid rgba(245,200,66,0.5)' : '1px solid rgba(232,160,32,0.08)' }}>
                       {p.image_url && <img src={p.image_url + (p.image_url.includes('supabase.co') ? '?width=100&quality=70' : '')} alt={p.name} loading="eager" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                     </div>
                     <div style={{ fontSize: 10, fontWeight: 600, color: '#C8B99A', fontFamily: 'DM Sans, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>

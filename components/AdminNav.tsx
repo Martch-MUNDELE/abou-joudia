@@ -18,8 +18,18 @@ export default function AdminNav() {
   const router = useRouter()
   const supabase = createClient()
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [siteName, setSiteName] = useState('Abou Joudia')
+  const [siteBaseline, setSiteBaseline] = useState('AGADIR · LIVRAISON')
+  const [siteLogo, setSiteLogo] = useState<string | null>(null)
 
   useEffect(() => {
+    supabase.from('settings').select('*').then(({ data }) => {
+      data?.forEach((s: any) => {
+        if (s.key === 'site_name') setSiteName(s.value)
+        if (s.key === 'site_baseline') setSiteBaseline(s.value)
+        if (s.key === 'site_logo') setSiteLogo(s.value || '')
+      })
+    })
     supabase.auth.getUser().then(async ({ data }) => {
       if (data.user?.email) {
         const { data: admin } = await supabase.from('admins').select('role').eq('email', data.user.email).single()
@@ -40,14 +50,18 @@ export default function AdminNav() {
     <nav style={{ background: 'rgba(8,6,3,0.97)', borderBottom: '1px solid rgba(232,160,32,0.1)', position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(20px)' }}>
 
       {/* LIGNE 1 : Logo + Déconnexion */}
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '10px 24px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '8px 24px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link href="/admin" style={{ textDecoration: 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Logo size={36} />
+            {siteLogo === null ? <div style={{ width: 36, height: 36, flexShrink: 0 }} /> : siteLogo ? (
+              <img src={siteLogo} alt={siteName} style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }} />
+            ) : (
+              <Logo size={36} />
+            )}
             <div>
               <div style={{ fontSize: 8, color: '#E8A020', letterSpacing: '2px', textTransform: 'uppercase', lineHeight: 1, marginBottom: 2, fontWeight: 700 }}>Admin</div>
-              <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: 15, background: 'linear-gradient(90deg,#FFD060,#E8901A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.3px', lineHeight: 1.1 }}>Abou Joudia</div>
-              <div style={{ fontSize: 8, color: '#A89880', letterSpacing: '2px', textTransform: 'uppercase', lineHeight: 1, marginTop: 2 }}>Agadir · Livraison</div>
+              <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: 15, background: 'linear-gradient(90deg,#FFD060,#E8901A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.3px', lineHeight: 1.1 }}>{siteName}</div>
+              <div style={{ fontSize: 8, color: '#A89880', letterSpacing: '2px', textTransform: 'uppercase', lineHeight: 1, marginTop: 2 }}>{siteBaseline}</div>
             </div>
           </div>
         </Link>

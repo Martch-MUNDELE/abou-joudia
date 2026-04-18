@@ -9,7 +9,7 @@ export default async function FeaturedCard() {
   if (!product) return null
 
   return (
-    <div style={{ margin: '0 16px 24px', position: 'relative', borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(232,160,32,0.25)', minHeight: 200 }}>
+    <div style={{ margin: '0 16px 24px', position: 'relative', borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(232,160,32,0.25)', minHeight: 'clamp(180px, 50vw, 280px)' }}>
 
       {/* Image produit en background */}
       {product.image_url && (
@@ -30,7 +30,7 @@ export default async function FeaturedCard() {
         <div style={{ marginBottom: 8 }}>
             <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: 24, color: '#F5EDD6', lineHeight: 1.05, letterSpacing: '-0.5px', marginBottom: 3 }}>{product.name}</div>
             {product.description && (
-              <div style={{ fontSize: 12, color: '#C8B99A', lineHeight: 1.5, maxWidth: 220, marginBottom: 6 }}>{product.description}</div>
+              <div style={{ fontSize: 12, color: '#C8B99A', lineHeight: 1.5, maxWidth: 'min(220px, 55%)', marginBottom: 6 }}>{product.description}</div>
             )}
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
               <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: 28, color: '#F5C842', lineHeight: 1 }}>{product.price}</div>

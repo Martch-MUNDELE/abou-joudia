@@ -28,6 +28,9 @@ export default function Navbar() {
   const count = useCart(s => s.count())
   const [mounted, setMounted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const [siteName, setSiteName] = useState('Abou Joudia')
+  const [siteBaseline, setSiteBaseline] = useState('AGADIR · LIVRAISON')
+  const [siteLogo, setSiteLogo] = useState<string | null>(null)
   const { activeGroupe, activeSous, hasSelected, setGroupe, setHasSelected } = useCatalogue()
   const pathname = usePathname()
   const isHome = pathname === '/'
@@ -37,8 +40,20 @@ export default function Navbar() {
   useEffect(() => {
     setMounted(true)
     const supabase = createClient()
-    supabase.from('settings').select('value').eq('key', 'status').single().then(({ data }) => {
-      setIsOpen(data?.value === 'open')
+    supabase.from('settings').select('*').then(({ data }) => {
+      data?.forEach((s: any) => {
+        if (s.key === 'status') setIsOpen(s.value === 'open')
+        if (s.key === 'site_name') setSiteName(s.value)
+        if (s.key === 'site_baseline') setSiteBaseline(s.value)
+        if (s.key === 'site_logo') {
+          if (s.value) {
+            const base = s.value.split('?')[0]
+            setSiteLogo(base + '?t=' + Date.now())
+          } else {
+            setSiteLogo('')
+          }
+        }
+      })
     })
     const handleClick = (e: MouseEvent) => {
       if (dropRef.current && !dropRef.current.contains(e.target as Node)) setOpenDropdown(false)
@@ -62,13 +77,17 @@ export default function Navbar() {
   return (
     <nav style={{ background: 'rgba(8,6,3,0.94)', backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 50 }}>
       {/* LIGNE 1 — logo + panier */}
-      <div style={{ maxWidth: 600, margin: '0 auto', padding: '0 20px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ maxWidth: 600, margin: '0 auto', padding: '0 clamp(12px, 4vw, 24px)', height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link href="/" style={{ textDecoration: 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Logo size={36} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {siteLogo === null ? <div style={{ width: 64, height: 64, flexShrink: 0 }} /> : siteLogo ? (
+                <img src={siteLogo} alt={siteName} style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 8, flexShrink: 0 }} />
+              ) : (
+                <Logo size={52} />
+              )}
             <div>
-              <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: 15, background: 'linear-gradient(90deg,#FFD060,#E8901A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.3px', lineHeight: 1.1 }}>Abou Joudia</div>
-              <div style={{ fontSize: 8, color: '#C8B99A', letterSpacing: '2px', textTransform: 'uppercase', lineHeight: 1, marginTop: 2 }}>Agadir · Livraison</div>
+              <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: 15, background: 'linear-gradient(90deg,#FFD060,#E8901A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.3px', lineHeight: 1.1 }}>{siteName}</div>
+              <div style={{ fontSize: 9, color: '#C8B99A', letterSpacing: '2px', textTransform: 'uppercase', lineHeight: 1, marginTop: 3 }}>{siteBaseline}</div>
             </div>
           </div>
         </Link>
@@ -103,7 +122,7 @@ export default function Navbar() {
           </button>
 
           {openDropdown && (
-            <div style={{ position: 'absolute', top: 'calc(100% - 12px)', left: 16, right: 16, background: '#1A1510', border: '1px solid rgba(232,160,32,0.2)', borderRadius: 14, overflow: 'hidden', zIndex: 60, boxShadow: '0 16px 48px rgba(0,0,0,0.6)' }}>
+            <div style={{ position: 'absolute', top: 'calc(100% - 12px)', left: 16, right: 16, background: '#1A1510', border: '1px solid rgba(232,160,32,0.2)', borderRadius: 14, overflow: 'hidden', zIndex: 60, boxShadow: '0 16px 48px rgba(0,0,0,0.6)', maxHeight: 'min(400px, 65vh)', overflowY: 'auto' }}>
               {GROUPES.map((g, gi) => (
                 <div key={g.id}>
                   <div style={{ padding: '10px 16px 6px', fontSize: 10, fontWeight: 700, color: '#C8B99A', letterSpacing: '1.5px', textTransform: 'uppercase' as const, display: 'flex', alignItems: 'center', gap: 6 }}>

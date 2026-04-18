@@ -20,7 +20,7 @@ export default function CatalogueClient({ products, isOpen }: { products: Produc
   if (!hasSelected) return null
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '16px 16px 240px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '16px 16px clamp(120px, 30vh, 240px)', maxWidth: 600, margin: '0 auto' }}>
       {filtered.length === 0 ? (
         <div style={{ textAlign: 'center', color: '#C8B99A', padding: '40px 0', fontSize: 14 }}>Aucun produit disponible</div>
       ) : filtered.map((p, i) => (

@@ -37,7 +37,7 @@ export default function BackgroundSmoke() {
 
         {/* Burger — zIndex 2 */}
         {heroImage && (
-          <img src={heroImage} alt="" style={{ position: 'absolute', bottom: 0, right: 0, width: '75%', height: '55%', objectFit: 'contain', objectPosition: 'right bottom', opacity: 0.95, zIndex: 2 }} />
+          <img src={heroImage} alt="" style={{ position: 'absolute', bottom: 0, right: 0, width: 'min(75%, 450px)', height: 'min(55%, 360px)', objectFit: 'contain', objectPosition: 'right bottom', opacity: 0.95, zIndex: 2 }} />
         )}
 
         {/* Halo chaud burger */}

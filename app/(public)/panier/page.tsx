@@ -78,7 +78,7 @@ export default function PanierPage() {
   const stepLabels = ['Panier', 'Infos', 'Horaire']
 
   return (
-    <div style={{ maxWidth: 520, margin: '0 auto', paddingBottom: 100 }}>
+    <div style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 100 }}>
 
       {/* HEADER */}
       <div style={{ padding: '24px 20px 20px' }}>
@@ -109,7 +109,7 @@ export default function PanierPage() {
             {items.map((item, idx) => (
               <div key={item.product.id} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '13px 0', borderBottom: '1px solid rgba(232,160,32,0.06)' }}>
                 {/* Image ronde */}
-                <div style={{ width: 56, height: 56, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '2px solid rgba(232,160,32,0.15)' }}>
+                <div style={{ width: 'clamp(44px, 12vw, 56px)', height: 'clamp(44px, 12vw, 56px)', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '2px solid rgba(232,160,32,0.15)' }}>
                   <img src={item.product.image_url} alt={item.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
 
@@ -157,7 +157,7 @@ export default function PanierPage() {
             </button>
             {geoError && <div style={{ fontSize: 12, color: '#FF6B6B', marginBottom: 8 }}>{geoError}</div>}
             {form.lat && form.lng && (
-              <div style={{ marginBottom: 10, borderRadius: 12, overflow: 'hidden', height: 140, border: '1px solid rgba(232,160,32,0.15)' }}>
+              <div style={{ marginBottom: 10, borderRadius: 12, overflow: 'hidden', height: 'clamp(100px, 22vw, 150px)', border: '1px solid rgba(232,160,32,0.15)' }}>
                 <iframe
                   src={`https://www.openstreetmap.org/export/embed.html?bbox=${form.lng - 0.005},${form.lat - 0.005},${form.lng + 0.005},${form.lat + 0.005}&layer=mapnik&marker=${form.lat},${form.lng}`}
                   style={{ width: '100%', height: '100%', border: 'none', filter: 'invert(0.85) hue-rotate(180deg)' }}
@@ -199,7 +199,7 @@ export default function PanierPage() {
 
       {/* ══ BARRE STICKY BAS ══ */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'rgba(8,6,3,0.97)', backdropFilter: 'blur(20px)', padding: '16px 20px', zIndex: 40 }}>
-        <div style={{ maxWidth: 520, margin: '0 auto' }}>
+        <div style={{ maxWidth: 600, margin: '0 auto' }}>
           {/* Total visible sur step panier */}
           {step === 'cart' && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
