@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { createClient as createAdmin } from '@supabase/supabase-js'
 import { useRouter, useParams } from 'next/navigation'
 
 const SUBCATS = ['chaudes', 'froides', 'sandwichs_chauds', 'sandwichs_froids', 'salades']
@@ -13,10 +12,7 @@ export default function ModifierProduit() {
   const router = useRouter()
   const params = useParams()
   const supabase = createClient()
-  const admin = createAdmin(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_SERVICE_KEY!
-  )
+  const admin = supabase
   const [form, setForm] = useState({ name: '', description: '', ingredients: '', price: 0, subcategory: 'sandwichs_chauds', image_url: '', active: true })
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)

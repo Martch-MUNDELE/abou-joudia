@@ -40,8 +40,9 @@ export default function ProduitsAdmin() {
 
   const del = async (id: string) => {
     if (!window.confirm('Supprimer ce produit ?')) return
-    await supabase.from('products').delete().eq('id', id)
-    load()
+    const { error } = await supabase.from('products').delete().eq('id', id)
+    if (error) { alert('Erreur : ' + error.message); return }
+    await load()
   }
 
   const setFeatured = async (id: string) => {
@@ -92,7 +93,7 @@ export default function ProduitsAdmin() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {items.map(p => (
               <div key={p.id} style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.1)', borderRadius: 14, padding: '14px 16px', display: 'flex', gap: 14, alignItems: 'center' }}>
-                <img src={p.image_url} alt={p.name} style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(232,160,32,0.1)' }} />
+                {p.image_url && <img src={p.image_url} alt={p.name} style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(232,160,32,0.1)' }} />}
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: 14, color: '#F5EDD6' }}>{p.name}</div>
                   <div style={{ fontSize: 11, color: '#C8B99A', marginTop: 2 }}>{p.price} DH</div>
