@@ -30,7 +30,7 @@ export default function ProductOverlay({ product, onClose }: { product: Product,
 
       <div
         onClick={e => e.stopPropagation()}
-        style={{ background: '#0F0C07', borderRadius: '24px 24px 0 0', maxWidth: 600, width: '100%', margin: '0 auto', animation: 'slideUp 0.3s cubic-bezier(0.32,0.72,0,1)', height: '82vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}
+        style={{ background: '#0F0C07', borderRadius: '24px 24px 0 0', maxWidth: 600, width: '100%', margin: '0 auto', animation: 'slideUp 0.3s cubic-bezier(0.32,0.72,0,1)', height: '75vh', maxHeight: '75vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}
       >
         {/* Bouton fermeture — EN DEHORS de l'image, tout en haut de la sheet */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '14px 16px 0', flexShrink: 0 }}>
@@ -40,7 +40,7 @@ export default function ProductOverlay({ product, onClose }: { product: Product,
         </div>
 
         {/* ZONE IMAGE */}
-        <div style={{ position: 'relative', flex: '0 0 260px', background: '#080603', margin: '0 16px', borderRadius: 16, overflow: 'hidden' }}>
+        <div style={{ position: 'relative', flex: '0 0 200px', background: '#080603', margin: '0 16px', borderRadius: 16, overflow: 'hidden' }}>
           {product.image_url && (
             <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
           )}
@@ -85,7 +85,7 @@ export default function ProductOverlay({ product, onClose }: { product: Product,
         </div>
 
         {/* BOUTON + en bas à droite */}
-        <div style={{ padding: '12px 20px 28px', flexShrink: 0, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
+        <div style={{ padding: '12px 20px env(safe-area-inset-bottom, 20px)', flexShrink: 0, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
           {quantity > 0 && (
             <>
               <button onClick={handleRemove} style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid rgba(232,160,32,0.25)', background: 'transparent', color: '#C8B890', cursor: 'pointer', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
