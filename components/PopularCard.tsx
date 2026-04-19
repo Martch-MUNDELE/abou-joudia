@@ -29,27 +29,41 @@ export default function PopularCard({ fallback }: { fallback?: React.ReactNode }
   return (
     <>
     {selectedProduct && <ProductOverlay product={selectedProduct} allProducts={allProducts} onClose={() => setSelectedProduct(null)} />}
-    <div style={{ margin: '0 16px 24px', position: 'relative', borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(255,107,32,0.25)', minHeight: 'clamp(180px, 50vw, 280px)', cursor: 'pointer' }} onClick={() => setSelectedProduct(product)}>
+    <div
+      onClick={() => setSelectedProduct(product)}
+      style={{ margin: '0 16px 24px', position: 'relative', borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(255,107,32,0.2)', minHeight: 'clamp(180px, 50vw, 280px)', cursor: 'pointer' }}
+    >
+      {/* Image plein fond */}
       {product.image_url && (
-        <img src={product.image_url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', opacity: 0.65 }} />
+        <img src={product.image_url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
       )}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(8,4,0,0.88) 0%, rgba(40,15,0,0.65) 45%, rgba(80,30,0,0.2) 100%)' }} />
-      <div style={{ position: 'relative', zIndex: 2, padding: '20px 18px' }}>
-        <div style={{ fontSize: 9, color: '#FF6B20', letterSpacing: '3px', textTransform: 'uppercase', fontWeight: 700, marginBottom: 10, fontFamily: 'DM Sans, sans-serif' }}>
-          🔥 Populaire du moment
-        </div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
+
+      {/* Dégradé sombre en bas pour lisibilité texte */}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.75) 100%)' }} />
+
+      {/* Badge POPULAIRE en haut à gauche */}
+      <div style={{ position: 'absolute', top: 14, left: 14, zIndex: 3, display: 'flex', alignItems: 'center', gap: 6, background: 'linear-gradient(135deg, #FF6B20, #E8501A)', borderRadius: 50, padding: '5px 12px' }}>
+        <span style={{ fontSize: 10 }}>🔥</span>
+        <span style={{ fontSize: 9, color: '#fff', letterSpacing: '2px', textTransform: 'uppercase', fontWeight: 800, fontFamily: 'DM Sans, sans-serif' }}>Populaire du moment</span>
+      </div>
+
+      {/* Texte en bas */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 2, padding: '16px 18px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 4 }}>
           <div>
-            <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: 'clamp(26px, 8vw, 36px)', color: '#FF6B20' }}>{product.price}</span>
+            <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: 'clamp(26px, 8vw, 36px)', color: '#FF6B20', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>{product.price}</span>
             <span style={{ fontSize: 13, color: '#FF8C42', fontWeight: 600, fontFamily: 'DM Sans, sans-serif', marginLeft: 3 }}>DH</span>
           </div>
-          <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: 'clamp(18px, 5.5vw, 24px)', color: '#F5EDD6', lineHeight: 1.1 }}>{product.name}</div>
+          <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: 'clamp(18px, 5.5vw, 24px)', color: '#fff', lineHeight: 1.1, textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>{product.name}</div>
         </div>
         {product.description && (
-          <div style={{ fontSize: 12, color: '#C8B99A', lineHeight: 1.5, maxWidth: 'min(220px, 55%)', marginBottom: 14 }}>{product.description}</div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5, maxWidth: 'min(280px, 70%)', textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>{product.description}</div>
         )}
-        <div style={{ height: 1, background: 'rgba(255,107,32,0.15)', margin: '12px 0' }} />
-        <div onClick={e => e.stopPropagation()}><FeaturedCardButton product={product} /></div>
+      </div>
+
+      {/* Bouton + */}
+      <div style={{ position: 'absolute', bottom: 16, right: 16, zIndex: 3 }} onClick={e => e.stopPropagation()}>
+        <FeaturedCardButton product={product} />
       </div>
     </div>
     </>
