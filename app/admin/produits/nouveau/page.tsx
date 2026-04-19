@@ -1,10 +1,15 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-const SUBCATS = ['chaudes', 'froides', 'sandwichs_chauds', 'sandwichs_froids', 'salades']
-const SUBCAT_LABELS = { chaudes: 'Boissons Chaudes', froides: 'Boissons Froides', sandwichs_chauds: 'Sandwichs Chauds', sandwichs_froids: 'Sandwichs Froids', salades: 'Salades' }
+const FALLBACK_SUBCATS = [
+  { slug: 'chaudes', name: 'Boissons Chaudes' },
+  { slug: 'froides', name: 'Boissons Froides' },
+  { slug: 'sandwichs_chauds', name: 'Sandwichs Chauds' },
+  { slug: 'sandwichs_froids', name: 'Sandwichs Froids' },
+  { slug: 'salades', name: 'Salades' },
+]
 const inputStyle = { width: '100%', padding: '13px 14px', borderRadius: 12, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontSize: 16, outline: 'none', fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const }
 const labelStyle = { fontSize: 11, fontWeight: 700, color: '#C8B99A', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.8px' }
 
@@ -12,8 +17,15 @@ export default function NouveauProduit() {
   const router = useRouter()
   const supabase = createClient()
   const [form, setForm] = useState({ name: '', description: '', ingredients: '', price: 0, subcategory: 'sandwichs_chauds', image_url: '', active: true })
+  const [subcats, setSubcats] = useState<{ slug: string; name: string }[]>(FALLBACK_SUBCATS)
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    supabase.from('menu_categories').select('slug,name').eq('level', 1).eq('active', true).order('display_order').then(({ data }) => {
+      if (data && data.length > 0) setSubcats(data as { slug: string; name: string }[])
+    })
+  }, [])
 
   const uploadImage = async (file: File) => {
     setUploading(true)
@@ -63,7 +75,7 @@ export default function NouveauProduit() {
         <div>
           <label style={labelStyle}>Sous-catégorie</label>
           <select value={form.subcategory} onChange={e => setForm(f => ({ ...f, subcategory: e.target.value }))} style={{ ...inputStyle, cursor: 'pointer' }}>
-            {SUBCATS.map(s => <option key={s} value={s}>{(SUBCAT_LABELS as any)[s]}</option>)}
+            {subcats.map(s => <option key={s.slug} value={s.slug}>{s.name}</option>)}
           </select>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 10, border: '1px solid rgba(232,160,32,0.1)' }}>
