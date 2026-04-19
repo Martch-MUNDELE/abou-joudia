@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useCart } from '@/store/cart'
+import FeaturesBar from '@/components/FeaturesBar'
 import SlotPicker from '@/components/SlotPicker'
 import PhoneInput from '@/components/PhoneInput'
 
@@ -197,6 +198,7 @@ export default function PanierPage() {
         </div>
       )}
 
+      {step === 'cart' && <FeaturesBar alwaysShow />}
       {/* ══ BARRE STICKY BAS ══ */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'rgba(8,6,3,0.97)', backdropFilter: 'blur(20px)', padding: '16px 20px', zIndex: 40 }}>
         <div style={{ maxWidth: 600, margin: '0 auto' }}>

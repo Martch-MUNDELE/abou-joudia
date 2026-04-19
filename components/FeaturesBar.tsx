@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useCatalogue } from '@/store/catalogue'
 import { createClient } from '@/lib/supabase/client'
 
 type Feature = { icon: string; title: string; desc: string }
@@ -72,7 +73,8 @@ function Icon({ name }: { name: string }) {
   }
 }
 
-export default function FeaturesBar() {
+export default function FeaturesBar({ alwaysShow = false }: { alwaysShow?: boolean }) {
+  const { hasSelected } = useCatalogue()
   const [features, setFeatures] = useState<Feature[]>(DEFAULTS)
   const supabase = createClient()
 
@@ -87,6 +89,8 @@ export default function FeaturesBar() {
       setFeatures(parsed)
     })
   }, [])
+
+  if (!alwaysShow && hasSelected) return null
 
   return (
     <div style={{ display: 'flex', gap: 8, padding: '0 16px', marginBottom: 24 }}>
