@@ -3,15 +3,18 @@ import ProductCard from '@/components/ProductCard'
 import { useCatalogue } from '@/store/catalogue'
 import type { Product } from '@/lib/types'
 
-const GROUPES = [
+type GroupeFilter = { id: string; sous: { id: string }[] }
+
+const GROUPES_FALLBACK: GroupeFilter[] = [
   { id: 'boissons', sous: [{ id: 'chaudes' }, { id: 'froides' }] },
   { id: 'sandwichs', sous: [{ id: 'sandwichs_chauds' }, { id: 'sandwichs_froids' }] },
   { id: 'salades', sous: [] },
 ]
 
-export default function CatalogueClient({ products, isOpen }: { products: Product[], isOpen: boolean }) {
+export default function CatalogueClient({ products, isOpen, groupes: groupesProp }: { products: Product[], isOpen: boolean, groupes?: GroupeFilter[] }) {
   const { activeGroupe, activeSous, hasSelected } = useCatalogue()
-  const groupe = GROUPES.find(g => g.id === activeGroupe)!
+  const groupes = (groupesProp && groupesProp.length > 0) ? groupesProp : GROUPES_FALLBACK
+  const groupe = groupes.find(g => g.id === activeGroupe) ?? { id: activeGroupe, sous: [] as { id: string }[] }
 
   const popularId = products.find(p => p.subcategory === activeSous && p.popular)?.id
   const filtered = (groupe.sous.length === 0

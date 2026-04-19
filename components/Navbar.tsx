@@ -7,7 +7,23 @@ import { useEffect, useState, useRef } from 'react'
 import Logo from '@/components/Logo'
 import { createClient } from '@/lib/supabase/client'
 
-const GROUPES = [
+type GroupeItem = { id: string; label: string; emoji: string; sous: { id: string; label: string; emoji: string }[] }
+
+interface MenuCat {
+  id: string; slug: string; name: string; parent_id: string | null
+  display_order: number; active: boolean; icon_value: string | null; level: number
+}
+
+function buildGroupes(cats: MenuCat[]): GroupeItem[] {
+  const l0 = cats.filter(c => c.level === 0 && c.active).sort((a, b) => a.display_order - b.display_order)
+  const l1 = cats.filter(c => c.level === 1 && c.active).sort((a, b) => a.display_order - b.display_order)
+  return l0.map(g => ({
+    id: g.slug, label: g.name, emoji: g.icon_value ?? g.slug,
+    sous: l1.filter(s => s.parent_id === g.id).map(s => ({ id: s.slug, label: s.name, emoji: s.icon_value ?? s.slug }))
+  }))
+}
+
+const GROUPES: GroupeItem[] = [
   { id: 'boissons', label: 'Boissons', emoji: 'boissons', sous: [{ id: 'chaudes', label: 'Boissons Chaudes', emoji: 'chaudes' }, { id: 'froides', label: 'Boissons Froides', emoji: 'froides' }] },
   { id: 'sandwichs', label: 'Sandwichs', emoji: 'sandwichs', sous: [{ id: 'sandwichs_chauds', label: 'Sandwichs Chauds', emoji: 'chauds' }, { id: 'sandwichs_froids', label: 'Sandwichs Froids', emoji: 'froids' }] },
   { id: 'salades', label: 'Salades', emoji: 'salades', sous: [] },
@@ -35,6 +51,7 @@ export default function Navbar() {
   const pathname = usePathname()
   const isHome = pathname === '/'
   const [openDropdown, setOpenDropdown] = useState(false)
+  const [groupes, setGroupes] = useState<GroupeItem[]>(GROUPES)
   const dropRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -55,6 +72,12 @@ export default function Navbar() {
         }
       })
     })
+    supabase.from('menu_categories').select('*').then(({ data }) => {
+      if (data && data.length > 0) {
+        const built = buildGroupes(data as MenuCat[])
+        if (built.length > 0) setGroupes(built)
+      }
+    })
     const handleClick = (e: MouseEvent) => {
       if (dropRef.current && !dropRef.current.contains(e.target as Node)) setOpenDropdown(false)
     }
@@ -63,16 +86,17 @@ export default function Navbar() {
   }, [])
 
   const handleSelect = (groupeId: string, sousId?: string) => {
-    const g = GROUPES.find(g => g.id === groupeId)!
+    const g = groupes.find(g => g.id === groupeId)
+    if (!g) return
     setGroupe(groupeId, sousId || (g.sous[0]?.id ?? groupeId))
     setHasSelected(true)
     setOpenDropdown(false)
   }
 
-  const groupe = GROUPES.find(g => g.id === activeGroupe)!
-  const currentSous = groupe.sous.find(s => s.id === activeSous)
-  const currentLabel = currentSous ? currentSous.label : groupe.label
-  const currentEmoji = currentSous ? currentSous.emoji : groupe.emoji
+  const groupe = groupes.find(g => g.id === activeGroupe) ?? groupes[0]
+  const currentSous = groupe?.sous.find(s => s.id === activeSous)
+  const currentLabel = currentSous ? currentSous.label : (groupe?.label ?? '')
+  const currentEmoji = currentSous ? currentSous.emoji : (groupe?.emoji ?? '')
 
   return (
     <nav style={{ background: 'rgba(8,6,3,0.94)', backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 50 }}>
@@ -123,7 +147,7 @@ export default function Navbar() {
 
           {openDropdown && (
             <div style={{ position: 'absolute', top: 'calc(100% - 12px)', left: 16, right: 16, background: '#1A1510', border: '1px solid rgba(232,160,32,0.2)', borderRadius: 14, overflow: 'hidden', zIndex: 60, boxShadow: '0 16px 48px rgba(0,0,0,0.6)', maxHeight: 'min(400px, 65vh)', overflowY: 'auto' }}>
-              {GROUPES.map((g, gi) => (
+              {groupes.map((g, gi) => (
                 <div key={g.id}>
                   <div style={{ padding: '10px 16px 6px', fontSize: 10, fontWeight: 700, color: '#C8B99A', letterSpacing: '1.5px', textTransform: 'uppercase' as const, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ color: '#E8A020' }}>{renderIcon(g.emoji, 11)}</span>
@@ -151,7 +175,7 @@ export default function Navbar() {
                       </span>
                     </button>
                   )}
-                  {gi < GROUPES.length - 1 && <div style={{ height: 1, background: 'rgba(232,160,32,0.08)', margin: '4px 0' }} />}
+                  {gi < groupes.length - 1 && <div style={{ height: 1, background: 'rgba(232,160,32,0.08)', margin: '4px 0' }} />}
                 </div>
               ))}
             </div>
