@@ -1,6 +1,14 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import {
+  UtensilsCrossed, Utensils, ChefHat, Pizza, Sandwich, Coffee,
+  CupSoda, Wine, Beer, Soup, Salad, Apple, Beef, Fish, Egg, Cookie, Cake,
+  IceCream, Candy, Carrot, Wheat, Flame, Snowflake, Droplets, Star, Heart,
+  Leaf, Sun, Moon, Clock, MapPin, Home, ShoppingBag, ShoppingCart, Package,
+  Tag, Percent, Gift, Award, Zap, Sparkles, ThumbsUp,
+  type LucideIcon,
+} from 'lucide-react'
 
 type Category = {
   id: string
@@ -24,25 +32,101 @@ type FormState = {
   icon_value: string
 }
 
-const BUILTIN_ICONS = [
-  { value: 'boissons', label: 'Boissons (tasse)' },
-  { value: 'chaudes', label: 'Chaud (flamme)' },
-  { value: 'froides', label: 'Froid (flocon)' },
-  { value: 'sandwichs', label: 'Sandwichs (burger)' },
-  { value: 'chauds', label: 'Chaud (flamme)' },
-  { value: 'froids', label: 'Froid (flocon)' },
-  { value: 'salades', label: 'Salades' },
+const LUCIDE_ICONS: { value: string; label: string; Icon: LucideIcon }[] = [
+  { value: 'Coffee', label: 'Café', Icon: Coffee },
+  { value: 'CupSoda', label: 'Boisson', Icon: CupSoda },
+  { value: 'Wine', label: 'Vin', Icon: Wine },
+  { value: 'Beer', label: 'Bière', Icon: Beer },
+  { value: 'Soup', label: 'Soupe', Icon: Soup },
+  { value: 'Utensils', label: 'Couverts', Icon: Utensils },
+  { value: 'UtensilsCrossed', label: 'Croisés', Icon: UtensilsCrossed },
+  { value: 'ChefHat', label: 'Chef', Icon: ChefHat },
+  { value: 'Pizza', label: 'Pizza', Icon: Pizza },
+  { value: 'Sandwich', label: 'Sandwich', Icon: Sandwich },
+  { value: 'Salad', label: 'Salade', Icon: Salad },
+  { value: 'Apple', label: 'Pomme', Icon: Apple },
+  { value: 'Beef', label: 'Viande', Icon: Beef },
+  { value: 'Fish', label: 'Poisson', Icon: Fish },
+  { value: 'Egg', label: 'Œuf', Icon: Egg },
+  { value: 'Cookie', label: 'Cookie', Icon: Cookie },
+  { value: 'Cake', label: 'Gâteau', Icon: Cake },
+  { value: 'IceCream', label: 'Glace', Icon: IceCream },
+  { value: 'Candy', label: 'Bonbon', Icon: Candy },
+  { value: 'Carrot', label: 'Carotte', Icon: Carrot },
+  { value: 'Wheat', label: 'Blé', Icon: Wheat },
+  { value: 'Flame', label: 'Chaud', Icon: Flame },
+  { value: 'Snowflake', label: 'Froid', Icon: Snowflake },
+  { value: 'Droplets', label: 'Gouttes', Icon: Droplets },
+  { value: 'Leaf', label: 'Feuille', Icon: Leaf },
+  { value: 'Star', label: 'Étoile', Icon: Star },
+  { value: 'Heart', label: 'Cœur', Icon: Heart },
+  { value: 'Sparkles', label: 'Magie', Icon: Sparkles },
+  { value: 'Sun', label: 'Soleil', Icon: Sun },
+  { value: 'Moon', label: 'Lune', Icon: Moon },
+  { value: 'Zap', label: 'Flash', Icon: Zap },
+  { value: 'Award', label: 'Trophée', Icon: Award },
+  { value: 'ThumbsUp', label: 'Top', Icon: ThumbsUp },
+  { value: 'Gift', label: 'Cadeau', Icon: Gift },
+  { value: 'Percent', label: 'Promo', Icon: Percent },
+  { value: 'Tag', label: 'Tag', Icon: Tag },
+  { value: 'Package', label: 'Colis', Icon: Package },
+  { value: 'ShoppingBag', label: 'Sac', Icon: ShoppingBag },
+  { value: 'ShoppingCart', label: 'Panier', Icon: ShoppingCart },
+  { value: 'MapPin', label: 'Lieu', Icon: MapPin },
+  { value: 'Home', label: 'Maison', Icon: Home },
+  { value: 'Clock', label: 'Heure', Icon: Clock },
 ]
 
+const LUCIDE_MAP: Record<string, LucideIcon> = Object.fromEntries(
+  LUCIDE_ICONS.map(i => [i.value, i.Icon])
+)
+
 const renderIcon = (id: string, size = 18): React.ReactNode => {
+  const LIcon = LUCIDE_MAP[id]
+  if (LIcon) return <LIcon size={size} />
+  // Legacy SVG fallbacks for old slug-based values
   const s = size < 20 ? 20 : size
   const flamme = <svg width={s} height={s} viewBox='0 0 38 38' fill='none'><path d='M19 9 C17 14 12 17 12 22 C12 27.5 15 32 19 33 C23 32 26 27.5 26 22 C26 17 21 14 19 9Z' stroke='currentColor' strokeWidth='2' fill='rgba(232,160,32,0.2)' strokeLinecap='round' strokeLinejoin='round'/></svg>
   const flocon = <svg width={s} height={s} viewBox='0 0 40 40' fill='none'><line x1='20' y1='4' x2='20' y2='36' stroke='currentColor' strokeWidth='2.2' strokeLinecap='round'/><line x1='4' y1='20' x2='36' y2='20' stroke='currentColor' strokeWidth='2.2' strokeLinecap='round'/><line x1='8' y1='8' x2='32' y2='32' stroke='currentColor' strokeWidth='2.2' strokeLinecap='round'/><line x1='32' y1='8' x2='8' y2='32' stroke='currentColor' strokeWidth='2.2' strokeLinecap='round'/><circle cx='20' cy='20' r='2.5' fill='currentColor'/></svg>
   const burger = <svg width={s} height={s} viewBox='0 0 40 40' fill='none'><path d='M8 19 Q8 7 20 7 Q32 7 32 19Z' stroke='currentColor' strokeWidth='2' fill='rgba(232,160,32,0.15)' strokeLinecap='round' strokeLinejoin='round'/><path d='M7 21 Q10 18.5 13 21 Q16 18.5 20 21 Q24 18.5 27 21 Q30 18.5 33 21' stroke='currentColor' strokeWidth='2' fill='none' strokeLinecap='round'/><rect x='8' y='23' width='24' height='3.5' rx='1.8' stroke='currentColor' strokeWidth='2' fill='rgba(232,160,32,0.15)'/><path d='M8 28.5 Q8 35 20 35 Q32 35 32 28.5Z' stroke='currentColor' strokeWidth='2' fill='rgba(232,160,32,0.15)' strokeLinecap='round' strokeLinejoin='round'/></svg>
   const tasse = <svg width={s} height={s} viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M17 8h1a4 4 0 0 1 0 8h-1'/><path d='M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z'/><line x1='6' y1='2' x2='6' y2='4'/><line x1='10' y1='2' x2='10' y2='4'/><line x1='14' y1='2' x2='14' y2='4'/></svg>
   const salade = <svg width={s} height={s} viewBox='0 0 38 38' fill='none'><path d='M19 4 C21 4 23 5 23 7 C25 5 28 6 28 9 C31 8 33 11 31 14 C34 14 35 18 33 20 C35 22 33 26 30 26 C31 29 29 32 26 31 C25 34 22 35 19 34 C16 35 13 34 12 31 C9 32 7 29 8 26 C5 26 3 22 5 20 C3 18 4 14 7 14 C5 11 7 8 10 9 C10 6 13 5 15 7 C15 5 17 4 19 4Z' stroke='currentColor' strokeWidth='2' fill='rgba(232,160,32,0.1)' strokeLinejoin='round'/><circle cx='19' cy='19' r='2.5' fill='currentColor' opacity='0.85'/></svg>
-  const map: Record<string, React.ReactNode> = { boissons: tasse, chaudes: flamme, froides: flocon, sandwichs: burger, chauds: flamme, froids: flocon, salades: salade }
-  return map[id] ?? null
+  const legacy: Record<string, React.ReactNode> = { boissons: tasse, chaudes: flamme, froides: flocon, sandwichs: burger, chauds: flamme, froids: flocon, salades: salade }
+  return legacy[id] ?? null
+}
+
+function IconGrid({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div style={{ maxHeight: 280, overflowY: 'auto', border: '1px solid rgba(232,160,32,0.15)', borderRadius: 10, padding: 8, background: 'rgba(255,255,255,0.02)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 4 }}>
+        {LUCIDE_ICONS.map(({ value: v, label, Icon }) => {
+          const selected = value === v
+          return (
+            <button
+              key={v}
+              type="button"
+              onClick={() => onChange(v)}
+              title={label}
+              style={{
+                width: 44, height: 44, borderRadius: 8,
+                border: selected ? '1.5px solid #F5C842' : '1px solid rgba(232,160,32,0.1)',
+                background: selected ? 'rgba(245,200,66,0.15)' : 'transparent',
+                cursor: 'pointer', display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', gap: 2,
+                color: selected ? '#F5C842' : '#C8B99A', padding: 3,
+                transition: 'border-color 0.1s, background 0.1s',
+              }}
+            >
+              <Icon size={20} />
+              <span style={{ fontSize: 7, lineHeight: 1, textAlign: 'center', fontFamily: 'DM Sans, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 38 }}>
+                {label}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 const slugify = (s: string) =>
@@ -51,7 +135,7 @@ const slugify = (s: string) =>
     .replace(/[ôö]/g, 'o').replace(/[îï]/g, 'i').replace(/ç/g, 'c')
     .replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
 
-const EMPTY_FORM: FormState = { name: '', slug: '', parent_id: '', display_order: '0', active: true, icon_type: 'builtin', icon_value: 'boissons' }
+const EMPTY_FORM: FormState = { name: '', slug: '', parent_id: '', display_order: '0', active: true, icon_type: 'builtin', icon_value: 'Coffee' }
 
 const INP: React.CSSProperties = { width: '100%', padding: '10px 14px', borderRadius: 10, background: '#1A1510', border: '1px solid rgba(232,160,32,0.2)', color: '#F5EDD6', fontFamily: 'DM Sans, sans-serif', fontSize: 13, outline: 'none', boxSizing: 'border-box' }
 const LBL: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 6, display: 'block' }
@@ -88,13 +172,25 @@ function CatRow({ cat, indent = false, onEdit, onDelete }: { cat: Category; inde
   )
 }
 
+const INP_SM: React.CSSProperties = { width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontSize: 13, outline: 'none', fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' }
+
 export default function MenuAdmin() {
   const [cats, setCats] = useState<Category[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
-  const [iconFile, setIconFile] = useState<File | null>(null)
+  const [uploadingIcon, setUploadingIcon] = useState(false)
+  const [iconUploadError, setIconUploadError] = useState('')
+
+  const [menuPlaceholder, setMenuPlaceholder] = useState("Qu'est-ce qui te fait envie ?")
+  const [menuPlaceholderIcon, setMenuPlaceholderIcon] = useState('')
+  const [menuPlaceholderIconType, setMenuPlaceholderIconType] = useState<'builtin' | 'custom'>('builtin')
+  const [menuPlaceholderBuiltinIcon, setMenuPlaceholderBuiltinIcon] = useState('Coffee')
+  const [uploadingMenuIcon, setUploadingMenuIcon] = useState(false)
+  const [savingPlaceholder, setSavingPlaceholder] = useState(false)
+  const [savedPlaceholder, setSavedPlaceholder] = useState(false)
+
   const supabase = createClient()
 
   const load = async () => {
@@ -102,22 +198,89 @@ export default function MenuAdmin() {
     setCats((data as Category[]) || [])
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    supabase.from('settings').select('*').then(({ data }) => {
+      data?.forEach((s: { key: string; value: string }) => {
+        if (s.key === 'menu_placeholder') setMenuPlaceholder(s.value)
+        if (s.key === 'menu_placeholder_icon') setMenuPlaceholderIcon(s.value)
+        if (s.key === 'menu_placeholder_icon_type') setMenuPlaceholderIconType(s.value as 'builtin' | 'custom')
+        if (s.key === 'menu_placeholder_builtin_icon') setMenuPlaceholderBuiltinIcon(s.value)
+      })
+    })
+  }, [])
 
   const parents = cats.filter(c => c.level === 0).sort((a, b) => a.display_order - b.display_order)
   const childrenOf = (pid: string) => cats.filter(c => c.parent_id === pid).sort((a, b) => a.display_order - b.display_order)
 
-  const openNew = () => { setEditingId(null); setForm(EMPTY_FORM); setIconFile(null); setShowForm(true) }
+  const openNew = () => { setEditingId(null); setForm(EMPTY_FORM); setIconUploadError(''); setShowForm(true) }
   const openEdit = (cat: Category) => {
     setEditingId(cat.id)
     setForm({ name: cat.name, slug: cat.slug, parent_id: cat.parent_id ?? '', display_order: String(cat.display_order), active: cat.active, icon_type: cat.icon_type, icon_value: cat.icon_value })
-    setIconFile(null)
+    setIconUploadError('')
     setShowForm(true)
   }
-  const closeForm = () => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); setIconFile(null) }
+  const closeForm = () => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); setIconUploadError('') }
 
   const setField = (k: keyof FormState, v: string | boolean) =>
-    setForm(f => ({ ...f, [k]: v, ...(k === 'name' ? { slug: slugify(v as string) } : {}) }))
+    setForm(f => ({
+      ...f,
+      [k]: v,
+      ...(k === 'name' ? { slug: slugify(v as string) } : {}),
+      ...(k === 'icon_type' ? { icon_value: v === 'builtin' ? 'Coffee' : '' } : {}),
+    }))
+
+  const uploadMenuPlaceholderIcon = async (file: File) => {
+    if (file.size > 200 * 1024) { alert('Fichier trop lourd (max 200 KB)'); return }
+    setUploadingMenuIcon(true)
+    const ext = file.name.split('.').pop() ?? 'png'
+    const fileName = `menu-placeholder-icon-${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from('menu-icons').upload(fileName, file, { upsert: true })
+    if (!error) {
+      const { data } = supabase.storage.from('menu-icons').getPublicUrl(fileName)
+      setMenuPlaceholderIcon(data.publicUrl)
+      await supabase.from('settings').upsert({ key: 'menu_placeholder_icon', value: data.publicUrl })
+    }
+    setUploadingMenuIcon(false)
+  }
+
+  const saveMenuPlaceholder = async () => {
+    setSavingPlaceholder(true)
+    await Promise.all([
+      supabase.from('settings').upsert({ key: 'menu_placeholder', value: menuPlaceholder }),
+      supabase.from('settings').upsert({ key: 'menu_placeholder_icon', value: menuPlaceholderIcon }),
+      supabase.from('settings').upsert({ key: 'menu_placeholder_icon_type', value: menuPlaceholderIconType }),
+      supabase.from('settings').upsert({ key: 'menu_placeholder_builtin_icon', value: menuPlaceholderBuiltinIcon }),
+    ])
+    setSavingPlaceholder(false)
+    setSavedPlaceholder(true)
+    setTimeout(() => setSavedPlaceholder(false), 2000)
+  }
+
+  const handleIconFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setIconUploadError('')
+    if (file.size > 500 * 1024) {
+      setIconUploadError('Fichier trop lourd (max 500 KB)')
+      return
+    }
+    if (!file.type.startsWith('image/')) {
+      setIconUploadError('Format invalide (PNG/SVG recommandé)')
+      return
+    }
+    setUploadingIcon(true)
+    try {
+      const ext = file.name.split('.').pop() ?? 'png'
+      const path = `menu-icon-${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage.from('menu-icons').upload(path, file, { upsert: true })
+      if (upErr) { setIconUploadError('Erreur upload : ' + upErr.message); return }
+      const { data: urlData } = supabase.storage.from('menu-icons').getPublicUrl(path)
+      setField('icon_value', urlData.publicUrl)
+    } finally {
+      setUploadingIcon(false)
+    }
+  }
 
   const del = async (id: string) => {
     if (!window.confirm('Supprimer cette catégorie ?')) return
@@ -130,15 +293,6 @@ export default function MenuAdmin() {
     if (!form.name.trim() || !form.slug.trim()) return
     setSaving(true)
     try {
-      let icon_value = form.icon_value
-      if (form.icon_type === 'custom' && iconFile) {
-        const ext = iconFile.name.split('.').pop()
-        const path = `${form.slug}-${Date.now()}.${ext}`
-        const { error: upErr } = await supabase.storage.from('menu-icons').upload(path, iconFile, { upsert: true })
-        if (upErr) { alert('Erreur upload : ' + upErr.message); return }
-        const { data: urlData } = supabase.storage.from('menu-icons').getPublicUrl(path)
-        icon_value = urlData.publicUrl
-      }
       const level = form.parent_id ? 1 : 0
       const payload = {
         slug: form.slug,
@@ -147,7 +301,7 @@ export default function MenuAdmin() {
         display_order: parseInt(form.display_order) || 0,
         active: form.active,
         icon_type: form.icon_type,
-        icon_value,
+        icon_value: form.icon_value,
         level,
       }
       let saveError = null
@@ -172,6 +326,55 @@ export default function MenuAdmin() {
         <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 900, color: '#F5EDD6' }}>Menu</h1>
         <button onClick={openNew} style={{ padding: '9px 18px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>
           + Ajouter
+        </button>
+      </div>
+
+      {/* MENU — BOUTON PRINCIPAL */}
+      <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 28 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Menu — Bouton principal</div>
+
+        <label style={LBL}>Texte du placeholder</label>
+        <input type="text" value={menuPlaceholder} onChange={e => setMenuPlaceholder(e.target.value)} style={{ ...INP_SM, marginBottom: 14 }} />
+
+        <label style={LBL}>Type d&apos;icône</label>
+        <select
+          value={menuPlaceholderIconType}
+          onChange={e => setMenuPlaceholderIconType(e.target.value as 'builtin' | 'custom')}
+          style={{ ...INP_SM, marginBottom: 14, cursor: 'pointer' }}
+        >
+          <option value="builtin">Icône intégrée</option>
+          <option value="custom">Image personnalisée</option>
+        </select>
+
+        {menuPlaceholderIconType === 'builtin' ? (
+          <>
+            <label style={LBL}>Icône</label>
+            <div style={{ marginBottom: 14 }}>
+              <IconGrid value={menuPlaceholderBuiltinIcon} onChange={setMenuPlaceholderBuiltinIcon} />
+            </div>
+          </>
+        ) : (
+          <>
+            <label style={LBL}>Icône du placeholder (PNG/SVG, max 200 KB)</label>
+            {menuPlaceholderIcon && (
+              <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <img src={menuPlaceholderIcon} alt="Icône placeholder" style={{ width: 32, height: 32, objectFit: 'contain', borderRadius: 8, background: 'rgba(232,160,32,0.1)', padding: 4 }} />
+                <button onClick={() => setMenuPlaceholderIcon('')} style={{ background: 'transparent', color: '#FF6B6B', border: '1px solid rgba(255,107,107,0.3)', borderRadius: 8, padding: '4px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Supprimer</button>
+              </div>
+            )}
+            <label style={{ display: 'block', width: '100%', padding: '14px', borderRadius: 10, border: '1.5px dashed rgba(232,160,32,0.25)', background: 'rgba(232,160,32,0.03)', color: uploadingMenuIcon ? '#C8B99A' : '#E8A020', cursor: uploadingMenuIcon ? 'wait' : 'pointer', textAlign: 'center', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box', marginBottom: 14 }}>
+              {uploadingMenuIcon ? 'Upload en cours...' : 'Choisir une icône (PNG/SVG)'}
+              <input type="file" accept="image/png,image/svg+xml" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadMenuPlaceholderIcon(e.target.files[0]) }} />
+            </label>
+          </>
+        )}
+
+        <button
+          onClick={saveMenuPlaceholder}
+          disabled={savingPlaceholder}
+          style={{ padding: '10px 24px', borderRadius: 50, border: savedPlaceholder ? '1px solid rgba(91,197,122,0.3)' : 'none', background: savedPlaceholder ? 'rgba(91,197,122,0.15)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', color: savedPlaceholder ? '#5BC57A' : '#0A0804', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 13, cursor: savingPlaceholder ? 'wait' : 'pointer' }}
+        >
+          {savedPlaceholder ? 'Enregistré' : savingPlaceholder ? 'Enregistrement...' : 'Enregistrer'}
         </button>
       </div>
 
@@ -205,42 +408,39 @@ export default function MenuAdmin() {
               <label style={LBL}>Ordre d&apos;affichage</label>
               <input type="number" min={0} value={form.display_order} onChange={e => setField('display_order', e.target.value)} style={INP} />
             </div>
-            <div>
+
+            {/* Icon type — full width */}
+            <div style={{ gridColumn: '1/-1' }}>
               <label style={LBL}>Type d&apos;icône</label>
-              <select value={form.icon_type} onChange={e => setField('icon_type', e.target.value)} style={{ ...INP, cursor: 'pointer' }}>
+              <select value={form.icon_type} onChange={e => { setField('icon_type', e.target.value); setIconUploadError('') }} style={{ ...INP, cursor: 'pointer' }}>
                 <option value="builtin">Icône intégrée</option>
                 <option value="custom">Image personnalisée</option>
               </select>
             </div>
-            <div>
+
+            {/* Icon picker — full width */}
+            <div style={{ gridColumn: '1/-1' }}>
               <label style={LBL}>Icône</label>
               {form.icon_type === 'builtin' ? (
-                <select value={form.icon_value} onChange={e => setField('icon_value', e.target.value)} style={{ ...INP, cursor: 'pointer' }}>
-                  {BUILTIN_ICONS.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
-                </select>
+                <IconGrid value={form.icon_value} onChange={v => setField('icon_value', v)} />
               ) : (
-                <input type="file" accept="image/*" onChange={e => setIconFile(e.target.files?.[0] ?? null)} style={{ ...INP, padding: '8px 14px' }} />
+                <>
+                  <input type="file" accept="image/png,image/svg+xml,image/*" onChange={handleIconFileChange} disabled={uploadingIcon} style={{ ...INP, padding: '8px 14px' }} />
+                  {uploadingIcon && <div style={{ fontSize: 11, color: '#C8B99A', marginTop: 4, fontFamily: 'DM Sans, sans-serif' }}>Upload en cours…</div>}
+                  {iconUploadError && <div style={{ fontSize: 11, color: '#FF6B6B', marginTop: 4, fontFamily: 'DM Sans, sans-serif' }}>{iconUploadError}</div>}
+                  {form.icon_value && !uploadingIcon && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+                      <img src={form.icon_value} width={32} height={32} style={{ objectFit: 'contain', borderRadius: 8, border: '1px solid rgba(232,160,32,0.2)' }} alt="" />
+                      <span style={{ fontSize: 12, color: '#C8B99A', fontFamily: 'DM Sans, sans-serif' }}>Aperçu icône</span>
+                    </div>
+                  )}
+                </>
               )}
             </div>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <input type="checkbox" id="cat-active" checked={form.active} onChange={e => setField('active', e.target.checked)} style={{ width: 16, height: 16, accentColor: '#F5C842', cursor: 'pointer' }} />
               <label htmlFor="cat-active" style={{ ...LBL, marginBottom: 0, cursor: 'pointer' }}>Catégorie active</label>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {form.icon_type === 'builtin' && form.icon_value && (
-                <>
-                  <div style={{ display: 'inline-flex', width: 36, height: 36, borderRadius: 10, background: 'rgba(232,160,32,0.1)', border: '1px solid rgba(232,160,32,0.2)', alignItems: 'center', justifyContent: 'center', color: '#E8A020' }}>
-                    {renderIcon(form.icon_value, 18)}
-                  </div>
-                  <span style={{ fontSize: 12, color: '#C8B99A', fontFamily: 'DM Sans, sans-serif' }}>Aperçu icône</span>
-                </>
-              )}
-              {form.icon_type === 'custom' && form.icon_value && !iconFile && (
-                <>
-                  <img src={form.icon_value} style={{ width: 36, height: 36, objectFit: 'contain', borderRadius: 8, border: '1px solid rgba(232,160,32,0.2)' }} alt="" />
-                  <span style={{ fontSize: 12, color: '#C8B99A', fontFamily: 'DM Sans, sans-serif' }}>Icône actuelle</span>
-                </>
-              )}
             </div>
           </div>
 
@@ -248,7 +448,7 @@ export default function MenuAdmin() {
             <button onClick={closeForm} style={{ padding: '10px 22px', borderRadius: 10, border: '1px solid rgba(232,160,32,0.2)', background: 'transparent', color: '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
               Annuler
             </button>
-            <button onClick={save} disabled={saving} style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: saving ? 'rgba(245,200,66,0.3)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 13, cursor: saving ? 'not-allowed' : 'pointer' }}>
+            <button onClick={save} disabled={saving || uploadingIcon} style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: (saving || uploadingIcon) ? 'rgba(245,200,66,0.3)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 13, cursor: (saving || uploadingIcon) ? 'not-allowed' : 'pointer' }}>
               {saving ? 'Enregistrement…' : editingId ? 'Mettre à jour' : 'Créer'}
             </button>
           </div>
