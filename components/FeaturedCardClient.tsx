@@ -22,7 +22,7 @@ export default function FeaturedCardClient({ product, allProducts }: { product: 
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.75) 100%)' }} />
 
         {/* Badge Signature en haut à gauche */}
-        <div style={{ position: 'absolute', top: 14, left: 14, zIndex: 3, display: 'flex', alignItems: 'center', gap: 6, background: 'linear-gradient(135deg, rgba(245,200,66,0.25), rgba(232,160,32,0.2))', border: '1px solid rgba(245,200,66,0.4)', borderRadius: 50, padding: '5px 12px', backdropFilter: 'blur(8px)' }}>
+        <div style={{ position: 'absolute', top: 14, left: 14, zIndex: 3, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(10,8,4,0.75)', border: '1px solid rgba(245,200,66,0.5)', borderRadius: 50, padding: '5px 12px', backdropFilter: 'blur(10px)' }}>
           <span style={{ color: '#F5C842', fontSize: 10 }}>✦</span>
           <span style={{ fontSize: 9, color: '#F5C842', letterSpacing: '2px', textTransform: 'uppercase', fontWeight: 800, fontFamily: 'DM Sans, sans-serif' }}>Signature du moment</span>
         </div>

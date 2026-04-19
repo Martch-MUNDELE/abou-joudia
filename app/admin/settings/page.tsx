@@ -5,6 +5,19 @@ import { createClient } from '@/lib/supabase/client'
 const labelStyle = { fontSize: 11, fontWeight: 700, color: '#C8B99A', display: 'block', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.8px' }
 const inputStyle = { width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontSize: 13, outline: 'none', fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const }
 
+type Feature = { icon: string; title: string; desc: string }
+
+const ICON_OPTIONS = [
+  { value: 'chef', label: 'Toque — Chef' },
+  { value: 'delivery', label: 'Scooter — Livraison' },
+  { value: 'fresh', label: 'Panier — Frais' },
+  { value: 'star', label: 'Étoile' },
+  { value: 'clock', label: 'Horloge' },
+  { value: 'heart', label: 'Cœur' },
+  { value: 'shield', label: 'Bouclier qualité' },
+  { value: 'fire', label: 'Flamme' },
+]
+
 export default function SettingsAdmin() {
   const [status, setStatus] = useState('open')
   const [statusMessage, setStatusMessage] = useState('')
@@ -17,6 +30,9 @@ export default function SettingsAdmin() {
   const [siteLogo, setSiteLogo] = useState('')
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [logoDimensions, setLogoDimensions] = useState<{w:number,h:number}|null>(null)
+  const [feature1, setFeature1] = useState<Feature>({ icon: 'chef', title: 'Préparé à Agadir', desc: 'Par chez vous à Agadir, repas cuisinés avec soin par nos équipes.' })
+  const [feature2, setFeature2] = useState<Feature>({ icon: 'delivery', title: 'Livraison rapide', desc: 'On vous livre rapidement et directement à votre porte.' })
+  const [feature3, setFeature3] = useState<Feature>({ icon: 'fresh', title: 'Frais du jour', desc: 'Profitez de produits toujours frais, choisis chaque jour.' })
   const supabase = createClient()
 
   useEffect(() => {
@@ -28,6 +44,9 @@ export default function SettingsAdmin() {
         if (s.key === 'site_name') setSiteName(s.value)
         if (s.key === 'site_baseline') setSiteBaseline(s.value)
         if (s.key === 'site_logo') setSiteLogo(s.value)
+        if (s.key === 'feature_1') { try { setFeature1(JSON.parse(s.value)) } catch {} }
+        if (s.key === 'feature_2') { try { setFeature2(JSON.parse(s.value)) } catch {} }
+        if (s.key === 'feature_3') { try { setFeature3(JSON.parse(s.value)) } catch {} }
       })
     })
   }, [])
@@ -71,6 +90,9 @@ export default function SettingsAdmin() {
       supabase.from('settings').upsert({ key: 'site_name', value: siteName }),
       supabase.from('settings').upsert({ key: 'site_baseline', value: siteBaseline }),
       supabase.from('settings').upsert({ key: 'site_logo', value: siteLogo }),
+      supabase.from('settings').upsert({ key: 'feature_1', value: JSON.stringify(feature1) }),
+      supabase.from('settings').upsert({ key: 'feature_2', value: JSON.stringify(feature2) }),
+      supabase.from('settings').upsert({ key: 'feature_3', value: JSON.stringify(feature3) }),
     ])
     setSaving(false)
     setSaved(true)
@@ -153,6 +175,50 @@ export default function SettingsAdmin() {
           {uploading ? 'Upload en cours...' : 'Choisir une photo depuis votre tel ou ordinateur'}
           <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadHeroImage(e.target.files[0]) }} />
         </label>
+      </div>
+
+      {/* ARGUMENTS PRODUIT */}
+      <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Arguments produit</div>
+
+        {/* Argument 1 */}
+        <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid rgba(232,160,32,0.08)' }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#E8A020', marginBottom: 10 }}>Argument 1</div>
+          <label style={labelStyle}>Icône</label>
+          <select value={feature1.icon} onChange={e => setFeature1({ ...feature1, icon: e.target.value })} style={{ ...inputStyle, marginBottom: 10, cursor: 'pointer' }}>
+            {ICON_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          <label style={labelStyle}>Titre</label>
+          <input type="text" value={feature1.title} onChange={e => setFeature1({ ...feature1, title: e.target.value })} style={{ ...inputStyle, marginBottom: 10 }} />
+          <label style={labelStyle}>Description</label>
+          <textarea value={feature1.desc} onChange={e => setFeature1({ ...feature1, desc: e.target.value })} rows={2} style={{ ...inputStyle, resize: 'vertical' as const }} />
+        </div>
+
+        {/* Argument 2 */}
+        <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid rgba(232,160,32,0.08)' }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#E8A020', marginBottom: 10 }}>Argument 2</div>
+          <label style={labelStyle}>Icône</label>
+          <select value={feature2.icon} onChange={e => setFeature2({ ...feature2, icon: e.target.value })} style={{ ...inputStyle, marginBottom: 10, cursor: 'pointer' }}>
+            {ICON_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          <label style={labelStyle}>Titre</label>
+          <input type="text" value={feature2.title} onChange={e => setFeature2({ ...feature2, title: e.target.value })} style={{ ...inputStyle, marginBottom: 10 }} />
+          <label style={labelStyle}>Description</label>
+          <textarea value={feature2.desc} onChange={e => setFeature2({ ...feature2, desc: e.target.value })} rows={2} style={{ ...inputStyle, resize: 'vertical' as const }} />
+        </div>
+
+        {/* Argument 3 */}
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#E8A020', marginBottom: 10 }}>Argument 3</div>
+          <label style={labelStyle}>Icône</label>
+          <select value={feature3.icon} onChange={e => setFeature3({ ...feature3, icon: e.target.value })} style={{ ...inputStyle, marginBottom: 10, cursor: 'pointer' }}>
+            {ICON_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          <label style={labelStyle}>Titre</label>
+          <input type="text" value={feature3.title} onChange={e => setFeature3({ ...feature3, title: e.target.value })} style={{ ...inputStyle, marginBottom: 10 }} />
+          <label style={labelStyle}>Description</label>
+          <textarea value={feature3.desc} onChange={e => setFeature3({ ...feature3, desc: e.target.value })} rows={2} style={{ ...inputStyle, resize: 'vertical' as const }} />
+        </div>
       </div>
 
       {/* SAVE */}

@@ -3,6 +3,7 @@ import ProductCard from '@/components/ProductCard'
 import CatalogueClient from '@/components/CatalogueClient'
 import FeaturedCard from '@/components/FeaturedCard'
 import PopularCard from '@/components/PopularCard'
+import FeaturesBar from '@/components/FeaturesBar'
 import type { Product } from '@/lib/types'
 
 export const revalidate = 0
@@ -22,6 +23,9 @@ export default async function HomePage() {
 
       {/* FEATURED ou POPULAR selon sélection */}
       {isOpen && <PopularCard fallback={<FeaturedCard />} />}
+
+      {/* 3 ARGUMENTS */}
+      {isOpen && <FeaturesBar />}
 
       {/* CATALOGUE avec sous-menus */}
       {isOpen && <CatalogueClient products={products || []} isOpen={isOpen} />}
