@@ -5,16 +5,21 @@ import { useCatalogue } from '@/store/catalogue'
 import { createClient } from '@/lib/supabase/client'
 import type { Product } from '@/lib/types'
 import FeaturedCardButton from '@/components/FeaturedCardButton'
+import ProductOverlay from '@/components/ProductOverlay'
 
 export default function PopularCard({ fallback }: { fallback?: React.ReactNode }) {
   const { activeSous, hasSelected } = useCatalogue()
   const [product, setProduct] = useState<Product | null>(null)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [allProducts, setAllProducts] = useState<Product[]>([])
 
   useEffect(() => {
     if (!hasSelected) { setProduct(null); return }
     const supabase = createClient()
-    supabase.from('products').select('*').eq('popular', true).eq('subcategory', activeSous).single().then(({ data }) => {
-      setProduct(data as Product | null)
+    supabase.from('products').select('*').eq('subcategory', activeSous).eq('active', true).then(({ data }) => {
+      const all = (data as Product[]) || []
+      setAllProducts(all)
+      setProduct(all.find(p => p.popular) || null)
     })
   }, [activeSous, hasSelected])
 
@@ -22,7 +27,9 @@ export default function PopularCard({ fallback }: { fallback?: React.ReactNode }
   if (!product) return null
 
   return (
-    <div style={{ margin: '0 16px 24px', position: 'relative', borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(255,107,32,0.25)', minHeight: 'clamp(180px, 50vw, 280px)' }}>
+    <>
+    {selectedProduct && <ProductOverlay product={selectedProduct} allProducts={allProducts} onClose={() => setSelectedProduct(null)} />}
+    <div style={{ margin: '0 16px 24px', position: 'relative', borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(255,107,32,0.25)', minHeight: 'clamp(180px, 50vw, 280px)', cursor: 'pointer' }} onClick={() => setSelectedProduct(product)}>
       {product.image_url && (
         <img src={product.image_url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', opacity: 0.65 }} />
       )}
@@ -42,8 +49,9 @@ export default function PopularCard({ fallback }: { fallback?: React.ReactNode }
           <div style={{ fontSize: 12, color: '#C8B99A', lineHeight: 1.5, maxWidth: 'min(220px, 55%)', marginBottom: 14 }}>{product.description}</div>
         )}
         <div style={{ height: 1, background: 'rgba(255,107,32,0.15)', margin: '12px 0' }} />
-        <FeaturedCardButton product={product} />
+        <div onClick={e => e.stopPropagation()}><FeaturedCardButton product={product} /></div>
       </div>
     </div>
+    </>
   )
 }
