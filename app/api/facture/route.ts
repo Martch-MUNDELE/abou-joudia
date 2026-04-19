@@ -4,7 +4,6 @@ import { renderToBuffer } from '@react-pdf/renderer'
 import { FacturePDF } from '@/lib/pdf'
 import { Resend } from 'resend'
 
-
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -15,7 +14,12 @@ export async function POST(req: NextRequest) {
   const { order_id } = await req.json()
 
   const { data: order } = await supabase.from('orders').select('*, delivery_slots(*), order_items(*)').eq('id', order_id).single()
-  if (!order || !order.customer_email) return NextResponse.json({ error: 'Pas d\'email' }, { status: 400 })
+  if (!order || !order.customer_email) return NextResponse.json({ error: "Pas d'email" }, { status: 400 })
+
+  const { data: settings } = await supabase.from('settings').select('*')
+  const logoUrl = settings?.find((s: any) => s.key === 'site_logo')?.value || ''
+  const siteName = settings?.find((s: any) => s.key === 'site_name')?.value || 'Abou Joudia'
+  const siteBaseline = settings?.find((s: any) => s.key === 'site_baseline')?.value || 'AGADIR · LIVRAISON'
 
   const pdfBuffer = await renderToBuffer(
     FacturePDF({ order, items: order.order_items, slot: order.delivery_slots }) as any
@@ -24,7 +28,7 @@ export async function POST(req: NextRequest) {
   await resend.emails.send({
     from: 'Abou Joudia <onboarding@resend.dev>',
     to: order.customer_email,
-    subject: `🧾 Votre facture Abou Joudia — ${order.total.toFixed(2)} DH`,
+    subject: `🧾 Votre facture ${siteName} — ${order.total.toFixed(2)} DH`,
     html: `<!DOCTYPE html>
 <html>
 <body style="margin:0;padding:0;background:#0A0804;font-family:'Helvetica Neue',Arial,sans-serif">
@@ -34,12 +38,12 @@ export async function POST(req: NextRequest) {
     <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid rgba(232,160,32,0.15);padding-bottom:20px;margin-bottom:0">
       <tr>
         <td width="56" valign="middle">
-          <img src="https://nrpsqvmdmsfekemtrbcz.supabase.co/storage/v1/object/public/products/logo-abou-joudia.png" alt="Abou Joudia" width="52" height="52" style="border-radius:10px;display:block" onerror="this.style.display='none'" />
+          <img src="${logoUrl}" alt="${siteName}" width="52" height="52" style="display:block" onerror="this.style.display='none'" />
         </td>
         <td width="12"></td>
         <td valign="middle">
-          <div style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#F5C842;letter-spacing:-0.5px;line-height:1">Abou Joudia</div>
-          <div style="font-size:9px;color:#C8B99A;letter-spacing:3px;text-transform:uppercase;margin-top:4px">Agadir · Livraison</div>
+          <div style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#F5C842;letter-spacing:-0.5px;line-height:1">${siteName}</div>
+          <div style="font-size:9px;color:#C8B99A;letter-spacing:3px;text-transform:uppercase;margin-top:4px">${siteBaseline}</div>
         </td>
       </tr>
     </table>
@@ -64,7 +68,7 @@ export async function POST(req: NextRequest) {
     <!-- FOOTER -->
     <div style="border-top:1px solid rgba(232,160,32,0.1);padding-top:20px;text-align:center">
       <div style="font-size:11px;color:#555;line-height:1.8">
-        Abou Joudia — Agadir, Maroc<br>
+        ${siteName} — Agadir, Maroc<br>
         <span style="color:#E8A020">Saveurs du Souss, livrées chez toi.</span>
       </div>
     </div>
