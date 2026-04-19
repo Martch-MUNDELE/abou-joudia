@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   UtensilsCrossed, Utensils, ChefHat, Pizza, Sandwich, Coffee,
@@ -84,7 +84,6 @@ const LUCIDE_MAP: Record<string, LucideIcon> = Object.fromEntries(
 const renderIcon = (id: string, size = 18): React.ReactNode => {
   const LIcon = LUCIDE_MAP[id]
   if (LIcon) return <LIcon size={size} />
-  // Legacy SVG fallbacks for old slug-based values
   const s = size < 20 ? 20 : size
   const flamme = <svg width={s} height={s} viewBox='0 0 38 38' fill='none'><path d='M19 9 C17 14 12 17 12 22 C12 27.5 15 32 19 33 C23 32 26 27.5 26 22 C26 17 21 14 19 9Z' stroke='currentColor' strokeWidth='2' fill='rgba(232,160,32,0.2)' strokeLinecap='round' strokeLinejoin='round'/></svg>
   const flocon = <svg width={s} height={s} viewBox='0 0 40 40' fill='none'><line x1='20' y1='4' x2='20' y2='36' stroke='currentColor' strokeWidth='2.2' strokeLinecap='round'/><line x1='4' y1='20' x2='36' y2='20' stroke='currentColor' strokeWidth='2.2' strokeLinecap='round'/><line x1='8' y1='8' x2='32' y2='32' stroke='currentColor' strokeWidth='2.2' strokeLinecap='round'/><line x1='32' y1='8' x2='8' y2='32' stroke='currentColor' strokeWidth='2.2' strokeLinecap='round'/><circle cx='20' cy='20' r='2.5' fill='currentColor'/></svg>
@@ -142,10 +141,56 @@ const LBL: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: '#C8B99
 
 const IconEdit = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
 const IconTrash = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+const IconGrip = () => (
+  <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
+    <circle cx="2.5" cy="2" r="1.5"/>
+    <circle cx="7.5" cy="2" r="1.5"/>
+    <circle cx="2.5" cy="7" r="1.5"/>
+    <circle cx="7.5" cy="7" r="1.5"/>
+    <circle cx="2.5" cy="12" r="1.5"/>
+    <circle cx="7.5" cy="12" r="1.5"/>
+  </svg>
+)
 
-function CatRow({ cat, indent = false, onEdit, onDelete }: { cat: Category; indent?: boolean; onEdit: (c: Category) => void; onDelete: (id: string) => void }) {
+function CatRow({
+  cat, indent = false, onEdit, onDelete,
+  isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd,
+}: {
+  cat: Category
+  indent?: boolean
+  onEdit: (c: Category) => void
+  onDelete: (id: string) => void
+  isDragging: boolean
+  isDragOver: boolean
+  onDragStart: () => void
+  onDragOver: (e: React.DragEvent) => void
+  onDrop: () => void
+  onDragEnd: () => void
+}) {
   return (
-    <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.1)', borderRadius: 14, padding: '12px 16px', display: 'flex', gap: 14, alignItems: 'center', marginLeft: indent ? 28 : 0, ...(indent ? { borderLeft: '2px solid rgba(232,160,32,0.25)' } : {}) }}>
+    <div
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+      style={{
+        background: '#131009',
+        border: isDragOver ? '1px dashed #F5C842' : '1px solid rgba(232,160,32,0.1)',
+        borderRadius: 14,
+        padding: '12px 16px',
+        display: 'flex',
+        gap: 14,
+        alignItems: 'center',
+        marginLeft: indent ? 28 : 0,
+        opacity: isDragging ? 0.4 : 1,
+        transition: 'opacity 0.15s',
+        ...(indent ? { borderLeft: isDragOver ? '2px dashed #F5C842' : '2px solid rgba(232,160,32,0.25)' } : {}),
+      }}
+    >
+      <div style={{ color: '#4A4030', flexShrink: 0, cursor: 'grab', display: 'flex', alignItems: 'center', padding: '0 2px' }}>
+        <IconGrip />
+      </div>
       <div style={{ display: 'inline-flex', width: 32, height: 32, borderRadius: 9, background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.15)', alignItems: 'center', justifyContent: 'center', color: '#E8A020', flexShrink: 0 }}>
         {cat.icon_type === 'builtin'
           ? renderIcon(cat.icon_value, 14)
@@ -190,6 +235,15 @@ export default function MenuAdmin() {
   const [uploadingMenuIcon, setUploadingMenuIcon] = useState(false)
   const [savingPlaceholder, setSavingPlaceholder] = useState(false)
   const [savedPlaceholder, setSavedPlaceholder] = useState(false)
+
+  // Drag & drop state
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [dragGroupKey, setDragGroupKey] = useState<string | null>(null)
+  const [dragOverId, setDragOverId] = useState<string | null>(null)
+  const [savingOrder, setSavingOrder] = useState(false)
+  const [savedOrder, setSavedOrder] = useState(false)
+  // Ref for immediate access in event handlers (avoids stale closure on fast drags)
+  const dragRef = useRef<{ id: string | null; groupKey: string | null }>({ id: null, groupKey: null })
 
   const supabase = createClient()
 
@@ -320,6 +374,51 @@ export default function MenuAdmin() {
     }
   }
 
+  const startDrag = (id: string, groupKey: string) => {
+    dragRef.current = { id, groupKey }
+    setDragId(id)
+    setDragGroupKey(groupKey)
+  }
+
+  const clearDrag = () => {
+    dragRef.current = { id: null, groupKey: null }
+    setDragId(null)
+    setDragGroupKey(null)
+    setDragOverId(null)
+  }
+
+  const handleDrop = async (dropId: string, groupKey: string) => {
+    const { id: currentDragId, groupKey: draggedGroupKey } = dragRef.current
+    clearDrag()
+    if (!currentDragId || draggedGroupKey !== groupKey || currentDragId === dropId) return
+
+    const group = groupKey === 'root'
+      ? [...parents]
+      : cats.filter(c => c.parent_id === groupKey).sort((a, b) => a.display_order - b.display_order)
+
+    const fromIdx = group.findIndex(c => c.id === currentDragId)
+    const toIdx = group.findIndex(c => c.id === dropId)
+    if (fromIdx === -1 || toIdx === -1) return
+
+    const reordered = [...group]
+    const [removed] = reordered.splice(fromIdx, 1)
+    reordered.splice(fromIdx < toIdx ? toIdx - 1 : toIdx, 0, removed)
+
+    const updates = reordered.map((c, i) => ({ ...c, display_order: i }))
+    setCats(prev => {
+      const map = new Map(updates.map(c => [c.id, c]))
+      return prev.map(c => map.get(c.id) ?? c)
+    })
+
+    setSavingOrder(true)
+    await Promise.all(updates.map(c =>
+      supabase.from('menu_categories').update({ display_order: c.display_order }).eq('id', c.id)
+    ))
+    setSavingOrder(false)
+    setSavedOrder(true)
+    setTimeout(() => setSavedOrder(false), 2000)
+  }
+
   return (
     <div style={{ maxWidth: 720, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
@@ -409,7 +508,6 @@ export default function MenuAdmin() {
               <input type="number" min={0} value={form.display_order} onChange={e => setField('display_order', e.target.value)} style={INP} />
             </div>
 
-            {/* Icon type — full width */}
             <div style={{ gridColumn: '1/-1' }}>
               <label style={LBL}>Type d&apos;icône</label>
               <select value={form.icon_type} onChange={e => { setField('icon_type', e.target.value); setIconUploadError('') }} style={{ ...INP, cursor: 'pointer' }}>
@@ -418,7 +516,6 @@ export default function MenuAdmin() {
               </select>
             </div>
 
-            {/* Icon picker — full width */}
             <div style={{ gridColumn: '1/-1' }}>
               <label style={LBL}>Icône</label>
               {form.icon_type === 'builtin' ? (
@@ -457,6 +554,11 @@ export default function MenuAdmin() {
 
       {/* LISTE */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {(savingOrder || savedOrder) && (
+          <div style={{ textAlign: 'center', padding: '8px 16px', borderRadius: 10, background: savedOrder ? 'rgba(80,200,120,0.08)' : 'rgba(232,160,32,0.06)', border: `1px solid ${savedOrder ? 'rgba(80,200,120,0.25)' : 'rgba(232,160,32,0.2)'}`, color: savedOrder ? '#5BC57A' : '#C8B99A', fontSize: 12, fontFamily: 'DM Sans, sans-serif', fontWeight: 600 }}>
+            {savedOrder ? 'Ordre sauvegardé ✓' : 'Sauvegarde en cours…'}
+          </div>
+        )}
         {parents.length === 0 && (
           <div style={{ textAlign: 'center', color: '#7A6E58', padding: '40px 0', fontSize: 14, fontFamily: 'DM Sans, sans-serif' }}>
             Aucune catégorie — cliquez sur + Ajouter
@@ -464,9 +566,31 @@ export default function MenuAdmin() {
         )}
         {parents.map(parent => (
           <div key={parent.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <CatRow cat={parent} onEdit={openEdit} onDelete={del} />
+            <CatRow
+              cat={parent}
+              onEdit={openEdit}
+              onDelete={del}
+              isDragging={dragId === parent.id}
+              isDragOver={dragOverId === parent.id && dragGroupKey === 'root'}
+              onDragStart={() => startDrag(parent.id, 'root')}
+              onDragOver={e => { e.preventDefault(); if (dragRef.current.groupKey === 'root') setDragOverId(parent.id) }}
+              onDrop={() => handleDrop(parent.id, 'root')}
+              onDragEnd={clearDrag}
+            />
             {childrenOf(parent.id).map(child => (
-              <CatRow key={child.id} cat={child} indent onEdit={openEdit} onDelete={del} />
+              <CatRow
+                key={child.id}
+                cat={child}
+                indent
+                onEdit={openEdit}
+                onDelete={del}
+                isDragging={dragId === child.id}
+                isDragOver={dragOverId === child.id && dragGroupKey === parent.id}
+                onDragStart={() => startDrag(child.id, parent.id)}
+                onDragOver={e => { e.preventDefault(); if (dragRef.current.groupKey === parent.id) setDragOverId(child.id) }}
+                onDrop={() => handleDrop(child.id, parent.id)}
+                onDragEnd={clearDrag}
+              />
             ))}
           </div>
         ))}
