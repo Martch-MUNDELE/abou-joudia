@@ -23,6 +23,14 @@ export default function SettingsAdmin() {
   const [statusMessage, setStatusMessage] = useState('')
   const [heroImage, setHeroImage] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [backgroundImage, setBackgroundImage] = useState('')
+  const [uploadingBackground, setUploadingBackground] = useState(false)
+  const [bgImageActive, setBgImageActive] = useState('true')
+  const [bgType, setBgType] = useState('color')
+  const [bgColor, setBgColor] = useState('#0A0804')
+  const [bgGradStart, setBgGradStart] = useState('#0A0804')
+  const [bgGradEnd, setBgGradEnd] = useState('#1a0a02')
+  const [bgGradDir, setBgGradDir] = useState('to bottom')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [siteName, setSiteName] = useState('Abou Joudia')
@@ -41,12 +49,19 @@ export default function SettingsAdmin() {
         if (s.key === 'status') setStatus(s.value)
         if (s.key === 'status_message') setStatusMessage(s.value)
         if (s.key === 'hero_image') setHeroImage(s.value)
+        if (s.key === 'background_image') setBackgroundImage(s.value)
         if (s.key === 'site_name') setSiteName(s.value)
         if (s.key === 'site_baseline') setSiteBaseline(s.value)
         if (s.key === 'site_logo') setSiteLogo(s.value)
         if (s.key === 'feature_1') { try { setFeature1(JSON.parse(s.value)) } catch {} }
         if (s.key === 'feature_2') { try { setFeature2(JSON.parse(s.value)) } catch {} }
         if (s.key === 'feature_3') { try { setFeature3(JSON.parse(s.value)) } catch {} }
+        if (s.key === 'background_image_active') setBgImageActive(s.value)
+        if (s.key === 'background_type') setBgType(s.value)
+        if (s.key === 'background_color' && s.value) setBgColor(s.value)
+        if (s.key === 'background_gradient_start' && s.value) setBgGradStart(s.value)
+        if (s.key === 'background_gradient_end' && s.value) setBgGradEnd(s.value)
+        if (s.key === 'background_gradient_dir' && s.value) setBgGradDir(s.value)
       })
     })
   }, [])
@@ -69,6 +84,18 @@ export default function SettingsAdmin() {
     setUploadingLogo(false)
   }
 
+  const uploadBackgroundImage = async (file: File) => {
+    setUploadingBackground(true)
+    const ext = file.name.split('.').pop()
+    const fileName = `background-${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from('products').upload(fileName, file, { upsert: true })
+    if (!error) {
+      const { data } = supabase.storage.from('products').getPublicUrl(fileName)
+      setBackgroundImage(data.publicUrl)
+    }
+    setUploadingBackground(false)
+  }
+
   const uploadHeroImage = async (file: File) => {
     setUploading(true)
     const ext = file.name.split('.').pop()
@@ -87,12 +114,19 @@ export default function SettingsAdmin() {
       supabase.from('settings').upsert({ key: 'status', value: status }),
       supabase.from('settings').upsert({ key: 'status_message', value: statusMessage }),
       supabase.from('settings').upsert({ key: 'hero_image', value: heroImage }),
+      supabase.from('settings').upsert({ key: 'background_image', value: backgroundImage }),
       supabase.from('settings').upsert({ key: 'site_name', value: siteName }),
       supabase.from('settings').upsert({ key: 'site_baseline', value: siteBaseline }),
       supabase.from('settings').upsert({ key: 'site_logo', value: siteLogo }),
       supabase.from('settings').upsert({ key: 'feature_1', value: JSON.stringify(feature1) }),
       supabase.from('settings').upsert({ key: 'feature_2', value: JSON.stringify(feature2) }),
       supabase.from('settings').upsert({ key: 'feature_3', value: JSON.stringify(feature3) }),
+      supabase.from('settings').upsert({ key: 'background_image_active', value: bgImageActive }),
+      supabase.from('settings').upsert({ key: 'background_type', value: bgType }),
+      supabase.from('settings').upsert({ key: 'background_color', value: bgColor }),
+      supabase.from('settings').upsert({ key: 'background_gradient_start', value: bgGradStart }),
+      supabase.from('settings').upsert({ key: 'background_gradient_end', value: bgGradEnd }),
+      supabase.from('settings').upsert({ key: 'background_gradient_dir', value: bgGradDir }),
     ])
     setSaving(false)
     setSaved(true)
@@ -155,6 +189,105 @@ export default function SettingsAdmin() {
         {/* Baseline */}
         <label style={labelStyle}>Baseline</label>
         <input type="text" value={siteBaseline} onChange={e => setSiteBaseline(e.target.value)} style={inputStyle} />
+      </div>
+
+      {/* FOND DE PAGE */}
+      <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Fond de page</div>
+
+        {/* Toggle image active */}
+        <label style={labelStyle}>Image de fond active</label>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+          <button
+            onClick={() => setBgImageActive('true')}
+            style={{ flex: 1, padding: '12px', borderRadius: 10, border: '1px solid', borderColor: bgImageActive === 'true' ? 'rgba(91,197,122,0.4)' : 'rgba(255,255,255,0.06)', background: bgImageActive === 'true' ? 'rgba(91,197,122,0.12)' : 'transparent', color: bgImageActive === 'true' ? '#5BC57A' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+          >Oui</button>
+          <button
+            onClick={() => setBgImageActive('false')}
+            style={{ flex: 1, padding: '12px', borderRadius: 10, border: '1px solid', borderColor: bgImageActive === 'false' ? 'rgba(255,107,107,0.4)' : 'rgba(255,255,255,0.06)', background: bgImageActive === 'false' ? 'rgba(255,107,107,0.12)' : 'transparent', color: bgImageActive === 'false' ? '#FF6B6B' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+          >Non</button>
+        </div>
+
+        {/* Image upload when active */}
+        {bgImageActive === 'true' && (
+          <>
+            {backgroundImage && (
+              <div style={{ marginBottom: 14, borderRadius: 12, overflow: 'hidden', height: 120, position: 'relative' }}>
+                <img src={backgroundImage} alt="Background" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <button
+                  onClick={() => setBackgroundImage('')}
+                  style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#F5EDD6', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '4px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}
+                >Supprimer</button>
+              </div>
+            )}
+            <label style={{ display: 'block', width: '100%', padding: '18px', borderRadius: 10, border: '1.5px dashed rgba(232,160,32,0.25)', background: 'rgba(232,160,32,0.03)', color: uploadingBackground ? '#C8B99A' : '#E8A020', cursor: uploadingBackground ? 'wait' : 'pointer', textAlign: 'center', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const }}>
+              {uploadingBackground ? 'Upload en cours...' : 'Choisir une photo depuis votre tel ou ordinateur'}
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadBackgroundImage(e.target.files[0]) }} />
+            </label>
+          </>
+        )}
+
+        {/* Color/Gradient options when inactive */}
+        {bgImageActive === 'false' && (
+          <>
+            {/* Radio type */}
+            <label style={labelStyle}>Type de fond</label>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+              {(['color', 'gradient'] as const).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setBgType(t)}
+                  style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid', borderColor: bgType === t ? 'rgba(232,160,32,0.5)' : 'rgba(255,255,255,0.06)', background: bgType === t ? 'rgba(232,160,32,0.1)' : 'transparent', color: bgType === t ? '#E8A020' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+                >
+                  {t === 'color' ? 'Couleur unie' : 'Dégradé'}
+                </button>
+              ))}
+            </div>
+
+            {bgType === 'color' && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={labelStyle}>Couleur de fond</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)} style={{ width: 48, height: 40, borderRadius: 8, border: '1px solid rgba(232,160,32,0.2)', background: 'transparent', cursor: 'pointer', padding: 2 }} />
+                  <span style={{ color: '#C8B99A', fontSize: 13, fontFamily: 'DM Sans, sans-serif' }}>{bgColor}</span>
+                </div>
+              </div>
+            )}
+
+            {bgType === 'gradient' && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={labelStyle}>Couleur début</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input type="color" value={bgGradStart} onChange={e => setBgGradStart(e.target.value)} style={{ width: 44, height: 38, borderRadius: 8, border: '1px solid rgba(232,160,32,0.2)', background: 'transparent', cursor: 'pointer', padding: 2 }} />
+                      <span style={{ color: '#C8B99A', fontSize: 12, fontFamily: 'DM Sans, sans-serif' }}>{bgGradStart}</span>
+                    </div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={labelStyle}>Couleur fin</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input type="color" value={bgGradEnd} onChange={e => setBgGradEnd(e.target.value)} style={{ width: 44, height: 38, borderRadius: 8, border: '1px solid rgba(232,160,32,0.2)', background: 'transparent', cursor: 'pointer', padding: 2 }} />
+                      <span style={{ color: '#C8B99A', fontSize: 12, fontFamily: 'DM Sans, sans-serif' }}>{bgGradEnd}</span>
+                    </div>
+                  </div>
+                </div>
+                <label style={labelStyle}>Direction</label>
+                <select value={bgGradDir} onChange={e => setBgGradDir(e.target.value)} style={{ ...inputStyle }}>
+                  <option value="to bottom">Vers le bas</option>
+                  <option value="to right">Vers la droite</option>
+                  <option value="135deg">Diagonal</option>
+                </select>
+              </div>
+            )}
+
+            {/* Aperçu temps réel */}
+            <div style={{ marginTop: 14 }}>
+              <label style={labelStyle}>Aperçu</label>
+              <div style={{ height: 60, borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', background: bgType === 'color' ? bgColor : `linear-gradient(${bgGradDir}, ${bgGradStart}, ${bgGradEnd})` }} />
+            </div>
+          </>
+        )}
       </div>
 
       {/* HERO IMAGE */}

@@ -6,17 +6,46 @@ import SmokeEffect from '@/components/SmokeEffect'
 
 export default function BackgroundSmoke() {
   const [heroImage, setHeroImage] = useState('')
+  const [backgroundImage, setBackgroundImage] = useState('/background-home.jpg')
+  const [bgImageActive, setBgImageActive] = useState('true')
+  const [bgType, setBgType] = useState('color')
+  const [bgColor, setBgColor] = useState('#0A0804')
+  const [bgGradStart, setBgGradStart] = useState('#0A0804')
+  const [bgGradEnd, setBgGradEnd] = useState('#1a0a02')
+  const [bgGradDir, setBgGradDir] = useState('to bottom')
   const pathname = usePathname()
   const showBg = pathname === '/'
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.from('settings').select('value').eq('key', 'hero_image').single().then(({ data }) => {
-      if (data?.value) setHeroImage(data.value)
+    supabase.from('settings').select('*').in('key', [
+      'hero_image', 'background_image', 'background_image_active',
+      'background_type', 'background_color', 'background_gradient_start',
+      'background_gradient_end', 'background_gradient_dir',
+    ]).then(({ data }) => {
+      data?.forEach((s: any) => {
+        if (s.key === 'hero_image' && s.value) setHeroImage(s.value)
+        if (s.key === 'background_image' && s.value) setBackgroundImage(s.value)
+        if (s.key === 'background_image_active') setBgImageActive(s.value)
+        if (s.key === 'background_type') setBgType(s.value)
+        if (s.key === 'background_color' && s.value) setBgColor(s.value)
+        if (s.key === 'background_gradient_start' && s.value) setBgGradStart(s.value)
+        if (s.key === 'background_gradient_end' && s.value) setBgGradEnd(s.value)
+        if (s.key === 'background_gradient_dir' && s.value) setBgGradDir(s.value)
+      })
     })
   }, [])
 
   if (!showBg) return null
+
+  if (bgImageActive === 'false') {
+    const customBg = bgType === 'color'
+      ? bgColor
+      : `linear-gradient(${bgGradDir}, ${bgGradStart}, ${bgGradEnd})`
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', background: customBg }} />
+    )
+  }
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
@@ -24,7 +53,7 @@ export default function BackgroundSmoke() {
 
         {/* Background Agadir nuit — zIndex 0 */}
         <img
-          src="/background-home.jpg"
+          src={backgroundImage}
           alt=""
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', opacity: 0.35, zIndex: 0 }}
         />
