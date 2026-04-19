@@ -18,9 +18,9 @@ export const metadata: Metadata = {
     siteName: 'Abou Joudia',
     images: [
       {
-        url: 'https://nrpsqvmdmsfekemtrbcz.supabase.co/storage/v1/object/public/products/hero.png',
-        width: 1200,
-        height: 630,
+        url: 'https://nrpsqvmdmsfekemtrbcz.supabase.co/storage/v1/object/public/products/logo-abou-joudia-1776546998985.png',
+        width: 508,
+        height: 433,
         alt: 'Abou Joudia — Livraison Agadir',
       }
     ],
