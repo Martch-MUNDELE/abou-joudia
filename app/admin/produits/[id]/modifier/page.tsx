@@ -13,13 +13,13 @@ export default function ModifierProduit() {
   const params = useParams()
   const supabase = createClient()
   const admin = supabase
-  const [form, setForm] = useState({ name: '', description: '', ingredients: '', price: 0, subcategory: 'sandwichs_chauds', image_url: '', active: true })
+  const [form, setForm] = useState<{ name: string, description: string, ingredients: string, price: number, subcategory: string, image_url: string, active: boolean, discount: number | null }>({ name: '', description: '', ingredients: '', price: 0, subcategory: 'sandwichs_chauds', image_url: '', active: true, discount: null })
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     supabase.from('products').select('*').eq('id', params.id).single().then(({ data }) => {
-      if (data) setForm({ name: data.name || '', description: data.description || '', ingredients: data.ingredients || '', price: data.price || 0, subcategory: data.subcategory || 'sandwichs_chauds', image_url: data.image_url || '', active: data.active ?? true })
+      if (data) setForm({ name: data.name || '', description: data.description || '', ingredients: data.ingredients || '', price: data.price || 0, subcategory: data.subcategory || 'sandwichs_chauds', image_url: data.image_url || '', active: data.active ?? true, discount: data.discount ?? null })
     })
   }, [])
 
@@ -45,6 +45,10 @@ export default function ModifierProduit() {
     }
     window.location.href = '/admin/produits'
   }
+
+  const promoOn = typeof form.discount === 'number' && form.discount > 0
+  const discountedPreview = promoOn ? Math.ceil(form.price * (1 - (form.discount as number) / 100)) : null
+  const savingsPreview = discountedPreview !== null ? form.price - discountedPreview : null
 
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: '0 0 60px' }}>
@@ -82,6 +86,39 @@ export default function ModifierProduit() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 10, border: '1px solid rgba(232,160,32,0.1)' }}>
           <input type="checkbox" id="active" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} style={{ accentColor: '#E8A020', width: 18, height: 18 }} />
           <label htmlFor="active" style={{ fontSize: 14, color: '#C8B890', cursor: 'pointer' }}>Produit actif (visible sur le site)</label>
+        </div>
+        <div style={{ background: 'rgba(255,80,80,0.04)', border: '1px solid rgba(255,80,80,0.15)', borderRadius: 12, padding: '14px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#F5EDD6', fontFamily: 'DM Sans, sans-serif' }}>Promotion</div>
+              <div style={{ fontSize: 11, color: '#7A6E58', marginTop: 2 }}>Réduction sur ce produit</div>
+            </div>
+            <div
+              onClick={() => setForm(f => ({ ...f, discount: promoOn ? null : 10 }))}
+              style={{ width: 44, height: 24, borderRadius: 12, background: promoOn ? 'rgba(255,80,80,0.3)' : 'rgba(255,255,255,0.08)', border: promoOn ? '1px solid rgba(255,80,80,0.5)' : '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', position: 'relative', flexShrink: 0 }}
+            >
+              <div style={{ position: 'absolute', top: 3, left: promoOn ? 23 : 3, width: 18, height: 18, borderRadius: '50%', background: promoOn ? '#FF5050' : '#555' }} />
+            </div>
+          </div>
+          {promoOn && (
+            <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div>
+                <label style={labelStyle}>Réduction (%)</label>
+                <input
+                  type="number" min={5} max={80}
+                  value={form.discount ?? ''}
+                  onChange={e => { const v = parseInt(e.target.value); setForm(f => ({ ...f, discount: isNaN(v) ? 5 : Math.min(80, Math.max(5, v)) })) }}
+                  style={inputStyle}
+                />
+              </div>
+              {discountedPreview !== null && savingsPreview !== null && (
+                <div style={{ padding: '10px 14px', background: 'rgba(255,80,80,0.06)', borderRadius: 8, border: '1px solid rgba(255,80,80,0.12)' }}>
+                  <div style={{ fontSize: 12, color: '#FF8080', fontFamily: 'DM Sans, sans-serif', fontWeight: 600 }}>Prix remisé : {discountedPreview} DH</div>
+                  <div style={{ fontSize: 12, color: '#7A6E58', fontFamily: 'DM Sans, sans-serif', marginTop: 4 }}>Économie : {savingsPreview} DH</div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 10, paddingTop: 8 }}>
           <button onClick={() => router.push('/admin/produits')} style={{ flex: 1, padding: '14px', borderRadius: 50, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#C8B99A', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14 }}>Annuler</button>

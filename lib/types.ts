@@ -15,6 +15,7 @@ export interface Product {
   active: boolean
   featured?: boolean
   popular?: boolean
+  discount?: number | null
 }
 
 export interface DeliverySlot {

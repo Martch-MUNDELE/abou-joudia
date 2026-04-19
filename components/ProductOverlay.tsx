@@ -8,32 +8,37 @@ export default function ProductOverlay({ product, allProducts, onClose }: { prod
   const [current, setCurrent] = useState(product)
   const quantity = items.find(i => i.product.id === current.id)?.quantity || 0
   const [added, setAdded] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
   const sheetRef = useRef<HTMLDivElement>(null)
+  const handleClose = () => { setIsClosing(true); setTimeout(onClose, 280) }
 
   const handleAdd = () => { add(current); setAdded(true); setTimeout(() => setAdded(false), 800) }
   const handleRemove = () => { if (quantity > 0) update(current.id, quantity - 1) }
 
   const related = allProducts.filter(p => p.subcategory === current.subcategory && p.id !== current.id)
+  const discountedPrice = current.discount && current.discount > 0 ? Math.ceil(current.price * (1 - current.discount / 100)) : null
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', animation: 'fadeIn 0.2s ease' }}>
+    <div onClick={handleClose} style={{ position: 'fixed', top: 140, left: 0, right: 0, bottom: 0, height: 'calc(100vh - 140px)', zIndex: 300, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', animation: 'fadeIn 0.2s ease' }}>
       <style>{`
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+        @keyframes slideDown { from{transform:translateY(0)} to{transform:translateY(100%)} }
         .related-scroll::-webkit-scrollbar { display:none }
+        @keyframes heartbeat { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
       `}</style>
 
-      <div ref={sheetRef} onClick={e => e.stopPropagation()} style={{ background: '#0F0C07', borderRadius: '24px 24px 0 0', maxWidth: 600, width: '100%', margin: '0 auto', animation: 'slideUp 0.3s cubic-bezier(0.32,0.72,0,1)', height: '88vh', maxHeight: '88vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+      <div ref={sheetRef} onClick={e => e.stopPropagation()} style={{ background: '#0F0C07', borderRadius: '24px 24px 0 0', maxWidth: 600, width: '100%', margin: '0 auto', animation: isClosing ? 'slideDown 0.28s ease-in forwards' : 'slideUp 0.32s ease-out', height: '88vh', maxHeight: '88vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
 
         {/* IMAGE — adaptative avec bouton X intégré */}
         <div style={{ position: 'relative', flex: '0 0 clamp(180px, 40vh, 400px)', background: '#080603', borderRadius: '0 0 16px 16px', overflow: 'hidden', flexShrink: 0 }}>
           {current.image_url && (
             <img src={current.image_url} alt={current.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
           )}
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '35%', background: 'linear-gradient(to top, #0F0C07 0%, transparent 100%)' }} />
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '20%', background: 'linear-gradient(to top, #0F0C07 0%, transparent 100%)' }} />
           <button
-            onClick={e => { e.stopPropagation(); onClose() }}
-            style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, width: 36, height: 36, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1.5px solid rgba(255,255,255,0.25)', color: '#FFFFFF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 300, lineHeight: 1 }}>×</button>
+            onClick={e => { e.stopPropagation(); handleClose() }}
+            style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', right: 12, zIndex: 400, width: 36, height: 36, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', color: '#FFFFFF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 300, lineHeight: 1 }}>×</button>
         </div>
 
         {/* ZONE INFOS */}
@@ -47,12 +52,22 @@ export default function ProductOverlay({ product, allProducts, onClose }: { prod
 
           {/* Prix + Nom + Bouton sur même ligne */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <div style={{ flexShrink: 0 }}>
-              <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: 30, color: '#F5C842' }}>{current.price}</span>
-              <span style={{ fontSize: 12, color: '#E8A020', fontWeight: 600, fontFamily: 'DM Sans, sans-serif', marginLeft: 2 }}>DH</span>
-            </div>
-            <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: 20, color: '#F5EDD6', lineHeight: 1.1, flex: 1 }}>
-              {current.name}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+              {discountedPrice !== null ? (
+                <>
+                  <span style={{ background: 'rgba(245,200,66,0.15)', border: '1px solid rgba(245,200,66,0.3)', color: '#F5C842', fontSize: 10, fontWeight: 800, borderRadius: 5, padding: '2px 7px', marginRight: 6, fontFamily: 'DM Sans, sans-serif', animation: 'heartbeat 1.4s ease-in-out infinite', display: 'inline-block' }}>-{current.discount}%</span>
+                  <span style={{ fontSize: 13, color: '#7A6E58', textDecoration: 'line-through', fontFamily: 'DM Sans, sans-serif' }}>{current.price} DH</span>
+                  <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 800, fontSize: 28, color: '#F5C842' }}>{discountedPrice}</span>
+                  <span style={{ fontSize: 12, color: '#E8A020', fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}>DH</span>
+                  <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: 20, color: '#F5EDD6', lineHeight: 1.1 }}>{current.name}</span>
+                </>
+              ) : (
+                <>
+                  <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: 28, color: '#F5C842' }}>{current.price}</span>
+                  <span style={{ fontSize: 12, color: '#E8A020', fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}>DH</span>
+                  <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: 20, color: '#F5EDD6', lineHeight: 1.1 }}>{current.name}</span>
+                </>
+              )}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
               {quantity > 0 && (
