@@ -16,10 +16,36 @@ const STATUS_COLORS: Record<string, { bg: string; color: string; border: string 
   annulée:        { bg: 'rgba(255,107,107,0.1)',  color: '#FF6B6B', border: 'rgba(255,107,107,0.2)' },
 }
 
-function whatsappLink(phone: string, name: string, total: number) {
-  const num = phone.replace(/\s/g, '').replace(/^0/, '212')
-  const msg = encodeURIComponent(`Bonjour ${name}, votre commande Abou Joudia de ${total.toFixed(2)} DH est en cours de préparation. Merci !`)
-  return `https://wa.me/${num}?text=${msg}`
+function cleanPhone(phone: string) {
+  const p = phone.replace(/[\s\-]/g, '')
+  return p.startsWith('+') ? p : p.replace(/^0/, '212')
+}
+
+function buildWhatsAppUrl(order: any, slot: any, formatDate: (d: string) => string): string | null {
+  const name = order.customer_name
+  let msg: string | null = null
+
+  if (order.status === 'confirmée') {
+    const itemsList = order.order_items?.map((i: any) =>
+      `${i.quantity} x ${i.product_name} — ${(i.unit_price * i.quantity).toFixed(2)} DH`
+    ).join('\n') || ''
+    const slotDate = slot ? formatDate(slot.date) : 'À confirmer'
+    const slotTime = slot ? `${slot.time_start?.slice(0, 5)} à ${slot.time_end?.slice(0, 5)}` : ''
+    const address = order.customer_address || ''
+    const mapsLine = order.lat && order.lng ? `\nhttps://maps.google.com/?q=${order.lat},${order.lng}` : ''
+    msg = `Bonjour ${name},\n\nVotre commande Abou Joudia est confirmée.\n\n${itemsList}\n\nTotal : ${order.total.toFixed(2)} DH - paiement cash à la livraison\nCréneau : ${slotDate} de ${slotTime}\n\nVotre adresse de livraison :\n${address}${mapsLine}\n\nMerci pour votre confiance !\nAbou Joudia`
+  } else if (order.status === 'en_preparation') {
+    msg = `Bonjour ${name}, votre commande Abou Joudia est en cours de préparation. Encore un peu de patience !`
+  } else if (order.status === 'en_livraison') {
+    msg = `Bonjour ${name}, votre commande Abou Joudia est en route ! Notre livreur arrive bientôt chez vous.`
+  } else if (order.status === 'livrée') {
+    msg = `Merci ${name} ! Votre commande a bien été livrée. Bon appétit et à très bientôt chez Abou Joudia !`
+  } else if (order.status === 'annulée') {
+    msg = `Bonjour ${name}, nous sommes désolés mais votre commande a dû être annulée. Contactez-nous pour plus d'informations.`
+  }
+
+  if (!msg) return null
+  return `https://wa.me/${cleanPhone(order.customer_phone)}?text=${encodeURIComponent(msg)}`
 }
 
 const IconPhone = () => (
@@ -51,6 +77,7 @@ export default function CommandesAdmin() {
   const [orders, setOrders] = useState<any[]>([])
   const [filter, setFilter] = useState('all')
   const [counts, setCounts] = useState<Record<string, number>>({})
+  const [slots, setSlots] = useState<Record<string, any>>({})
   const supabase = createClient()
 
   const load = async () => {
@@ -60,6 +87,16 @@ export default function CommandesAdmin() {
     all.forEach(o => { c[o.status] = (c[o.status] || 0) + 1 })
     setCounts(c)
     setOrders(filter === 'all' ? all : all.filter(o => o.status === filter))
+
+    const slotIds = [...new Set(all.filter(o => o.slot_id).map(o => o.slot_id as string))]
+    if (slotIds.length > 0) {
+      const { data: slotData } = await supabase.from('delivery_slots').select('*').in('id', slotIds)
+      if (slotData) {
+        const map: Record<string, any> = {}
+        slotData.forEach(s => { map[s.id] = s })
+        setSlots(map)
+      }
+    }
   }
 
   useEffect(() => { load() }, [filter])
@@ -143,7 +180,7 @@ export default function CommandesAdmin() {
                 <a href={`tel:${order.customer_phone}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 50, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.06)', color: '#E8A020', textDecoration: 'none', fontSize: 11, fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}>
                   <IconPhone /> Appeler
                 </a>
-                <a href={whatsappLink(order.customer_phone, order.customer_name, order.total)} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 50, border: '1px solid rgba(91,197,122,0.2)', background: 'rgba(91,197,122,0.06)', color: '#5BC57A', textDecoration: 'none', fontSize: 11, fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}>
+                <a href={`https://wa.me/${cleanPhone(order.customer_phone)}`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 50, border: '1px solid rgba(91,197,122,0.2)', background: 'rgba(91,197,122,0.06)', color: '#5BC57A', textDecoration: 'none', fontSize: 11, fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}>
                   <IconChat /> WhatsApp
                 </a>
                 {order.lat && order.lng && (
@@ -152,18 +189,32 @@ export default function CommandesAdmin() {
                   </a>
                 )}
               </div>
-<div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, color: '#7A6E58', fontFamily: 'DM Sans, sans-serif' }}>Statut</span>
-                <div style={{ position: 'relative' }}>
-                  <select
-                    value={order.status}
-                    onChange={e => updateStatus(order.id, e.target.value)}
-                    style={{ background: '#1A1510', border: '1px solid rgba(232,160,32,0.25)', color: STATUS_COLORS[order.status]?.color || '#E8A020', borderRadius: 8, padding: '7px 32px 7px 12px', fontSize: 12, fontWeight: 700, outline: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', appearance: 'none', WebkitAppearance: 'none' }}
-                  >
-                    {STATUSES.map(s => <option key={s} value={s} style={{ background: '#131009', color: '#F5EDD6' }}>{STATUS_LABELS[s]}</option>)}
-                  </select>
-                  <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: STATUS_COLORS[order.status]?.color || '#E8A020', fontSize: 10 }}>▾</span>
+<div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 11, color: '#7A6E58', fontFamily: 'DM Sans, sans-serif' }}>Statut</span>
+                  <div style={{ position: 'relative' }}>
+                    <select
+                      value={order.status}
+                      onChange={e => updateStatus(order.id, e.target.value)}
+                      style={{ background: '#1A1510', border: '1px solid rgba(232,160,32,0.25)', color: STATUS_COLORS[order.status]?.color || '#E8A020', borderRadius: 8, padding: '7px 32px 7px 12px', fontSize: 12, fontWeight: 700, outline: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', appearance: 'none', WebkitAppearance: 'none' }}
+                    >
+                      {STATUSES.map(s => <option key={s} value={s} style={{ background: '#131009', color: '#F5EDD6' }}>{STATUS_LABELS[s]}</option>)}
+                    </select>
+                    <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: STATUS_COLORS[order.status]?.color || '#E8A020', fontSize: 10 }}>▾</span>
+                  </div>
                 </div>
+                {(() => {
+                  const url = buildWhatsAppUrl(order, slots[order.slot_id] ?? null, formatDate)
+                  if (!url) return null
+                  return (
+                    <button
+                      onClick={() => window.open(url, '_blank')}
+                      style={{ marginTop: 10, width: '100%', background: '#25D366', color: '#fff', borderRadius: 50, padding: '8px 16px', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}
+                    >
+                      Envoyer message WhatsApp
+                    </button>
+                  )
+                })()}
               </div>
 
             </div>
