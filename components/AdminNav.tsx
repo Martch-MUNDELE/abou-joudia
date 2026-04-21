@@ -11,6 +11,7 @@ const LINKS = [
   { href: '/admin/produits', label: 'Produits' },
   { href: '/admin/menu', label: 'Menu' },
   { href: '/admin/creneaux', label: 'Créneaux' },
+  { href: '/admin/livraison', label: 'Livraison' },
   { href: '/admin/settings', label: 'Paramètres' },
 ]
 

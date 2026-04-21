@@ -29,6 +29,16 @@ export interface DeliverySlot {
   notes?: string
 }
 
+export interface DeliveryZone {
+  id: string
+  min_km: number
+  max_km: number
+  price: number
+  min_order: number
+  active: boolean
+  created_at: string
+}
+
 export interface Order {
   id: string
   created_at: string
@@ -43,6 +53,11 @@ export interface Order {
   slot_id: string
   total: number
   payment_method: string
+  delivery_mode?: 'delivery' | 'pickup'
+  delivery_fee?: number
+  distance_km?: number
+  zone_id?: string
+  delivery_detail?: Record<string, any>
   delivery_slots?: DeliverySlot
   order_items?: OrderItem[]
 }
