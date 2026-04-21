@@ -7,12 +7,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-export async function GET(request: Request) {
-  const cronHeader = request.headers.get('x-vercel-cron')
-  if (!cronHeader) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+export async function GET() {
   const { data: settings } = await supabase.from('settings').select('*')
   const get = (key: string) => settings?.find((s: {key: string, value: string}) => s.key === key)?.value ?? ''
 
