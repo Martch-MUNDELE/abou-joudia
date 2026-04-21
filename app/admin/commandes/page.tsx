@@ -219,16 +219,18 @@ export default function CommandesAdmin() {
                   const url = buildWhatsAppUrl(order, slots[order.slot_id] ?? null, pending, formatDate)
                   if (!url) return null
                   return (
-                    <button
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       onClick={async () => {
                         await updateStatus(order.id, pending)
                         setPendingStatuses(prev => { const n = { ...prev }; delete n[order.id]; return n })
-                        window.open(url, '_blank')
                       }}
-                      style={{ marginTop: 10, display: 'inline-block', float: 'right', background: '#25D366', color: '#0A0804', borderRadius: 50, padding: '6px 16px', fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}
+                      style={{ marginTop: 10, display: 'inline-block', float: 'right', background: '#25D366', color: '#0A0804', borderRadius: 50, padding: '6px 16px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', textDecoration: 'none' }}
                     >
                       {WA_BUTTON_LABELS[pending] || 'Envoyer message WhatsApp'}
-                    </button>
+                    </a>
                   )
                 })()}
               </div>
