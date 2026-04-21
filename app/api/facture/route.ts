@@ -13,8 +13,14 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 export async function POST(req: NextRequest) {
   const { order_id } = await req.json()
 
-  const { data: order } = await supabase.from('orders').select('*, delivery_slots(*), order_items(*)').eq('id', order_id).single()
+  const { data: order } = await supabase.from('orders').select('*, order_items(*)').eq('id', order_id).single()
   if (!order || !order.customer_email) return NextResponse.json({ error: "Pas d'email" }, { status: 400 })
+
+  let slot = null
+  if (order.slot_id) {
+    const { data } = await supabase.from('delivery_slots').select('*').eq('id', order.slot_id).single()
+    slot = data
+  }
 
   const { data: settings } = await supabase.from('settings').select('*')
   const logoUrl = settings?.find((s: any) => s.key === 'site_logo')?.value || ''
@@ -22,7 +28,7 @@ export async function POST(req: NextRequest) {
   const siteBaseline = settings?.find((s: any) => s.key === 'site_baseline')?.value || 'AGADIR · LIVRAISON'
 
   const pdfBuffer = await renderToBuffer(
-    FacturePDF({ order, items: order.order_items, slot: order.delivery_slots }) as any
+    FacturePDF({ order, items: order.order_items, slot }) as any
   )
 
   await resend.emails.send({
@@ -33,8 +39,6 @@ export async function POST(req: NextRequest) {
 <html>
 <body style="margin:0;padding:0;background:#0A0804;font-family:'Helvetica Neue',Arial,sans-serif">
   <div style="max-width:520px;margin:0 auto;padding:32px 16px">
-
-    <!-- HEADER -->
     <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid rgba(232,160,32,0.15);padding-bottom:20px;margin-bottom:0">
       <tr>
         <td width="56" valign="middle">
@@ -47,32 +51,24 @@ export async function POST(req: NextRequest) {
         </td>
       </tr>
     </table>
-
-    <!-- CORPS -->
     <div style="padding:28px 0">
       <p style="color:#C8B99A;font-size:14px;margin:0 0 8px">Bonjour <strong style="color:#F5EDD6">${order.customer_name}</strong>,</p>
       <p style="color:#C8B99A;font-size:14px;margin:0 0 24px;line-height:1.6">Merci pour votre commande ! Veuillez trouver ci-joint votre facture.</p>
-
-      <!-- MONTANT -->
       <div style="background:rgba(232,160,32,0.06);border:1px solid rgba(232,160,32,0.15);border-radius:12px;padding:20px;text-align:center;margin-bottom:24px">
         <div style="font-size:11px;color:#E8A020;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Total de votre commande</div>
         <div style="font-family:Georgia,serif;font-size:36px;font-weight:900;color:#F5C842">${order.total.toFixed(2)} <span style="font-size:16px">DH</span></div>
         <div style="font-size:12px;color:#888;margin-top:6px">Paiement à la livraison en cash</div>
       </div>
-
       <p style="color:#7A6E58;font-size:12px;line-height:1.6;margin:0">
         Votre facture PDF est jointe à cet email. Notre équipe prépare votre commande avec soin et vous livrera dans les meilleurs délais.
       </p>
     </div>
-
-    <!-- FOOTER -->
     <div style="border-top:1px solid rgba(232,160,32,0.1);padding-top:20px;text-align:center">
       <div style="font-size:11px;color:#555;line-height:1.8">
         ${siteName} — Agadir, Maroc<br>
         <span style="color:#E8A020">Saveurs du Souss, livrées chez toi.</span>
       </div>
     </div>
-
   </div>
 </body>
 </html>`,
