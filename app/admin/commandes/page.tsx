@@ -15,17 +15,32 @@ const STATUS_COLORS: Record<string, { bg: string; color: string; border: string 
   livrée:         { bg: 'rgba(122,110,88,0.1)',   color: '#C8B99A', border: 'rgba(122,110,88,0.2)'  },
   annulée:        { bg: 'rgba(255,107,107,0.1)',  color: '#FF6B6B', border: 'rgba(255,107,107,0.2)' },
 }
+const STATUS_TRANSITIONS: Record<string, string[]> = {
+  nouvelle:       ['confirmée', 'annulée'],
+  confirmée:      ['en_preparation', 'annulée'],
+  en_preparation: ['en_livraison', 'annulée'],
+  en_livraison:   ['livrée', 'annulée'],
+  livrée:         [],
+  annulée:        [],
+}
+const WA_BUTTON_LABELS: Record<string, string> = {
+  confirmée:      'Envoyer message Confirmation',
+  en_preparation: 'Envoyer message Préparation',
+  en_livraison:   'Envoyer message Livraison',
+  livrée:         'Envoyer message Livrée',
+  annulée:        'Envoyer message Annulation',
+}
 
 function cleanPhone(phone: string) {
   const p = phone.replace(/[\s\-]/g, '')
   return p.startsWith('+') ? p : p.replace(/^0/, '212')
 }
 
-function buildWhatsAppUrl(order: any, slot: any, formatDate: (d: string) => string): string | null {
+function buildWhatsAppUrl(order: any, slot: any, targetStatus: string, formatDate: (d: string) => string): string | null {
   const name = order.customer_name
   let msg: string | null = null
 
-  if (order.status === 'confirmée') {
+  if (targetStatus === 'confirmée') {
     const itemsList = order.order_items?.map((i: any) =>
       `${i.quantity} x ${i.product_name} — ${(i.unit_price * i.quantity).toFixed(2)} DH`
     ).join('\n') || ''
@@ -34,13 +49,13 @@ function buildWhatsAppUrl(order: any, slot: any, formatDate: (d: string) => stri
     const address = order.customer_address || ''
     const mapsLine = order.lat && order.lng ? `\nhttps://maps.google.com/?q=${order.lat},${order.lng}` : ''
     msg = `Bonjour ${name},\n\nVotre commande Abou Joudia est confirmée.\n\n${itemsList}\n\nTotal : ${order.total.toFixed(2)} DH - paiement cash à la livraison\nCréneau : ${slotDate} de ${slotTime}\n\nVotre adresse de livraison :\n${address}${mapsLine}\n\nMerci pour votre confiance !\nAbou Joudia`
-  } else if (order.status === 'en_preparation') {
+  } else if (targetStatus === 'en_preparation') {
     msg = `Bonjour ${name}, votre commande Abou Joudia est en cours de préparation. Encore un peu de patience !`
-  } else if (order.status === 'en_livraison') {
+  } else if (targetStatus === 'en_livraison') {
     msg = `Bonjour ${name}, votre commande Abou Joudia est en route ! Notre livreur arrive bientôt chez vous.`
-  } else if (order.status === 'livrée') {
+  } else if (targetStatus === 'livrée') {
     msg = `Merci ${name} ! Votre commande a bien été livrée. Bon appétit et à très bientôt chez Abou Joudia !`
-  } else if (order.status === 'annulée') {
+  } else if (targetStatus === 'annulée') {
     msg = `Bonjour ${name}, nous sommes désolés mais votre commande a dû être annulée. Contactez-nous pour plus d'informations.`
   }
 
@@ -75,9 +90,10 @@ const IconCal = () => (
 
 export default function CommandesAdmin() {
   const [orders, setOrders] = useState<any[]>([])
-  const [filter, setFilter] = useState('all')
+  const [filter, setFilter] = useState('nouvelle')
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [slots, setSlots] = useState<Record<string, any>>({})
+  const [pendingStatuses, setPendingStatuses] = useState<Record<string, string>>({})
   const supabase = createClient()
 
   const load = async () => {
@@ -86,7 +102,7 @@ export default function CommandesAdmin() {
     const c: Record<string, number> = {}
     all.forEach(o => { c[o.status] = (c[o.status] || 0) + 1 })
     setCounts(c)
-    setOrders(filter === 'all' ? all : all.filter(o => o.status === filter))
+    setOrders(all.filter(o => o.status === filter))
 
     const slotIds = [...new Set(all.filter(o => o.slot_id).map(o => o.slot_id as string))]
     if (slotIds.length > 0) {
@@ -116,12 +132,6 @@ export default function CommandesAdmin() {
 
       {/* FILTRES */}
       <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 24, paddingBottom: 4 }}>
-        <button
-          onClick={() => setFilter('all')}
-          style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 50, border: '1px solid', borderColor: filter === 'all' ? 'rgba(232,160,32,0.4)' : 'rgba(232,160,32,0.12)', background: filter === 'all' ? 'rgba(232,160,32,0.12)' : 'transparent', color: filter === 'all' ? '#E8A020' : '#C8B99A', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}
-        >
-          Toutes
-        </button>
         {STATUSES.map(s => {
           const sc = STATUS_COLORS[s]
           const active = filter === s
@@ -141,6 +151,8 @@ export default function CommandesAdmin() {
         )}
         {orders.map(order => {
           const sc = STATUS_COLORS[order.status] || STATUS_COLORS['nouvelle']
+          const transitions = STATUS_TRANSITIONS[order.status] || []
+          const pending = pendingStatuses[order.id] || ''
           return (
             <div key={order.id} style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.1)', borderRadius: 16, padding: '18px 20px' }}>
 
@@ -156,15 +168,6 @@ export default function CommandesAdmin() {
                   <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 50, background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`, display: 'inline-block', marginTop: 4 }}>{STATUS_LABELS[order.status]}</span>
                 </div>
               </div>
-
-              {/* CRÉNEAU */}
-              {false && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(232,160,32,0.04)', border: '1px solid rgba(232,160,32,0.1)', borderRadius: 8, padding: '7px 12px', marginBottom: 12, color: '#C8B890', fontSize: 12 }}>
-                  <IconCal />
-                  <span style={{ fontWeight: 600 }}>{formatDate(order.delivery_slots.date)}</span>
-                  <span style={{ color: '#E8A020', fontWeight: 700 }}>{order.delivery_slots.time_start?.slice(0,5)} – {order.delivery_slots.time_end?.slice(0,5)}</span>
-                </div>
-              )}
 
               {/* ITEMS */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
@@ -189,29 +192,42 @@ export default function CommandesAdmin() {
                   </a>
                 )}
               </div>
-<div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+
+              {/* STATUT */}
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: 11, color: '#7A6E58', fontFamily: 'DM Sans, sans-serif' }}>Statut</span>
-                  <div style={{ position: 'relative' }}>
-                    <select
-                      value={order.status}
-                      onChange={e => updateStatus(order.id, e.target.value)}
-                      style={{ background: '#1A1510', border: '1px solid rgba(232,160,32,0.25)', color: STATUS_COLORS[order.status]?.color || '#E8A020', borderRadius: 8, padding: '7px 32px 7px 12px', fontSize: 12, fontWeight: 700, outline: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', appearance: 'none', WebkitAppearance: 'none' }}
-                    >
-                      {STATUSES.map(s => <option key={s} value={s} style={{ background: '#131009', color: '#F5EDD6' }}>{STATUS_LABELS[s]}</option>)}
-                    </select>
-                    <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: STATUS_COLORS[order.status]?.color || '#E8A020', fontSize: 10 }}>▾</span>
-                  </div>
+                  {transitions.length > 0 ? (
+                    <div style={{ position: 'relative' }}>
+                      <select
+                        value={pending}
+                        onChange={e => setPendingStatuses(prev => ({ ...prev, [order.id]: e.target.value }))}
+                        style={{ background: '#1A1510', border: '1px solid rgba(232,160,32,0.25)', color: pending ? (STATUS_COLORS[pending]?.color || '#E8A020') : '#7A6E58', borderRadius: 8, padding: '7px 32px 7px 12px', fontSize: 12, fontWeight: 700, outline: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', appearance: 'none', WebkitAppearance: 'none' }}
+                      >
+                        <option value="" disabled style={{ background: '#131009', color: '#7A6E58' }}>— Changer statut —</option>
+                        {transitions.map(s => (
+                          <option key={s} value={s} style={{ background: '#131009', color: '#F5EDD6' }}>{STATUS_LABELS[s]}</option>
+                        ))}
+                      </select>
+                      <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: pending ? (STATUS_COLORS[pending]?.color || '#E8A020') : '#7A6E58', fontSize: 10 }}>▾</span>
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 50, background: sc.bg, color: sc.color, border: `1px solid ${sc.border}` }}>{STATUS_LABELS[order.status]}</span>
+                  )}
                 </div>
-                {(() => {
-                  const url = buildWhatsAppUrl(order, slots[order.slot_id] ?? null, formatDate)
+                {pending && pending !== order.status && (() => {
+                  const url = buildWhatsAppUrl(order, slots[order.slot_id] ?? null, pending, formatDate)
                   if (!url) return null
                   return (
                     <button
-                      onClick={() => window.open(url, '_blank')}
-                      style={{ marginTop: 10, width: '100%', background: '#25D366', color: '#fff', borderRadius: 50, padding: '8px 16px', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}
+                      onClick={async () => {
+                        await updateStatus(order.id, pending)
+                        setPendingStatuses(prev => { const n = { ...prev }; delete n[order.id]; return n })
+                        window.open(url, '_blank')
+                      }}
+                      style={{ marginTop: 10, display: 'inline-block', float: 'right', background: '#25D366', color: '#0A0804', borderRadius: 50, padding: '6px 16px', fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}
                     >
-                      Envoyer message WhatsApp
+                      {WA_BUTTON_LABELS[pending] || 'Envoyer message WhatsApp'}
                     </button>
                   )
                 })()}
