@@ -160,6 +160,11 @@ export default function LivraisonAdmin() {
 
   const save = async () => {
     if (hasOverlap()) { setSaveError('Les tranches tarifaires se chevauchent. Corrigez avant d\'enregistrer.'); return }
+    const _maxRadiusNum = parseFloat(maxRadius) || 0
+    if (_maxRadiusNum > 0 && zones.some(z => z.max_km > _maxRadiusNum || z.min_km >= _maxRadiusNum)) {
+      setSaveError(`Des tranches dépassent le rayon maximum de ${_maxRadiusNum} km. Corrigez avant d'enregistrer.`)
+      return
+    }
     setSaving(true); setSaveError('')
     await Promise.all([
       supabase.from('settings').upsert({ key: 'delivery_mode', value: deliveryMode }),
@@ -205,6 +210,8 @@ export default function LivraisonAdmin() {
   const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${(mapLng - 0.02).toFixed(6)},${(mapLat - 0.02).toFixed(6)},${(mapLng + 0.02).toFixed(6)},${(mapLat + 0.02).toFixed(6)}&layer=mapnik&marker=${mapLat.toFixed(6)},${mapLng.toFixed(6)}`
 
   const overlapErr = hasOverlap()
+  const maxRadiusNum = parseFloat(maxRadius) || 0
+  const hasZoneExceedingRadius = maxRadiusNum > 0 && zones.some(z => z.max_km > maxRadiusNum || z.min_km >= maxRadiusNum)
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '28px 20px 120px', fontFamily: 'DM Sans, sans-serif', color: '#F5EDD6' }}>
@@ -214,7 +221,7 @@ export default function LivraisonAdmin() {
           <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 700, margin: 0, background: 'linear-gradient(135deg,#F5C842,#FF6B20)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Livraison</h1>
           <div style={{ fontSize: 12, color: '#A89880', marginTop: 4 }}>Configuration du système de livraison</div>
         </div>
-        <button onClick={save} disabled={saving || overlapErr} style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: saved ? 'rgba(91,197,122,0.15)' : overlapErr ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', color: saved ? '#5BC57A' : overlapErr ? '#555' : '#0A0804', fontSize: 13, fontWeight: 700, cursor: (saving || overlapErr) ? 'not-allowed' : 'pointer' }}>
+        <button onClick={save} disabled={saving || overlapErr || hasZoneExceedingRadius} style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: saved ? 'rgba(91,197,122,0.15)' : (overlapErr || hasZoneExceedingRadius) ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', color: saved ? '#5BC57A' : (overlapErr || hasZoneExceedingRadius) ? '#555' : '#0A0804', fontSize: 13, fontWeight: 700, cursor: (saving || overlapErr || hasZoneExceedingRadius) ? 'not-allowed' : 'pointer' }}>
           {saving ? 'Enregistrement...' : saved ? '✓ Enregistré' : 'Enregistrer'}
         </button>
       </div>
@@ -379,6 +386,12 @@ export default function LivraisonAdmin() {
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>Tranches tarifaires</div>
 
+        {hasZoneExceedingRadius && (
+          <div style={{ background: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.25)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#FF6B6B', marginBottom: 10 }}>
+            ⚠ Certaines tranches dépassent votre rayon maximum de {maxRadiusNum} km
+          </div>
+        )}
+
         {zones.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '20px 0', color: '#8A7A60', fontSize: 13 }}>
             Aucune tranche définie.
@@ -396,11 +409,17 @@ export default function LivraisonAdmin() {
                   <div style={{ display: 'grid', gridTemplateColumns: minOrderStrategy === 'per_zone' ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: 8, marginBottom: 10 }}>
                     <div>
                       <label style={labelStyle}>De (km)</label>
-                      <input type="number" value={zone.min_km} onChange={e => updateZone(zone.id, 'min_km', parseFloat(e.target.value) || 0)} min="0" step="0.1" style={inputStyle} />
+                      <input type="number" value={zone.min_km} onChange={e => updateZone(zone.id, 'min_km', parseFloat(e.target.value) || 0)} min="0" step="0.1" style={{ ...inputStyle, borderColor: (maxRadiusNum > 0 && zone.min_km >= maxRadiusNum) ? 'rgba(255,107,107,0.5)' : undefined }} />
+                      {maxRadiusNum > 0 && zone.min_km >= maxRadiusNum && (
+                        <div style={{ fontSize: 11, color: '#FF6B6B', marginTop: 4 }}>Dépasse le rayon maximum ({maxRadiusNum} km)</div>
+                      )}
                     </div>
                     <div>
                       <label style={labelStyle}>À (km)</label>
-                      <input type="number" value={zone.max_km} onChange={e => updateZone(zone.id, 'max_km', parseFloat(e.target.value) || 0)} min="0" step="0.1" style={inputStyle} />
+                      <input type="number" value={zone.max_km} onChange={e => updateZone(zone.id, 'max_km', parseFloat(e.target.value) || 0)} min="0" step="0.1" style={{ ...inputStyle, borderColor: (maxRadiusNum > 0 && zone.max_km > maxRadiusNum) ? 'rgba(255,107,107,0.5)' : undefined }} />
+                      {maxRadiusNum > 0 && zone.max_km > maxRadiusNum && (
+                        <div style={{ fontSize: 11, color: '#FF6B6B', marginTop: 4 }}>Dépasse le rayon maximum ({maxRadiusNum} km)</div>
+                      )}
                     </div>
                     <div>
                       <label style={labelStyle}>Prix (DH)</label>
@@ -580,11 +599,11 @@ export default function LivraisonAdmin() {
       {/* BOUTON BAS FIXE */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '14px 20px', background: 'rgba(10,8,4,0.96)', borderTop: '1px solid rgba(232,160,32,0.1)', backdropFilter: 'blur(12px)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, zIndex: 40 }}>
         {saveError && <div style={{ fontSize: 12, color: '#FF6B6B' }}>{saveError}</div>}
-        <button onClick={save} disabled={saving || overlapErr} style={{
+        <button onClick={save} disabled={saving || overlapErr || hasZoneExceedingRadius} style={{
           padding: '12px 40px', borderRadius: 12, border: 'none',
-          background: saved ? 'rgba(91,197,122,0.15)' : overlapErr ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg,#F5C842,#FF6B20)',
-          color: saved ? '#5BC57A' : overlapErr ? '#555' : '#0A0804',
-          fontSize: 14, fontWeight: 700, cursor: (saving || overlapErr) ? 'not-allowed' : 'pointer',
+          background: saved ? 'rgba(91,197,122,0.15)' : (overlapErr || hasZoneExceedingRadius) ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg,#F5C842,#FF6B20)',
+          color: saved ? '#5BC57A' : (overlapErr || hasZoneExceedingRadius) ? '#555' : '#0A0804',
+          fontSize: 14, fontWeight: 700, cursor: (saving || overlapErr || hasZoneExceedingRadius) ? 'not-allowed' : 'pointer',
           minWidth: 220, fontFamily: 'DM Sans, sans-serif',
         }}>
           {saving ? 'Enregistrement...' : saved ? '✓ Enregistré' : 'Enregistrer la configuration'}
