@@ -54,7 +54,7 @@ export default function CommandesAdmin() {
   const supabase = createClient()
 
   const load = async () => {
-    const { data: all } = await supabase.from('orders').select('*, delivery_slots(*), order_items(*)').order('created_at', { ascending: false })
+    const { data: all } = await supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending: false })
     if (!all) return
     const c: Record<string, number> = {}
     all.forEach(o => { c[o.status] = (c[o.status] || 0) + 1 })
@@ -121,7 +121,7 @@ export default function CommandesAdmin() {
               </div>
 
               {/* CRÉNEAU */}
-              {order.delivery_slots && (
+              {false && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(232,160,32,0.04)', border: '1px solid rgba(232,160,32,0.1)', borderRadius: 8, padding: '7px 12px', marginBottom: 12, color: '#C8B890', fontSize: 12 }}>
                   <IconCal />
                   <span style={{ fontWeight: 600 }}>{formatDate(order.delivery_slots.date)}</span>
