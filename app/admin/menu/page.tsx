@@ -152,9 +152,17 @@ const IconGrip = () => (
   </svg>
 )
 
+const BTN_ORDER: React.CSSProperties = {
+  width: 28, height: 28, borderRadius: '50%', border: 'none',
+  background: 'rgba(232,160,32,0.1)', color: '#E8A020',
+  fontSize: 14, lineHeight: 1, cursor: 'pointer',
+  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+}
+
 function CatRow({
   cat, indent = false, onEdit, onDelete,
   isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd,
+  isFirst = false, isLast = false, onMoveUp, onMoveDown,
 }: {
   cat: Category
   indent?: boolean
@@ -166,6 +174,10 @@ function CatRow({
   onDragOver: (e: React.DragEvent) => void
   onDrop: () => void
   onDragEnd: () => void
+  isFirst?: boolean
+  isLast?: boolean
+  onMoveUp?: () => void
+  onMoveDown?: () => void
 }) {
   return (
     <div
@@ -205,6 +217,10 @@ function CatRow({
       <span style={{ padding: '3px 10px', borderRadius: 50, fontSize: 11, fontWeight: 700, fontFamily: 'DM Sans, sans-serif', background: cat.active ? 'rgba(80,200,120,0.12)' : 'rgba(255,107,107,0.12)', color: cat.active ? '#50C878' : '#FF6B6B', flexShrink: 0 }}>
         {cat.active ? 'Actif' : 'Inactif'}
       </span>
+      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+        {isFirst ? <div style={{ width: 28 }} /> : <button onClick={onMoveUp} style={BTN_ORDER}>↑</button>}
+        {isLast  ? <div style={{ width: 28 }} /> : <button onClick={onMoveDown} style={BTN_ORDER}>↓</button>}
+      </div>
       <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
         <button onClick={() => onEdit(cat)} style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.06)', color: '#E8A020', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <IconEdit />
@@ -378,6 +394,28 @@ export default function MenuAdmin() {
     dragRef.current = { id, groupKey }
     setDragId(id)
     setDragGroupKey(groupKey)
+  }
+
+  const moveInGroup = async (group: Category[], fromIdx: number, direction: 1 | -1) => {
+    const toIdx = fromIdx + direction
+    if (toIdx < 0 || toIdx >= group.length) return
+    const a = group[fromIdx]
+    const b = group[toIdx]
+    const orderA = b.display_order
+    const orderB = a.display_order
+    setCats(prev => prev.map(c => {
+      if (c.id === a.id) return { ...c, display_order: orderA }
+      if (c.id === b.id) return { ...c, display_order: orderB }
+      return c
+    }))
+    setSavingOrder(true)
+    await Promise.all([
+      supabase.from('menu_categories').update({ display_order: orderA }).eq('id', a.id),
+      supabase.from('menu_categories').update({ display_order: orderB }).eq('id', b.id),
+    ])
+    setSavingOrder(false)
+    setSavedOrder(true)
+    setTimeout(() => setSavedOrder(false), 2000)
   }
 
   const clearDrag = () => {
@@ -564,36 +602,47 @@ export default function MenuAdmin() {
             Aucune catégorie — cliquez sur + Ajouter
           </div>
         )}
-        {parents.map(parent => (
-          <div key={parent.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <CatRow
-              cat={parent}
-              onEdit={openEdit}
-              onDelete={del}
-              isDragging={dragId === parent.id}
-              isDragOver={dragOverId === parent.id && dragGroupKey === 'root'}
-              onDragStart={() => startDrag(parent.id, 'root')}
-              onDragOver={e => { e.preventDefault(); if (dragRef.current.groupKey === 'root') setDragOverId(parent.id) }}
-              onDrop={() => handleDrop(parent.id, 'root')}
-              onDragEnd={clearDrag}
-            />
-            {childrenOf(parent.id).map(child => (
+        {parents.map((parent, pi) => {
+          const children = childrenOf(parent.id)
+          return (
+            <div key={parent.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <CatRow
-                key={child.id}
-                cat={child}
-                indent
+                cat={parent}
                 onEdit={openEdit}
                 onDelete={del}
-                isDragging={dragId === child.id}
-                isDragOver={dragOverId === child.id && dragGroupKey === parent.id}
-                onDragStart={() => startDrag(child.id, parent.id)}
-                onDragOver={e => { e.preventDefault(); if (dragRef.current.groupKey === parent.id) setDragOverId(child.id) }}
-                onDrop={() => handleDrop(child.id, parent.id)}
+                isDragging={dragId === parent.id}
+                isDragOver={dragOverId === parent.id && dragGroupKey === 'root'}
+                onDragStart={() => startDrag(parent.id, 'root')}
+                onDragOver={e => { e.preventDefault(); if (dragRef.current.groupKey === 'root') setDragOverId(parent.id) }}
+                onDrop={() => handleDrop(parent.id, 'root')}
                 onDragEnd={clearDrag}
+                isFirst={pi === 0}
+                isLast={pi === parents.length - 1}
+                onMoveUp={() => moveInGroup(parents, pi, -1)}
+                onMoveDown={() => moveInGroup(parents, pi, 1)}
               />
-            ))}
-          </div>
-        ))}
+              {children.map((child, ci) => (
+                <CatRow
+                  key={child.id}
+                  cat={child}
+                  indent
+                  onEdit={openEdit}
+                  onDelete={del}
+                  isDragging={dragId === child.id}
+                  isDragOver={dragOverId === child.id && dragGroupKey === parent.id}
+                  onDragStart={() => startDrag(child.id, parent.id)}
+                  onDragOver={e => { e.preventDefault(); if (dragRef.current.groupKey === parent.id) setDragOverId(child.id) }}
+                  onDrop={() => handleDrop(child.id, parent.id)}
+                  onDragEnd={clearDrag}
+                  isFirst={ci === 0}
+                  isLast={ci === children.length - 1}
+                  onMoveUp={() => moveInGroup(children, ci, -1)}
+                  onMoveDown={() => moveInGroup(children, ci, 1)}
+                />
+              ))}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
