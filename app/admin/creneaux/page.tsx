@@ -1,103 +1,191 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { format } from 'date-fns'
-import { fr } from 'date-fns/locale'
-import type { DeliverySlot } from '@/lib/types'
+import { addDays } from 'date-fns'
+
+const labelStyle = { fontSize: 11, fontWeight: 700, color: '#C8B99A', display: 'block', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.8px' }
+const inputStyle = { width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontSize: 13, outline: 'none', fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const }
+const sectionStyle = { background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }
+const sectionTitle = { fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: 16 }
+
+const DAYS = [
+  { label: 'Dim', value: '0' },
+  { label: 'Lun', value: '1' },
+  { label: 'Mar', value: '2' },
+  { label: 'Mer', value: '3' },
+  { label: 'Jeu', value: '4' },
+  { label: 'Ven', value: '5' },
+  { label: 'Sam', value: '6' },
+]
+
+const SPINNER_CHARS = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
 
 export default function CreneauxAdmin() {
-  const [slots, setSlots] = useState<DeliverySlot[]>([])
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [slotsStart, setSlotsStart] = useState('09:00')
+  const [slotsEnd, setSlotsEnd] = useState('19:00')
+  const [slotsDuration, setSlotsDuration] = useState('60')
+  const [slotsCapacity, setSlotsCapacity] = useState('10')
+  const [slotsPauseStart, setSlotsPauseStart] = useState('')
+  const [slotsPauseEnd, setSlotsPauseEnd] = useState('')
+  const [slotsClosedDays, setSlotsClosedDays] = useState<string[]>([])
+  const [slotsDaysAhead, setSlotsDaysAhead] = useState('14')
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [spinIdx, setSpinIdx] = useState(0)
+
   const supabase = createClient()
 
-  const load = async () => {
-    const { data } = await supabase.from('delivery_slots').select('*').gte('date', new Date().toISOString().split('T')[0]).order('date').order('time_start')
-    setSlots(data || [])
-  }
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    supabase.from('settings').select('*').then(({ data }) => {
+      data?.forEach((s: { key: string; value: string }) => {
+        if (s.key === 'slots_start') setSlotsStart(s.value)
+        if (s.key === 'slots_end') setSlotsEnd(s.value)
+        if (s.key === 'slots_duration') setSlotsDuration(s.value)
+        if (s.key === 'slots_capacity') setSlotsCapacity(s.value)
+        if (s.key === 'slots_pause_start') setSlotsPauseStart(s.value)
+        if (s.key === 'slots_pause_end') setSlotsPauseEnd(s.value)
+        if (s.key === 'slots_closed_days') { try { setSlotsClosedDays(JSON.parse(s.value)) } catch {} }
+        if (s.key === 'slots_days_ahead') setSlotsDaysAhead(s.value)
+      })
+    })
+  }, [])
 
-  const toggle = async (slot: DeliverySlot) => {
-    await supabase.from('delivery_slots').update({ blocked: !slot.blocked }).eq('id', slot.id); load()
+  useEffect(() => {
+    if (!saving) return
+    const t = setInterval(() => setSpinIdx(i => (i + 1) % SPINNER_CHARS.length), 80)
+    return () => clearInterval(t)
+  }, [saving])
+
+  const toggleClosedDay = (day: string) => {
+    setSlotsClosedDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day])
   }
 
-  const updateCapacity = async (id: string, capacity: number) => {
-    await supabase.from('delivery_slots').update({ capacity }).eq('id', id); load()
-  }
+  const handleSave = async () => {
+    setSaving(true)
+    setSaved(false)
 
-  const generateSlots = async (date: string) => {
-    const { data: existing } = await supabase.from('delivery_slots').select('id').eq('date', date)
-    if (existing && existing.length > 0) { alert('Les créneaux existent déjà pour ce jour.'); return }
-    const times = [['09:00','10:00'],['10:00','11:00'],['11:00','12:00'],['12:00','13:00'],['14:00','15:00'],['15:00','16:00'],['16:00','17:00'],['17:00','18:00'],['18:00','19:00']]
-    await supabase.from('delivery_slots').insert(times.map(([s,e]) => ({ date, time_start: s, time_end: e, capacity: 10, booked: 0, blocked: false })))
-    load()
-  }
+    const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+    const toTime = (n: number) => `${Math.floor(n / 60).toString().padStart(2, '0')}:${(n % 60).toString().padStart(2, '0')}`
+    const duration = parseInt(slotsDuration) || 60
+    const capacity = parseInt(slotsCapacity) || 10
+    const daysAhead = parseInt(slotsDaysAhead) || 14
+    const ps = slotsPauseStart ? toMin(slotsPauseStart) : null
+    const pe = slotsPauseEnd ? toMin(slotsPauseEnd) : null
+    const todayStr = new Date().toISOString().split('T')[0]
 
-  const dates = [...new Set(slots.map(s => s.date))].sort()
-  const daySlots = slots.filter(s => s.date === selectedDate)
-  const pct = (slot: DeliverySlot) => Math.min(100, (slot.booked / slot.capacity) * 100)
-  const barColor = (slot: DeliverySlot) => slot.booked >= slot.capacity ? '#FF6B6B' : slot.booked > slot.capacity * 0.7 ? '#FF6B20' : '#5BC57A'
+    await Promise.all([
+      supabase.from('settings').upsert({ key: 'slots_start', value: slotsStart }),
+      supabase.from('settings').upsert({ key: 'slots_end', value: slotsEnd }),
+      supabase.from('settings').upsert({ key: 'slots_duration', value: slotsDuration }),
+      supabase.from('settings').upsert({ key: 'slots_capacity', value: slotsCapacity }),
+      supabase.from('settings').upsert({ key: 'slots_pause_start', value: slotsPauseStart }),
+      supabase.from('settings').upsert({ key: 'slots_pause_end', value: slotsPauseEnd }),
+      supabase.from('settings').upsert({ key: 'slots_closed_days', value: JSON.stringify(slotsClosedDays) }),
+      supabase.from('settings').upsert({ key: 'slots_days_ahead', value: slotsDaysAhead }),
+    ])
+
+    await supabase.from('delivery_slots').delete().gte('date', todayStr)
+
+    for (let i = 0; i < daysAhead; i++) {
+      const d = addDays(new Date(), i)
+      if (slotsClosedDays.includes(d.getDay().toString())) continue
+      const dateStr = d.toISOString().split('T')[0]
+      const rows: { date: string; time_start: string; time_end: string; capacity: number; booked: number; blocked: boolean }[] = []
+      let cur = toMin(slotsStart)
+      const end = toMin(slotsEnd)
+      while (cur + duration <= end) {
+        const next = cur + duration
+        if (!(ps !== null && pe !== null && cur < pe && next > ps)) {
+          rows.push({ date: dateStr, time_start: toTime(cur), time_end: toTime(next), capacity, booked: 0, blocked: false })
+        }
+        cur = next
+      }
+      if (rows.length > 0) await supabase.from('delivery_slots').insert(rows)
+    }
+
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 5000)
+  }
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 900, color: '#F5EDD6' }}>Créneaux</h1>
-        <button onClick={() => generateSlots(selectedDate)} style={{ padding: '9px 18px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>
-          + Générer pour ce jour
-        </button>
-      </div>
+      <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 900, color: '#F5EDD6', marginBottom: 24 }}>Créneaux</h1>
 
-      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 20, paddingBottom: 4 }}>
-        {dates.map(date => {
-          const active = selectedDate === date
-          return (
-            <button key={date} onClick={() => setSelectedDate(date)} style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 50, border: '1px solid', borderColor: active ? 'rgba(232,160,32,0.4)' : 'rgba(232,160,32,0.12)', background: active ? 'rgba(232,160,32,0.12)' : 'transparent', color: active ? '#E8A020' : '#C8B99A', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 12 }}>
-              {format(new Date(date + 'T12:00:00'), 'EEE d/MM', { locale: fr })}
-            </button>
-          )
-        })}
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {daySlots.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#C8B99A', fontSize: 14 }}>
-            Aucun créneau. Cliquez "Générer" pour créer les créneaux.
+      <div style={sectionStyle}>
+        <div style={sectionTitle}>Horaires & durée</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div>
+            <label style={labelStyle}>Heure de début</label>
+            <input type="time" value={slotsStart} onChange={e => setSlotsStart(e.target.value)} style={inputStyle} />
           </div>
-        )}
-        {daySlots.map(slot => (
-          <div key={slot.id} style={{ background: '#131009', border: `1px solid ${slot.blocked ? 'rgba(255,107,107,0.15)' : 'rgba(232,160,32,0.1)'}`, borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 16, opacity: slot.blocked ? 0.6 : 1, flexWrap: 'wrap' as const }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: slot.blocked ? '#C8B99A' : '#F5EDD6', minWidth: 110, textDecoration: slot.blocked ? 'line-through' : 'none', fontFamily: 'DM Sans, sans-serif' }}>
-              {slot.time_start.slice(0,5)} – {slot.time_end.slice(0,5)}
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, color: '#C8B99A' }}>{slot.booked}/{slot.capacity} réservations</div>
-              <div style={{ width: '100%', height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, marginTop: 5 }}>
-                <div style={{ width: `${pct(slot)}%`, height: '100%', background: barColor(slot), borderRadius: 2 }} />
-              </div>
-            </div>
-
-            {/* BOUTONS +/- */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 11, color: '#C8B99A' }}>Cap.</span>
-              <button
-                onClick={() => slot.capacity > slot.booked && updateCapacity(slot.id, slot.capacity - 1)}
-                style={{ width: 28, height: 28, borderRadius: 50, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.06)', color: '#E8A020', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >−</button>
-              <span style={{ minWidth: 24, textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#F5EDD6', fontFamily: 'DM Sans, sans-serif' }}>{slot.capacity}</span>
-              <button
-                onClick={() => updateCapacity(slot.id, slot.capacity + 1)}
-                style={{ width: 28, height: 28, borderRadius: 50, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.06)', color: '#E8A020', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >+</button>
-            </div>
-
-            <button
-              onClick={() => toggle(slot)}
-              style={{ padding: '7px 14px', borderRadius: 50, border: '1px solid', borderColor: slot.blocked ? 'rgba(91,197,122,0.3)' : 'rgba(255,107,107,0.3)', background: slot.blocked ? 'rgba(91,197,122,0.08)' : 'rgba(255,107,107,0.08)', color: slot.blocked ? '#5BC57A' : '#FF6B6B', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'DM Sans, sans-serif', width: '100%', marginTop: 4 }}
-            >
-              {slot.blocked ? 'Débloquer' : 'Bloquer'}
-            </button>
+          <div>
+            <label style={labelStyle}>Heure de fin</label>
+            <input type="time" value={slotsEnd} onChange={e => setSlotsEnd(e.target.value)} style={inputStyle} />
           </div>
-        ))}
+          <div>
+            <label style={labelStyle}>Durée d&apos;un créneau (min)</label>
+            <input type="number" min={15} max={240} step={15} value={slotsDuration} onChange={e => setSlotsDuration(e.target.value)} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Capacité par défaut</label>
+            <input type="number" min={1} value={slotsCapacity} onChange={e => setSlotsCapacity(e.target.value)} style={inputStyle} />
+          </div>
+        </div>
       </div>
+
+      <div style={sectionStyle}>
+        <div style={{ ...sectionTitle, marginBottom: 4 }}>Pause déjeuner</div>
+        <div style={{ fontSize: 12, color: '#C8B99A', marginBottom: 16, fontFamily: 'DM Sans, sans-serif' }}>Laisser vide = pas de pause</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div>
+            <label style={labelStyle}>Début pause</label>
+            <input type="time" value={slotsPauseStart} onChange={e => setSlotsPauseStart(e.target.value)} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Fin pause</label>
+            <input type="time" value={slotsPauseEnd} onChange={e => setSlotsPauseEnd(e.target.value)} style={inputStyle} />
+          </div>
+        </div>
+      </div>
+
+      <div style={sectionStyle}>
+        <div style={sectionTitle}>Jours de fermeture</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
+          {DAYS.map(({ label, value }) => {
+            const closed = slotsClosedDays.includes(value)
+            return (
+              <button
+                key={value}
+                onClick={() => toggleClosedDay(value)}
+                style={{ padding: '8px 16px', borderRadius: 50, border: '1px solid', borderColor: closed ? 'rgba(255,107,107,0.4)' : 'rgba(232,160,32,0.15)', background: closed ? 'rgba(255,107,107,0.12)' : 'transparent', color: closed ? '#FF6B6B' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div style={{ ...sectionStyle, marginBottom: 20 }}>
+        <div style={sectionTitle}>Génération</div>
+        <label style={labelStyle}>Jours à générer en avance</label>
+        <input type="number" min={1} max={90} value={slotsDaysAhead} onChange={e => setSlotsDaysAhead(e.target.value)} style={inputStyle} />
+      </div>
+
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', border: 'none', borderRadius: 50, fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 14, cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.8 : 1 }}
+      >
+        {saving ? `${SPINNER_CHARS[spinIdx]}  Enregistrement en cours...` : 'Enregistrer'}
+      </button>
+
+      {saved && (
+        <div style={{ marginTop: 12, background: 'rgba(91,197,122,0.08)', border: '1px solid rgba(91,197,122,0.25)', borderRadius: 12, padding: '14px 18px', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700, color: '#5BC57A' }}>
+          Configuration enregistrée et créneaux régénérés ✓
+        </div>
+      )}
     </div>
   )
 }
