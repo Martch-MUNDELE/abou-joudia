@@ -4,8 +4,8 @@ import { createClient } from '@/lib/supabase/client'
 import { addDays } from 'date-fns'
 
 const labelStyle = { fontSize: 11, fontWeight: 700, color: '#C8B99A', display: 'block', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.8px' }
-const inputStyle = { width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontSize: 13, outline: 'none', fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const }
-const sectionStyle = { background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }
+const inputStyle = { width: '100%', maxWidth: '100%', minWidth: 0, padding: '10px 14px', boxSizing: 'border-box' as const, borderRadius: 10, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontSize: 13, outline: 'none', fontFamily: 'DM Sans, sans-serif', appearance: 'none' as const }
+const sectionStyle = { background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 16px', marginBottom: 14, overflow: 'hidden' as const }
 const sectionTitle = { fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: 16 }
 
 const DAYS = [
@@ -109,27 +109,27 @@ export default function CreneauxAdmin() {
   }
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto' }}>
+    <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 12px', boxSizing: 'border-box' as const }}>
       <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 900, color: '#F5EDD6', marginBottom: 24 }}>Créneaux</h1>
 
       <div style={sectionStyle}>
         <div style={sectionTitle}>Horaires & durée</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div>
             <label style={labelStyle}>Heure de début</label>
-            <input type="time" value={slotsStart} onChange={e => setSlotsStart(e.target.value)} style={inputStyle} />
+            <input type="time" value={slotsStart} onChange={e => setSlotsStart(e.target.value)} style={{ ...inputStyle, boxSizing: 'border-box' as const, appearance: 'none' as const }} />
           </div>
           <div>
             <label style={labelStyle}>Heure de fin</label>
-            <input type="time" value={slotsEnd} onChange={e => setSlotsEnd(e.target.value)} style={inputStyle} />
+            <input type="time" value={slotsEnd} onChange={e => setSlotsEnd(e.target.value)} style={{ ...inputStyle, boxSizing: 'border-box' as const, appearance: 'none' as const }} />
           </div>
           <div>
-            <label style={labelStyle}>Durée d&apos;un créneau (min)</label>
-            <input type="number" min={15} max={240} step={15} value={slotsDuration} onChange={e => setSlotsDuration(e.target.value)} style={inputStyle} />
+            <label style={labelStyle}>Durée (min)</label>
+            <input type="number" min={15} max={240} step={15} value={slotsDuration} onChange={e => setSlotsDuration(e.target.value)} style={{ ...inputStyle, boxSizing: 'border-box' as const, appearance: 'none' as const }} />
           </div>
           <div>
             <label style={labelStyle}>Capacité par défaut</label>
-            <input type="number" min={1} value={slotsCapacity} onChange={e => setSlotsCapacity(e.target.value)} style={inputStyle} />
+            <input type="number" min={1} value={slotsCapacity} onChange={e => setSlotsCapacity(e.target.value)} style={{ ...inputStyle, boxSizing: 'border-box' as const, appearance: 'none' as const }} />
           </div>
         </div>
       </div>
@@ -137,14 +137,14 @@ export default function CreneauxAdmin() {
       <div style={sectionStyle}>
         <div style={{ ...sectionTitle, marginBottom: 4 }}>Pause déjeuner</div>
         <div style={{ fontSize: 12, color: '#C8B99A', marginBottom: 16, fontFamily: 'DM Sans, sans-serif' }}>Laisser vide = pas de pause</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div>
             <label style={labelStyle}>Début pause</label>
-            <input type="time" value={slotsPauseStart} onChange={e => setSlotsPauseStart(e.target.value)} style={inputStyle} />
+            <input type="time" value={slotsPauseStart} onChange={e => setSlotsPauseStart(e.target.value)} style={{ ...inputStyle, boxSizing: 'border-box' as const, appearance: 'none' as const }} />
           </div>
           <div>
             <label style={labelStyle}>Fin pause</label>
-            <input type="time" value={slotsPauseEnd} onChange={e => setSlotsPauseEnd(e.target.value)} style={inputStyle} />
+            <input type="time" value={slotsPauseEnd} onChange={e => setSlotsPauseEnd(e.target.value)} style={{ ...inputStyle, boxSizing: 'border-box' as const, appearance: 'none' as const }} />
           </div>
         </div>
       </div>
@@ -170,7 +170,7 @@ export default function CreneauxAdmin() {
       <div style={{ ...sectionStyle, marginBottom: 20 }}>
         <div style={sectionTitle}>Génération</div>
         <label style={labelStyle}>Jours à générer en avance</label>
-        <input type="number" min={1} max={90} value={slotsDaysAhead} onChange={e => setSlotsDaysAhead(e.target.value)} style={inputStyle} />
+        <input type="number" min={1} max={90} value={slotsDaysAhead} onChange={e => setSlotsDaysAhead(e.target.value)} style={{ ...inputStyle, boxSizing: 'border-box' as const, appearance: 'none' as const }} />
       </div>
 
       <button

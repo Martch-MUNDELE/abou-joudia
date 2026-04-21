@@ -9,7 +9,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div style={{ minHeight: '100vh', background: '#080603' }}>
       {!isLogin && <AdminNav />}
-      <main style={{ maxWidth: 900, margin: '0 auto', padding: isLogin ? '0' : '32px 24px 80px' }}>
+      <main style={{ maxWidth: 900, margin: '0 auto', padding: isLogin ? '0' : '32px 16px 80px' }}>
         {children}
       </main>
     </div>
