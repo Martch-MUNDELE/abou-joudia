@@ -133,6 +133,29 @@ export function FacturePDF({ order, items, slot }: { order: any, items: any[], s
           </View>
 
           {/* TOTAL */}
+          {/* FRAIS DE LIVRAISON */}
+          {order.delivery_mode === 'pickup' ? (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
+              <Text style={{ fontSize: 10, color: '#C8B99A', fontFamily: 'Helvetica' }}>Mode</Text>
+              <Text style={{ fontSize: 10, color: '#F5EDD6', fontFamily: 'Helvetica-Bold' }}>Retrait sur place</Text>
+            </View>
+          ) : order.delivery_fee > 0 ? (
+            <View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
+                <Text style={{ fontSize: 10, color: '#C8B99A', fontFamily: 'Helvetica' }}>Sous-total</Text>
+                <Text style={{ fontSize: 10, color: '#F5EDD6', fontFamily: 'Helvetica' }}>{(order.total - order.delivery_fee).toFixed(2)} DH</Text>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
+                <Text style={{ fontSize: 10, color: '#C8B99A', fontFamily: 'Helvetica' }}>Frais de livraison</Text>
+                <Text style={{ fontSize: 10, color: '#F5C842', fontFamily: 'Helvetica-Bold' }}>{order.delivery_fee.toFixed(2)} DH</Text>
+              </View>
+            </View>
+          ) : (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
+              <Text style={{ fontSize: 10, color: '#C8B99A', fontFamily: 'Helvetica' }}>Frais de livraison</Text>
+              <Text style={{ fontSize: 10, color: '#5BC57A', fontFamily: 'Helvetica-Bold' }}>Gratuit</Text>
+            </View>
+          )}
           <View style={styles.totalCard}>
             <Text style={styles.totalLabel}>Total à payer</Text>
             <Text style={styles.totalValue}>{order.total?.toFixed(2)} DH</Text>

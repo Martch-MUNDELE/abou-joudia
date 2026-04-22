@@ -1,19 +1,130 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useCart } from '@/store/cart'
+import { createClient } from '@/lib/supabase/client'
 import FeaturesBar from '@/components/FeaturesBar'
 import SlotPicker from '@/components/SlotPicker'
 import PhoneInput from '@/components/PhoneInput'
+import LeafletMap from '@/components/LeafletMap'
+import type { Product } from '@/lib/types'
+
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+interface DeliveryZone {
+  id: string
+  min_km: number
+  max_km: number
+  price: number
+  min_order: number
+  active: boolean
+}
+
+interface DeliverySettings {
+  mode: 'all' | 'delivery_only' | 'pickup_only'
+  shopLat: number | null
+  shopLng: number | null
+  shopAddress: string
+  maxRadius: number
+  tolerance: number
+  minOrder: number
+  freeAbove: number
+  outOfZoneMessage: string
+  pickupMessage: string
+  minOrderStrategy: 'global' | 'per_zone'
+}
+
+interface DeliveryResult {
+  mode: 'delivery' | 'pickup'
+  fee: number
+  distance: number | null
+  zone: DeliveryZone | null
+  inZone: boolean
+  reason: 'ok' | 'pickup_only' | 'out_of_zone' | 'no_shop' | 'no_zones' | 'free'
+}
+
+// ── Haversine ─────────────────────────────────────────────────────────────────
+
+function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+// ── calcDelivery ──────────────────────────────────────────────────────────────
+
+function calcDelivery(
+  clientLat: number,
+  clientLng: number,
+  settings: DeliverySettings,
+  zones: DeliveryZone[],
+  orderTotal: number
+): DeliveryResult {
+  if (!settings.shopLat || !settings.shopLng) {
+    return { mode: 'delivery', fee: 0, distance: null, zone: null, inZone: true, reason: 'no_shop' }
+  }
+  if (settings.mode === 'pickup_only') {
+    return { mode: 'pickup', fee: 0, distance: null, zone: null, inZone: true, reason: 'pickup_only' }
+  }
+  const distance = haversine(settings.shopLat, settings.shopLng, clientLat, clientLng)
+  const maxR = settings.maxRadius + settings.tolerance
+  if (distance > maxR) {
+    return { mode: 'delivery', fee: 0, distance, zone: null, inZone: false, reason: 'out_of_zone' }
+  }
+  const activeZones = zones.filter(z => z.active).sort((a, b) => a.min_km - b.min_km)
+  if (activeZones.length === 0) {
+    return { mode: 'delivery', fee: 0, distance, zone: null, inZone: true, reason: 'no_zones' }
+  }
+  const matched = activeZones.find(z => distance >= z.min_km && distance < z.max_km + settings.tolerance)
+  if (!matched) {
+    return { mode: 'delivery', fee: 0, distance, zone: null, inZone: true, reason: 'no_zones' }
+  }
+  if (settings.freeAbove > 0 && orderTotal >= settings.freeAbove) {
+    return { mode: 'delivery', fee: 0, distance, zone: matched, inZone: true, reason: 'free' }
+  }
+  return { mode: 'delivery', fee: matched.price, distance, zone: matched, inZone: true, reason: 'ok' }
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function PanierPage() {
-  const { items, update, total, clear } = useCart()
+  const { items, update, total, clear, add } = useCart()
   const router = useRouter()
+  const supabase = createClient()
+
   const [step, setStep] = useState<'cart' | 'info' | 'slot'>('cart')
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [orderError, setOrderError] = useState('')
+
+  // Delivery config loaded from Supabase
+  const [deliverySettings, setDeliverySettings] = useState<DeliverySettings>({
+    mode: 'all',
+    shopLat: null,
+    shopLng: null,
+    shopAddress: '',
+    maxRadius: 10,
+    tolerance: 0.3,
+    minOrder: 0,
+    freeAbove: 0,
+    outOfZoneMessage: 'Désolé, votre adresse est hors de notre zone de livraison.',
+    pickupMessage: 'Venez récupérer votre commande directement à notre boutique.',
+    minOrderStrategy: 'global',
+  })
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([])
+  const [deliveryLoaded, setDeliveryLoaded] = useState(false)
+  const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([])
+  const wasAutoSwitchedRef = useRef(false)
+
+  // Chosen delivery mode by user (when settings.mode === 'all')
+  const [chosenMode, setChosenMode] = useState<'delivery' | 'pickup'>('delivery')
+
+  // Delivery calculation result
+  const [deliveryResult, setDeliveryResult] = useState<DeliveryResult | null>(null)
+
   const [form, setForm] = useState(() => {
     if (typeof window === 'undefined') return { name: '', phone: '', address: '', note: '', email: '', wantFacture: false, lat: null as number | null, lng: null as number | null, geo_address: '' }
     try {
@@ -26,8 +137,89 @@ export default function PanierPage() {
     return { name: '', phone: '', address: '', note: '', email: '', wantFacture: false, lat: null as number | null, lng: null as number | null, geo_address: '' }
   })
   const [geoLoading, setGeoLoading] = useState(false)
+  const [geoError, setGeoError] = useState('')
 
-  // Sauvegarde auto dans localStorage
+  // ── Fetch delivery settings ────────────────────────────────────────────────
+
+  useEffect(() => {
+    async function loadDelivery() {
+      const [{ data: settingsData }, { data: zonesData }] = await Promise.all([
+        supabase.from('settings').select('key, value').like('key', 'delivery_%'),
+        supabase.from('delivery_zones').select('*').eq('active', true).order('min_km', { ascending: true }),
+      ])
+      if (settingsData) {
+        const map: Record<string, string> = {}
+        settingsData.forEach((s: any) => { map[s.key] = s.value })
+        setDeliverySettings({
+          mode: (map.delivery_mode as any) || 'all',
+          shopLat: map.delivery_shop_lat ? parseFloat(map.delivery_shop_lat) : null,
+          shopLng: map.delivery_shop_lng ? parseFloat(map.delivery_shop_lng) : null,
+          shopAddress: map.delivery_shop_address || '',
+          maxRadius: parseFloat(map.delivery_max_radius) || 10,
+          tolerance: parseFloat(map.delivery_tolerance) || 0.3,
+          minOrder: parseFloat(map.delivery_min_order) || 0,
+          freeAbove: parseFloat(map.delivery_free_above) || 0,
+          outOfZoneMessage: map.delivery_out_of_zone_message || 'Désolé, votre adresse est hors de notre zone de livraison.',
+          pickupMessage: map.delivery_pickup_message || 'Venez récupérer votre commande directement à notre boutique.',
+          minOrderStrategy: (map.delivery_min_order_strategy as any) || 'global',
+        })
+        if (map.delivery_mode === 'pickup_only') setChosenMode('pickup')
+        else if (map.delivery_mode === 'delivery_only') setChosenMode('delivery')
+      }
+      if (zonesData) setDeliveryZones(zonesData)
+      setDeliveryLoaded(true)
+    }
+    loadDelivery()
+  }, [])
+
+  // ── Recompute delivery when lat/lng or mode changes ────────────────────────
+
+  useEffect(() => {
+    if (!deliveryLoaded) return
+    if (chosenMode === 'pickup') {
+      setDeliveryResult({ mode: 'pickup', fee: 0, distance: null, zone: null, inZone: true, reason: 'pickup_only' })
+      return
+    }
+    if (form.lat && form.lng) {
+      const result = calcDelivery(form.lat, form.lng, deliverySettings, deliveryZones, total())
+      setDeliveryResult(result)
+    } else {
+      setDeliveryResult(null)
+    }
+  }, [form.lat, form.lng, chosenMode, deliveryLoaded, deliverySettings, deliveryZones])
+
+  // ── Min order ─────────────────────────────────────────────────────────────
+
+  const subTotal = total()
+  const isBelowMinOrder = deliverySettings.minOrder > 0 && subTotal < deliverySettings.minOrder && deliverySettings.mode !== 'pickup_only'
+
+  useEffect(() => {
+    if (!deliveryLoaded || deliverySettings.mode !== 'all') return
+    if (isBelowMinOrder) {
+      setChosenMode(prev => {
+        if (prev === 'delivery') { wasAutoSwitchedRef.current = true; return 'pickup' }
+        return prev
+      })
+    } else if (wasAutoSwitchedRef.current) {
+      wasAutoSwitchedRef.current = false
+      setChosenMode('delivery')
+    }
+  }, [isBelowMinOrder, deliveryLoaded, deliverySettings.mode])
+
+  useEffect(() => {
+    if (!isBelowMinOrder) { setSuggestedProducts([]); return }
+    supabase
+      .from('products')
+      .select('*')
+      .eq('active', true)
+      .order('popular', { ascending: false })
+      .order('price', { ascending: true })
+      .limit(3)
+      .then(({ data }) => { if (data) setSuggestedProducts(data as Product[]) })
+  }, [isBelowMinOrder])
+
+  // ── Form helpers ───────────────────────────────────────────────────────────
+
   const updateForm = (updater: (f: typeof form) => typeof form) => {
     setForm((prev: typeof form) => {
       const next = updater(prev)
@@ -35,10 +227,9 @@ export default function PanierPage() {
       return next
     })
   }
-  const [geoError, setGeoError] = useState('')
 
   const localize = () => {
-    if (!navigator.geolocation) { setGeoError("Géolocalisation non supportée"); return }
+    if (!navigator.geolocation) { setGeoError('Géolocalisation non supportée'); return }
     setGeoLoading(true); setGeoError('')
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -50,19 +241,65 @@ export default function PanierPage() {
         } catch { updateForm(f => ({ ...f, lat, lng })) }
         setGeoLoading(false)
       },
-      (err) => { setGeoError(err.code === 1 ? "Accès refusé." : "Position introuvable."); setGeoLoading(false) },
+      (err) => {
+        const msg = err.code === 1 ? 'Accès à la position refusé. Vous pouvez saisir votre adresse manuellement.' : 'Position introuvable. Veuillez saisir votre adresse manuellement.'
+        setGeoError(msg)
+        setGeoLoading(false)
+      },
       { enableHighAccuracy: true, timeout: 10000 }
     )
   }
 
+  // Geocode address typed manually
+  const geocodeAddress = async (addr: string) => {
+    if (!addr.trim() || addr.length < 6) return
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&limit=1&accept-language=fr`, { headers: { 'User-Agent': 'AbouJoudia/1.0' } })
+      const data = await res.json()
+      if (data && data.length > 0) {
+        updateForm(f => ({ ...f, lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), geo_address: f.address }))
+      }
+    } catch {}
+  }
+
+  const geocodeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleAddressChange = (val: string) => {
+    updateForm(f => ({ ...f, address: val, lat: null, lng: null }))
+    if (geocodeTimer.current) clearTimeout(geocodeTimer.current)
+    geocodeTimer.current = setTimeout(() => geocodeAddress(val), 1200)
+  }
+
+  // ── Order submission ───────────────────────────────────────────────────────
+
   const handleOrder = async () => {
-    if (!selectedSlot || !form.name || !form.phone || !form.address) return
+    if (!selectedSlot || !form.name || !form.phone) return
+    if (chosenMode === 'delivery' && !form.address) return
     setLoading(true)
     try {
+      const isPickup = chosenMode === 'pickup'
+      const fee = deliveryResult?.fee ?? 0
+      const distance = deliveryResult?.distance ?? null
+      const finalAddress = isPickup ? deliverySettings.shopAddress : form.address
+      const finalLat = isPickup ? deliverySettings.shopLat : form.lat
+      const finalLng = isPickup ? deliverySettings.shopLng : form.lng
+      const finalGeoAddress = isPickup ? deliverySettings.shopAddress : form.geo_address
+
       const res = await fetch('/api/commandes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, slot_id: selectedSlot, items: items.map(i => ({ product_id: i.product.id, product_name: i.product.name, quantity: i.quantity, unit_price: i.product.price })), total: total() })
+        body: JSON.stringify({
+          ...form,
+          address: finalAddress,
+          lat: finalLat,
+          lng: finalLng,
+          geo_address: finalGeoAddress,
+          slot_id: selectedSlot,
+          items: items.map(i => ({ product_id: i.product.id, product_name: i.product.name, quantity: i.quantity, unit_price: i.product.price })),
+          total: total() + fee,
+          delivery_mode: chosenMode,
+          delivery_fee: fee,
+          distance_km: distance,
+        })
       })
       const data = await res.json()
       if (data.error) { setOrderError(data.error); setLoading(false); return }
@@ -72,11 +309,39 @@ export default function PanierPage() {
   }
 
   useEffect(() => { if (items.length === 0) router.replace('/') }, [items.length, router])
-
   if (items.length === 0) return null
 
+  // ── Derived values ─────────────────────────────────────────────────────────
+
+  const isPickup = chosenMode === 'pickup'
+  const deliveryFee = isPickup ? 0 : (deliveryResult?.fee ?? 0)
+  const grandTotal = total() + deliveryFee
+  const showModeSelector = deliverySettings.mode === 'all'
+  const showAddressSection = !isPickup
+  const canProceedFromInfo = !!(
+    form.name &&
+    form.phone &&
+    (isPickup || (form.address && (!deliveryLoaded || !deliveryResult || deliveryResult.inZone))) &&
+    !(isBelowMinOrder && !isPickup)
+  )
+
   const stepIndex = ['cart', 'info', 'slot'].indexOf(step)
-  const stepLabels = ['Panier', 'Infos', 'Horaire']
+  const stepLabels = ['Panier', 'Infos', isPickup ? 'Horaire' : 'Horaire']
+  const slotTitle = isPickup ? 'Quand récupérer ?' : 'Quand livrer ?'
+
+  // ── Styles ─────────────────────────────────────────────────────────────────
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '13px 16px', borderRadius: 12,
+    border: '1.5px solid rgba(232,160,32,0.15)',
+    background: 'rgba(255,255,255,0.03)', color: '#F5EDD6',
+    fontFamily: 'DM Sans, sans-serif', fontSize: 14, outline: 'none',
+    boxSizing: 'border-box',
+  }
+  const labelStyle: React.CSSProperties = {
+    display: 'block', fontSize: 11, fontWeight: 700, color: '#C8B99A',
+    textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8,
+  }
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 100 }}>
@@ -84,7 +349,7 @@ export default function PanierPage() {
       {/* HEADER */}
       <div style={{ padding: '24px 20px 20px' }}>
         <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 24, fontWeight: 800, color: '#F5EDD6', margin: '0 0 20px', letterSpacing: '-0.5px' }}>
-          {step === 'cart' ? 'Mon panier' : step === 'info' ? 'Vos informations' : 'Quand livrer ?'}
+          {step === 'cart' ? 'Mon panier' : step === 'info' ? 'Vos informations' : slotTitle}
         </h1>
 
         {/* STEPPER */}
@@ -95,7 +360,7 @@ export default function PanierPage() {
                 <div style={{ width: 30, height: 30, borderRadius: '50%', background: stepIndex >= i ? 'linear-gradient(135deg,#F5C842,#FF6B20)' : 'rgba(255,255,255,0.05)', border: stepIndex >= i ? 'none' : '1.5px solid rgba(232,160,32,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: stepIndex >= i ? '#0A0804' : '#C8B99A', transition: 'all 0.3s', fontFamily: 'DM Sans, sans-serif' }}>
                   {stepIndex > i ? '✓' : i + 1}
                 </div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: stepIndex >= i ? '#E8A020' : '#C8B99A', letterSpacing: '0.3px', textTransform: 'none' as const, whiteSpace: 'nowrap' as const }}>{label}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: stepIndex >= i ? '#E8A020' : '#C8B99A', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>{label}</div>
               </div>
               {i < 2 && <div style={{ flex: 1, height: 1.5, background: stepIndex > i ? 'linear-gradient(90deg,#F5C842,#FF6B20)' : 'rgba(232,160,32,0.1)', margin: '0 6px 16px', transition: 'background 0.3s', borderRadius: 2 }} />}
             </div>
@@ -107,35 +372,42 @@ export default function PanierPage() {
       {step === 'cart' && (
         <div style={{ padding: '0 20px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {items.map((item, idx) => (
+            {items.map((item) => (
               <div key={item.product.id} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '13px 0', borderBottom: '1px solid rgba(232,160,32,0.06)' }}>
-                {/* Image ronde */}
-                <div style={{ width: 'clamp(44px, 12vw, 56px)', height: 'clamp(44px, 12vw, 56px)', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '2px solid rgba(232,160,32,0.15)' }}>
+                <div style={{ width: 'clamp(44px,12vw,56px)', height: 'clamp(44px,12vw,56px)', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '2px solid rgba(232,160,32,0.15)' }}>
                   <img src={item.product.image_url} alt={item.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
-
-                {/* Nom + prix */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: '#F5EDD6', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{item.product.name}</div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#F5EDD6', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.product.name}</div>
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14, color: '#F5C842' }}>{(item.product.price * item.quantity).toFixed(2)} DH</div>
                 </div>
-
-                {/* Contrôle quantité */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: 'rgba(255,255,255,0.04)', borderRadius: 50, border: '1px solid rgba(232,160,32,0.15)', flexShrink: 0 }}>
                   <button onClick={() => update(item.product.id, item.quantity - 1)} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'transparent', color: item.quantity === 1 ? '#FF6B6B' : '#C8B890', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 500, lineHeight: 1 }}>
                     {item.quantity === 1 ? '×' : '−'}
                   </button>
-                  <span style={{ fontWeight: 800, fontSize: 14, color: '#F5EDD6', minWidth: 20, textAlign: 'center' as const, fontFamily: 'DM Sans, sans-serif' }}>{item.quantity}</span>
+                  <span style={{ fontWeight: 800, fontSize: 14, color: '#F5EDD6', minWidth: 20, textAlign: 'center', fontFamily: 'DM Sans, sans-serif' }}>{item.quantity}</span>
                   <button onClick={() => update(item.product.id, item.quantity + 1)} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, lineHeight: 1 }}>+</button>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Livraison gratuite */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid rgba(232,160,32,0.06)', fontSize: 12, color: '#C8B99A' }}>
-            <span>Livraison</span>
-            <span style={{ color: '#7DD87A', fontWeight: 600 }}>Gratuite</span>
+          {/* Récapitulatif livraison dans le panier */}
+          <div style={{ marginTop: 4 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '11px 0', borderBottom: '1px solid rgba(232,160,32,0.06)', fontSize: 13, color: '#C8B99A' }}>
+              <span>Sous-total produits</span>
+              <span style={{ color: '#F5EDD6', fontWeight: 600 }}>{total().toFixed(2)} DH</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '11px 0', borderBottom: '1px solid rgba(232,160,32,0.06)', fontSize: 13, color: '#C8B99A' }}>
+              <span>Frais de livraison</span>
+              <span style={{ color: '#7DD87A', fontWeight: 600 }}>
+                {!deliveryLoaded ? '...' : isPickup ? 'Retrait' : deliveryResult ? (deliveryResult.fee === 0 ? 'Gratuit' : `${deliveryResult.fee} DH`) : 'Calculé à l\'étape suivante'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '13px 0', fontSize: 15, fontWeight: 800, fontFamily: 'DM Sans, sans-serif' }}>
+              <span style={{ color: '#C8B99A' }}>Total</span>
+              <span style={{ color: '#F5C842' }}>{grandTotal.toFixed(2)} DH</span>
+            </div>
           </div>
         </div>
       )}
@@ -143,33 +415,154 @@ export default function PanierPage() {
       {/* ══ STEP 2 — INFOS ══ */}
       {step === 'info' && (
         <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#C8B99A', textTransform: 'uppercase' as const, letterSpacing: '0.8px', marginBottom: 8 }}>Nom complet <span style={{ color: '#FF6B20' }}>*</span></label>
-            <input type="text" placeholder="Mohamed Amine..." value={form.name} onChange={e => updateForm(f => ({ ...f, name: e.target.value }))} style={{ width: '100%', padding: '13px 16px', borderRadius: 12, border: `1.5px solid ${form.name ? 'rgba(232,160,32,0.4)' : 'rgba(232,160,32,0.15)'}`, background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontFamily: 'DM Sans, sans-serif', fontSize: 14, outline: 'none', boxSizing: 'border-box' as const }} />
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#C8B99A', textTransform: 'uppercase' as const, letterSpacing: '0.8px', marginBottom: 8 }}>Téléphone <span style={{ color: '#FF6B20' }}>*</span></label>
-            <div style={{ display: 'flex', gap: 8 }}><PhoneInput value={form.phone} initialValue={form.phone} onChange={v => updateForm(f => ({ ...f, phone: v }))} /></div>
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#C8B99A', textTransform: 'uppercase' as const, letterSpacing: '0.8px', marginBottom: 8 }}>Adresse de livraison <span style={{ color: '#FF6B20' }}>*</span></label>
-            <button type="button" onClick={localize} disabled={geoLoading} style={{ width: '100%', padding: '13px 16px', borderRadius: 12, border: '1.5px dashed rgba(232,160,32,0.3)', background: form.lat ? 'rgba(125,216,122,0.06)' : 'rgba(232,160,32,0.04)', color: form.lat ? '#7DD87A' : '#E8A020', cursor: geoLoading ? 'wait' : 'pointer', fontSize: 13, fontWeight: 600, textAlign: 'center' as const, marginBottom: 10, fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const }}>
-              {geoLoading ? 'Localisation...' : form.lat ? '✓ Position détectée' : 'Me localiser automatiquement'}
-            </button>
-            {geoError && <div style={{ fontSize: 12, color: '#FF6B6B', marginBottom: 8 }}>{geoError}</div>}
-            {form.lat && form.lng && (
-              <div style={{ marginBottom: 10, borderRadius: 12, overflow: 'hidden', height: 'clamp(100px, 22vw, 150px)', border: '1px solid rgba(232,160,32,0.15)' }}>
-                <iframe
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${form.lng - 0.005},${form.lat - 0.005},${form.lng + 0.005},${form.lat + 0.005}&layer=mapnik&marker=${form.lat},${form.lng}`}
-                  style={{ width: '100%', height: '100%', border: 'none', filter: 'invert(0.85) hue-rotate(180deg)' }}
-                />
+
+          {/* Sélecteur mode livraison/retrait */}
+          {showModeSelector && (
+            <div>
+              <label style={labelStyle}>Mode de commande</label>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => { if (!isBelowMinOrder) setChosenMode('delivery') }}
+                  style={{ flex: 1, padding: '13px 16px', borderRadius: 12, border: isBelowMinOrder ? '2px solid rgba(200,185,154,0.25)' : `2px solid ${chosenMode === 'delivery' ? '#F5C842' : 'rgba(232,160,32,0.15)'}`, background: isBelowMinOrder ? 'rgba(255,255,255,0.01)' : chosenMode === 'delivery' ? 'rgba(245,200,66,0.08)' : 'rgba(255,255,255,0.02)', color: isBelowMinOrder ? 'rgba(200,185,154,0.4)' : chosenMode === 'delivery' ? '#F5C842' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700, cursor: isBelowMinOrder ? 'not-allowed' : 'pointer', opacity: isBelowMinOrder ? 0.5 : 1, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                >
+                  <span style={{ fontSize: 16 }}>🛵</span> Livraison
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChosenMode('pickup')}
+                  style={{ flex: 1, padding: '13px 16px', borderRadius: 12, border: `2px solid ${chosenMode === 'pickup' ? '#F5C842' : 'rgba(232,160,32,0.15)'}`, background: chosenMode === 'pickup' ? 'rgba(245,200,66,0.08)' : 'rgba(255,255,255,0.02)', color: chosenMode === 'pickup' ? '#F5C842' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                >
+                  <span style={{ fontSize: 16 }}>🏪</span> Retrait sur place
+                </button>
               </div>
-            )}
-            <textarea placeholder="Ou saisissez votre adresse..." value={form.address} onChange={e => updateForm(f => ({ ...f, address: e.target.value, lat: null, lng: null }))} rows={3} style={{ width: '100%', padding: '13px 16px', borderRadius: 12, border: '1.5px solid rgba(232,160,32,0.15)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontFamily: 'DM Sans, sans-serif', fontSize: 13, outline: 'none', resize: 'none' as const, lineHeight: 1.6, boxSizing: 'border-box' as const }} />
-          </div>
+
+              {isBelowMinOrder && (
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(245,140,0,0.08)', border: '1px solid rgba(245,140,0,0.2)', fontSize: 13, color: '#F5A020', lineHeight: 1.5 }}>
+                    Livraison disponible à partir de {deliverySettings.minOrder} DH — il vous manque {Math.ceil(deliverySettings.minOrder - subTotal)} DH
+                  </div>
+                  {suggestedProducts.length > 0 && (
+                    <div style={{ marginTop: 12 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#F5C842', marginBottom: 8 }}>Complète ta commande</div>
+                      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+                        {suggestedProducts.map(p => (
+                          <div key={p.id} style={{ flexShrink: 0, background: 'rgba(245,200,66,0.05)', border: '1px solid rgba(245,200,66,0.1)', borderRadius: 12, padding: 10, display: 'flex', flexDirection: 'column', gap: 6, width: 120 }}>
+                            <img src={p.image_url} alt={p.name} style={{ width: 50, height: 50, borderRadius: 8, objectFit: 'cover', alignSelf: 'center' }} loading="lazy" />
+                            <div style={{ fontSize: 11, fontWeight: 600, color: '#F5EDD6', lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{p.name}</div>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: '#F5C842' }}>{p.price.toFixed(2)} DH</div>
+                            <button type="button" onClick={() => add(p)} style={{ padding: '5px 0', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', fontSize: 18, fontWeight: 800, cursor: 'pointer', lineHeight: 1 }}>+</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Nom */}
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#C8B99A', textTransform: 'uppercase' as const, letterSpacing: '0.8px', marginBottom: 8 }}>Note (optionnel)</label>
-            <input type="text" placeholder="Étage, sonnette, instructions..." value={form.note} onChange={e => updateForm(f => ({ ...f, note: e.target.value }))} style={{ width: '100%', padding: '13px 16px', borderRadius: 12, border: '1.5px solid rgba(232,160,32,0.15)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontFamily: 'DM Sans, sans-serif', fontSize: 14, outline: 'none', boxSizing: 'border-box' as const }} />
+            <label style={labelStyle}>Nom complet <span style={{ color: '#FF6B20' }}>*</span></label>
+            <input type="text" placeholder="Mohamed Amine..." value={form.name} onChange={e => updateForm(f => ({ ...f, name: e.target.value }))} style={{ ...inputStyle, border: `1.5px solid ${form.name ? 'rgba(232,160,32,0.4)' : 'rgba(232,160,32,0.15)'}` }} />
+          </div>
+
+          {/* Téléphone */}
+          <div>
+            <label style={labelStyle}>Téléphone <span style={{ color: '#FF6B20' }}>*</span></label>
+            <PhoneInput value={form.phone} initialValue={form.phone} onChange={v => updateForm(f => ({ ...f, phone: v }))} />
+          </div>
+
+          {/* Section adresse — visible seulement en mode livraison */}
+          {showAddressSection ? (
+            <div>
+              <label style={labelStyle}>Adresse de livraison <span style={{ color: '#FF6B20' }}>*</span></label>
+              <button type="button" onClick={localize} disabled={geoLoading} style={{ width: '100%', padding: '13px 16px', borderRadius: 12, border: '1.5px dashed rgba(232,160,32,0.3)', background: form.lat ? 'rgba(125,216,122,0.06)' : 'rgba(232,160,32,0.04)', color: form.lat ? '#7DD87A' : '#E8A020', cursor: geoLoading ? 'wait' : 'pointer', fontSize: 13, fontWeight: 600, textAlign: 'center', marginBottom: 10, fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' }}>
+                {geoLoading ? 'Localisation...' : form.lat ? '✓ Position détectée' : 'Me localiser automatiquement'}
+              </button>
+              {geoError && <div style={{ fontSize: 12, color: '#FF6B6B', marginBottom: 8 }}>{geoError}</div>}
+
+              {form.lat && form.lng && (
+                <div style={{ marginBottom: 10 }}>
+                  <LeafletMap
+                    lat={form.lat}
+                    lng={form.lng}
+                    onPositionChange={(newLat, newLng, addr) => {
+                      updateForm(f => ({ ...f, lat: newLat, lng: newLng, address: addr || f.address, geo_address: addr }))
+                    }}
+                  />
+                </div>
+              )}
+
+              <textarea
+                placeholder="Ou saisissez votre adresse..."
+                value={form.address}
+                onChange={e => handleAddressChange(e.target.value)}
+                rows={3}
+                style={{ ...inputStyle, resize: 'none', lineHeight: 1.6, fontSize: 13 }}
+              />
+
+              {/* Résultat calcul livraison */}
+              {deliveryLoaded && form.address && deliveryResult && (
+                <div style={{ marginTop: 10, borderRadius: 12, border: `1px solid ${deliveryResult.inZone ? 'rgba(91,197,122,0.3)' : 'rgba(255,107,107,0.3)'}`, background: deliveryResult.inZone ? 'rgba(91,197,122,0.05)' : 'rgba(255,107,107,0.05)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {form.lat && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, color: '#A89880' }}>Adresse retenue</span>
+                      <span style={{ fontSize: 12, color: '#F5EDD6', maxWidth: '60%', textAlign: 'right', lineHeight: 1.4 }}>{form.address}</span>
+                    </div>
+                  )}
+                  {deliveryResult.distance !== null && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, color: '#A89880' }}>Distance</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#F5EDD6' }}>{deliveryResult.distance.toFixed(2)} km</span>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 12, color: '#A89880' }}>Frais de livraison</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: deliveryResult.fee === 0 ? '#7DD87A' : '#F5C842' }}>
+                      {deliveryResult.fee === 0 ? 'Gratuit' : `${deliveryResult.fee} DH`}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 12, color: '#A89880' }}>Zone</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: deliveryResult.inZone ? 'rgba(91,197,122,0.15)' : 'rgba(255,107,107,0.15)', color: deliveryResult.inZone ? '#5BC57A' : '#FF6B6B' }}>
+                      {deliveryResult.inZone ? 'Dans la zone ✓' : 'Hors zone ✗'}
+                    </span>
+                  </div>
+                  {!deliveryResult.inZone && (
+                    <div style={{ marginTop: 4, padding: '10px 12px', borderRadius: 8, background: 'rgba(255,107,107,0.08)', fontSize: 12, color: '#FF6B6B', lineHeight: 1.5 }}>
+                      {deliverySettings.outOfZoneMessage}
+                      {deliverySettings.mode === 'all' && (
+                        <button type="button" onClick={() => setChosenMode('pickup')} style={{ display: 'block', marginTop: 8, padding: '7px 16px', borderRadius: 8, border: '1px solid rgba(232,160,32,0.3)', background: 'transparent', color: '#E8A020', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+                          Passer en retrait sur place
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Mode retrait */
+            <div style={{ borderRadius: 12, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.04)', padding: '16px' }}>
+              <div style={{ fontSize: 13, color: '#C8B890', lineHeight: 1.6, marginBottom: 10 }}>{deliverySettings.pickupMessage}</div>
+              {deliverySettings.shopAddress && (
+                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>📍</span>
+                  <div style={{ fontSize: 13, color: '#F5EDD6', lineHeight: 1.5 }}>{deliverySettings.shopAddress}</div>
+                </div>
+              )}
+              <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: 'rgba(125,216,122,0.08)', border: '1px solid rgba(125,216,122,0.2)', fontSize: 12, color: '#7DD87A', fontWeight: 600 }}>
+                Frais de livraison : Gratuit (retrait)
+              </div>
+            </div>
+          )}
+
+          {/* Note */}
+          <div>
+            <label style={labelStyle}>Note (optionnel)</label>
+            <input type="text" placeholder="Étage, sonnette, instructions..." value={form.note} onChange={e => updateForm(f => ({ ...f, note: e.target.value }))} style={inputStyle} />
           </div>
 
           {/* Facturette */}
@@ -184,7 +577,7 @@ export default function PanierPage() {
               </div>
             </div>
             {form.wantFacture && (
-              <input type="email" placeholder="votre@email.com" value={form.email} onChange={e => updateForm(f => ({ ...f, email: e.target.value }))} style={{ width: '100%', marginTop: 12, padding: '11px 14px', borderRadius: 10, border: '1.5px solid rgba(232,160,32,0.2)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontFamily: 'DM Sans, sans-serif', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const }} />
+              <input type="email" placeholder="votre@email.com" value={form.email} onChange={e => updateForm(f => ({ ...f, email: e.target.value }))} style={{ width: '100%', marginTop: 12, padding: '11px 14px', borderRadius: 10, border: '1.5px solid rgba(232,160,32,0.2)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontFamily: 'DM Sans, sans-serif', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
             )}
           </div>
         </div>
@@ -194,19 +587,39 @@ export default function PanierPage() {
       {step === 'slot' && (
         <div style={{ padding: '0 20px' }}>
           <SlotPicker onSelect={setSelectedSlot} />
-          <p style={{ textAlign: 'center', color: '#C8B99A', fontSize: 11, marginTop: 16, letterSpacing: '0.3px' }}>Paiement en cash à la livraison uniquement</p>
+          {orderError && (
+            <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 10, background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.3)', fontSize: 13, color: '#FF6B6B' }}>{orderError}</div>
+          )}
+
+          {/* Récap livraison en step 3 */}
+          <div style={{ marginTop: 20, borderRadius: 12, border: '1px solid rgba(232,160,32,0.12)', background: 'rgba(255,255,255,0.02)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#C8B99A' }}>
+              <span>Sous-total</span>
+              <span style={{ color: '#F5EDD6', fontWeight: 600 }}>{total().toFixed(2)} DH</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#C8B99A' }}>
+              <span>{isPickup ? 'Retrait sur place' : 'Frais de livraison'}</span>
+              <span style={{ color: '#7DD87A', fontWeight: 600 }}>{isPickup ? 'Gratuit' : deliveryFee === 0 ? 'Gratuit' : `${deliveryFee} DH`}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 800, borderTop: '1px solid rgba(232,160,32,0.1)', paddingTop: 10, fontFamily: 'DM Sans, sans-serif' }}>
+              <span style={{ color: '#C8B99A' }}>Total</span>
+              <span style={{ color: '#F5C842' }}>{grandTotal.toFixed(2)} DH</span>
+            </div>
+          </div>
+
+          <p style={{ textAlign: 'center', color: '#C8B99A', fontSize: 11, marginTop: 16, letterSpacing: '0.3px' }}>Paiement en cash à la {isPickup ? 'récupération' : 'livraison'} uniquement</p>
         </div>
       )}
 
       {step === 'cart' && <FeaturesBar alwaysShow />}
+
       {/* ══ BARRE STICKY BAS ══ */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'rgba(8,6,3,0.97)', backdropFilter: 'blur(20px)', padding: '16px 20px', zIndex: 40 }}>
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
-          {/* Total visible sur step panier */}
           {step === 'cart' && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <span style={{ fontSize: 13, color: '#C8B99A', fontWeight: 500 }}>{items.reduce((acc, i) => acc + i.quantity, 0)} article{items.reduce((acc, i) => acc + i.quantity, 0) > 1 ? 's' : ''}</span>
-              <span style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 22, color: '#F5C842', letterSpacing: '-0.5px' }}>{total().toFixed(2)} DH</span>
+              <span style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 22, color: '#F5C842', letterSpacing: '-0.5px' }}>{grandTotal.toFixed(2)} DH</span>
             </div>
           )}
 
@@ -222,10 +635,13 @@ export default function PanierPage() {
                 else if (step === 'info') setStep('slot')
                 else handleOrder()
               }}
-              disabled={(step === 'info' && (!form.name || !form.phone || !form.address)) || (step === 'slot' && (!selectedSlot || loading))}
-              style={{ flex: 1, padding: '15px 20px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 20px rgba(232,160,32,0.3)', transition: 'all 0.2s', opacity: (step === 'info' && (!form.name || !form.phone || !form.address)) || (step === 'slot' && !selectedSlot) ? 0.4 : 1 }}
+              disabled={
+                (step === 'info' && !canProceedFromInfo) ||
+                (step === 'slot' && (!selectedSlot || loading))
+              }
+              style={{ flex: 1, padding: '15px 20px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 20px rgba(232,160,32,0.3)', transition: 'all 0.2s', opacity: (step === 'info' && !canProceedFromInfo) || (step === 'slot' && !selectedSlot) ? 0.4 : 1 }}
             >
-              {step === 'cart' ? `Continuer` : step === 'info' ? 'Quand livrer ?' : loading ? 'Envoi...' : 'Commander'}
+              {step === 'cart' ? 'Continuer' : step === 'info' ? (isPickup ? 'Quand récupérer ?' : 'Quand livrer ?') : loading ? 'Envoi...' : 'Commander'}
             </button>
           </div>
         </div>

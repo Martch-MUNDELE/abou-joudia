@@ -57,7 +57,8 @@ export async function POST(req: NextRequest) {
       <div style="background:rgba(232,160,32,0.06);border:1px solid rgba(232,160,32,0.15);border-radius:12px;padding:20px;text-align:center;margin-bottom:24px">
         <div style="font-size:11px;color:#E8A020;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Total de votre commande</div>
         <div style="font-family:Georgia,serif;font-size:36px;font-weight:900;color:#F5C842">${order.total.toFixed(2)} <span style="font-size:16px">DH</span></div>
-        <div style="font-size:12px;color:#888;margin-top:6px">Paiement à la livraison en cash</div>
+        ${order.delivery_mode === 'pickup' ? `<div style="font-size:12px;color:#5BC57A;margin-top:6px">Retrait sur place — Frais : Gratuit</div>` : order.delivery_fee > 0 ? `<div style="font-size:12px;color:#C8B99A;margin-top:6px">Sous-total : ${(order.total - order.delivery_fee).toFixed(2)} DH &nbsp;|&nbsp; Frais de livraison : <span style="color:#F5C842;font-weight:700">${order.delivery_fee.toFixed(2)} DH</span></div>` : `<div style="font-size:12px;color:#5BC57A;margin-top:6px">Livraison gratuite</div>`}
+        <div style="font-size:12px;color:#888;margin-top:4px">Paiement à la livraison en cash</div>
       </div>
       <p style="color:#7A6E58;font-size:12px;line-height:1.6;margin:0">
         Votre facture PDF est jointe à cet email. Notre équipe prépare votre commande avec soin et vous livrera dans les meilleurs délais.

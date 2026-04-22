@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   if (shopStatus?.value === 'closed') {
     return NextResponse.json({ error: 'Le shop est actuellement fermé' }, { status: 403 })
   }
-  const { name, phone, address, note, slot_id, items, total, lat, lng, geo_address, email, wantFacture } = body
+  const { name, phone, address, note, slot_id, items, total, lat, lng, geo_address, email, wantFacture, delivery_mode, delivery_fee, distance_km } = body
 
   const { data: slot } = await supabase.from('delivery_slots').select('*').eq('id', slot_id).single()
   if (!slot || slot.blocked || slot.booked >= slot.capacity) {
@@ -25,7 +25,8 @@ export async function POST(req: NextRequest) {
     customer_name: name, customer_phone: phone, customer_address: address,
     customer_note: note, slot_id, total, payment_method: 'livraison', status: 'nouvelle',
     lat: lat || null, lng: lng || null, geo_address: geo_address || null,
-    customer_email: (wantFacture && email) ? email : null
+    customer_email: (wantFacture && email) ? email : null,
+    delivery_mode: delivery_mode || null, delivery_fee: delivery_fee ?? null, distance_km: distance_km ?? null,
   }).select().single()
 
   if (error || !order) return NextResponse.json({ error: 'Erreur création commande' }, { status: 500 })

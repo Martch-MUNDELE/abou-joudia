@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import LeafletMap from '@/components/LeafletMap'
 
 function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371
@@ -207,7 +208,6 @@ export default function LivraisonAdmin() {
 
   const mapLat = parseFloat(shopLat) || 30.4202
   const mapLng = parseFloat(shopLng) || -9.5981
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${(mapLng - 0.02).toFixed(6)},${(mapLat - 0.02).toFixed(6)},${(mapLng + 0.02).toFixed(6)},${(mapLat + 0.02).toFixed(6)}&layer=mapnik&marker=${mapLat.toFixed(6)},${mapLng.toFixed(6)}`
 
   const overlapErr = hasOverlap()
   const maxRadiusNum = parseFloat(maxRadius) || 0
@@ -292,13 +292,15 @@ export default function LivraisonAdmin() {
 
         {geoError && <div style={{ fontSize: 12, color: '#FF6B6B', marginBottom: 12 }}>{geoError}</div>}
 
-        <div style={{ borderRadius: 12, overflow: 'hidden', marginBottom: 14, border: '1px solid rgba(232,160,32,0.1)' }}>
-          <iframe
-            key={`${shopLat}-${shopLng}`}
-            src={mapUrl}
-            style={{ width: '100%', height: 220, border: 'none', display: 'block' }}
-            loading="lazy"
-            title="Carte position boutique"
+        <div style={{ marginBottom: 14 }}>
+          <LeafletMap
+            lat={mapLat}
+            lng={mapLng}
+            onPositionChange={(newLat, newLng, addr) => {
+              setShopLat(newLat.toFixed(6))
+              setShopLng(newLng.toFixed(6))
+              if (addr) setShopAddress(addr)
+            }}
           />
         </div>
 
