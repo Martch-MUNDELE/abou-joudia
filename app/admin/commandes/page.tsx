@@ -36,7 +36,7 @@ function cleanPhone(phone: string) {
   return p.startsWith('+') ? p : p.replace(/^0/, '212')
 }
 
-function buildWhatsAppUrl(order: any, slot: any, targetStatus: string, formatDate: (d: string) => string): string | null {
+function buildWhatsAppUrl(order: any, slot: any, targetStatus: string, formatDate: (d: string) => string, shopAddress?: string): string | null {
   const name = order.customer_name
   let msg: string | null = null
 
@@ -48,7 +48,15 @@ function buildWhatsAppUrl(order: any, slot: any, targetStatus: string, formatDat
     const slotTime = slot ? `${slot.time_start?.slice(0, 5)} à ${slot.time_end?.slice(0, 5)}` : ''
     const address = order.customer_address || ''
     const mapsLine = order.lat && order.lng ? `\nhttps://maps.google.com/?q=${order.lat},${order.lng}` : ''
-    msg = `Bonjour ${name},\n\nVotre commande Abou Joudia est confirmée.\n\n${itemsList}\n\nTotal : ${order.total.toFixed(2)} DH - paiement cash à la livraison\nCréneau : ${slotDate} de ${slotTime}\n\nVotre adresse de livraison :\n${address}${mapsLine}\n\nMerci pour votre confiance !\nAbou Joudia`
+    let deliveryLines = ''
+    if (order.delivery_mode === 'pickup') {
+      deliveryLines = `\nMode : Retrait sur place\nAdresse boutique : ${shopAddress || ''}`
+    } else if (order.delivery_fee === 0) {
+      deliveryLines = '\nLivraison gratuite'
+    } else if (order.delivery_fee > 0) {
+      deliveryLines = `\nFrais de livraison : ${order.delivery_fee} DH`
+    }
+    msg = `Bonjour ${name},\n\nVotre commande Abou Joudia est confirmée.\n\n${itemsList}${deliveryLines}\n\nTotal : ${order.total.toFixed(2)} DH - paiement cash à la livraison\nCréneau : ${slotDate} de ${slotTime}\n\nVotre adresse de livraison :\n${address}${mapsLine}\n\nMerci pour votre confiance !\nAbou Joudia`
   } else if (targetStatus === 'en_preparation') {
     msg = `Bonjour ${name}, votre commande Abou Joudia est en cours de préparation. Encore un peu de patience !`
   } else if (targetStatus === 'en_livraison') {
@@ -94,15 +102,19 @@ export default function CommandesAdmin() {
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [slots, setSlots] = useState<Record<string, any>>({})
   const [pendingStatuses, setPendingStatuses] = useState<Record<string, string>>({})
+  const [shopAddress, setShopAddress] = useState('')
   const supabase = createClient()
 
   const load = async () => {
     const { data: all } = await supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending: false })
     if (!all) return
     const c: Record<string, number> = {}
-    all.forEach(o => { c[o.status] = (c[o.status] || 0) + 1 })
+    all.forEach(o => {
+      c[o.status] = (c[o.status] || 0) + 1
+      if (o.delivery_mode === 'pickup') c['retrait'] = (c['retrait'] || 0) + 1
+    })
     setCounts(c)
-    setOrders(all.filter(o => o.status === filter))
+    setOrders(filter === 'retrait' ? all.filter(o => o.delivery_mode === 'pickup') : all.filter(o => o.status === filter))
 
     const slotIds = [...new Set(all.filter(o => o.slot_id).map(o => o.slot_id as string))]
     if (slotIds.length > 0) {
@@ -114,6 +126,11 @@ export default function CommandesAdmin() {
       }
     }
   }
+
+  useEffect(() => {
+    supabase.from('settings').select('value').eq('key', 'delivery_shop_address').single()
+      .then(({ data }) => { if (data) setShopAddress(data.value || '') })
+  }, [])
 
   useEffect(() => { load() }, [filter])
 
@@ -142,6 +159,10 @@ export default function CommandesAdmin() {
             </button>
           )
         })}
+        <button onClick={() => setFilter('retrait')} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 50, border: '1px solid', borderColor: filter === 'retrait' ? 'rgba(232,160,32,0.25)' : 'rgba(255,255,255,0.06)', background: filter === 'retrait' ? 'rgba(232,160,32,0.1)' : 'transparent', color: filter === 'retrait' ? '#E8A020' : '#C8B99A', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}>
+          Retrait
+          {counts['retrait'] ? <span style={{ background: filter === 'retrait' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)', padding: '0 6px', borderRadius: 50, fontSize: 10 }}>{counts['retrait']}</span> : null}
+        </button>
       </div>
 
       {/* LISTE */}
@@ -165,7 +186,14 @@ export default function CommandesAdmin() {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: 20, fontWeight: 800, color: '#F5C842', fontFamily: 'DM Sans, sans-serif', whiteSpace: 'nowrap' }}>{order.total.toFixed(2)} <span style={{ fontSize: 13 }}>DH</span></div>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 50, background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`, display: 'inline-block', marginTop: 4 }}>{STATUS_LABELS[order.status]}</span>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end', marginTop: 4 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 50, background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`, display: 'inline-block' }}>{STATUS_LABELS[order.status]}</span>
+                    {order.delivery_mode && (
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 50, background: order.delivery_mode === 'pickup' ? 'rgba(232,160,32,0.1)' : 'rgba(91,197,122,0.1)', color: order.delivery_mode === 'pickup' ? '#E8A020' : '#5BC57A', border: `1px solid ${order.delivery_mode === 'pickup' ? 'rgba(232,160,32,0.25)' : 'rgba(91,197,122,0.25)'}`, display: 'inline-block' }}>
+                        {order.delivery_mode === 'pickup' ? '🏪 Retrait' : '🛵 Livraison'}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -177,6 +205,17 @@ export default function CommandesAdmin() {
                   </span>
                 ))}
               </div>
+
+              {/* DÉTAIL LIVRAISON */}
+              {(order.delivery_fee > 0 || order.delivery_mode === 'pickup') && (
+                <div style={{ fontSize: 11, color: '#C8B99A', fontFamily: 'DM Sans, sans-serif', marginBottom: 10 }}>
+                  {order.delivery_mode === 'pickup'
+                    ? 'Retrait sur place'
+                    : order.delivery_fee === 0
+                      ? `Livraison gratuite · ${order.distance_km ? Number(order.distance_km).toFixed(2) : '?'} km`
+                      : `Livraison · ${order.distance_km ? Number(order.distance_km).toFixed(2) : '?'} km · ${order.delivery_fee} DH`}
+                </div>
+              )}
 
               {/* ACTIONS */}
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -216,7 +255,7 @@ export default function CommandesAdmin() {
                   )}
                 </div>
                 {pending && pending !== order.status && (() => {
-                  const url = buildWhatsAppUrl(order, slots[order.slot_id] ?? null, pending, formatDate)
+                  const url = buildWhatsAppUrl(order, slots[order.slot_id] ?? null, pending, formatDate, shopAddress)
                   if (!url) return null
                   return (
                     <a

@@ -118,6 +118,7 @@ export default function PanierPage() {
   const [deliveryLoaded, setDeliveryLoaded] = useState(false)
   const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([])
   const wasAutoSwitchedRef = useRef(false)
+  const initialCalcDoneRef = useRef(false)
 
   // Chosen delivery mode by user (when settings.mode === 'all')
   const [chosenMode, setChosenMode] = useState<'delivery' | 'pickup'>('delivery')
@@ -131,7 +132,7 @@ export default function PanierPage() {
       const saved = localStorage.getItem('aj_customer')
       if (saved) {
         const parsed = JSON.parse(saved)
-        return { ...parsed, lat: null, lng: null, geo_address: '' }
+        return { ...parsed, lat: parsed.lat || null, lng: parsed.lng || null, geo_address: parsed.geo_address || '' }
       }
     } catch {}
     return { name: '', phone: '', address: '', note: '', email: '', wantFacture: false, lat: null as number | null, lng: null as number | null, geo_address: '' }
@@ -188,10 +189,25 @@ export default function PanierPage() {
     }
   }, [form.lat, form.lng, chosenMode, deliveryLoaded, deliverySettings, deliveryZones])
 
+  // ── Recalcul initial si position restaurée depuis localStorage ────────────
+
+  useEffect(() => {
+    if (initialCalcDoneRef.current) return
+    if (form.lat && form.lng && deliveryLoaded && deliverySettings.shopLat) {
+      initialCalcDoneRef.current = true
+      const result = calcDelivery(form.lat, form.lng, deliverySettings, deliveryZones, total())
+      setDeliveryResult(result)
+    }
+  }, [form.lat, form.lng, deliveryLoaded])
+
   // ── Min order ─────────────────────────────────────────────────────────────
 
   const subTotal = total()
   const isBelowMinOrder = deliverySettings.minOrder > 0 && subTotal < deliverySettings.minOrder && deliverySettings.mode !== 'pickup_only'
+  const showSuggestions = deliverySettings.mode !== 'pickup_only' && (
+    (deliverySettings.minOrder > 0 && subTotal < deliverySettings.minOrder) ||
+    (deliverySettings.freeAbove > 0 && subTotal < deliverySettings.freeAbove)
+  )
 
   useEffect(() => {
     if (!deliveryLoaded || deliverySettings.mode !== 'all') return
@@ -207,7 +223,7 @@ export default function PanierPage() {
   }, [isBelowMinOrder, deliveryLoaded, deliverySettings.mode])
 
   useEffect(() => {
-    if (!isBelowMinOrder) { setSuggestedProducts([]); return }
+    if (!showSuggestions) { setSuggestedProducts([]); return }
     supabase
       .from('products')
       .select('*')
@@ -216,14 +232,14 @@ export default function PanierPage() {
       .order('price', { ascending: true })
       .limit(3)
       .then(({ data }) => { if (data) setSuggestedProducts(data as Product[]) })
-  }, [isBelowMinOrder])
+  }, [showSuggestions])
 
   // ── Form helpers ───────────────────────────────────────────────────────────
 
   const updateForm = (updater: (f: typeof form) => typeof form) => {
     setForm((prev: typeof form) => {
       const next = updater(prev)
-      try { localStorage.setItem('aj_customer', JSON.stringify({ name: next.name, phone: next.phone, address: next.address, note: next.note, email: next.email, wantFacture: next.wantFacture })) } catch {}
+      try { localStorage.setItem('aj_customer', JSON.stringify({ name: next.name, phone: next.phone, address: next.address, note: next.note, email: next.email, wantFacture: next.wantFacture, lat: next.lat, lng: next.lng, geo_address: next.geo_address })) } catch {}
       return next
     })
   }
@@ -314,7 +330,31 @@ export default function PanierPage() {
   // ── Derived values ─────────────────────────────────────────────────────────
 
   const isPickup = chosenMode === 'pickup'
-  const deliveryFee = isPickup ? 0 : (deliveryResult?.fee ?? 0)
+
+  const step1LiveFeeResult = (() => {
+    if (!deliveryLoaded || isPickup || !deliverySettings.shopLat || !form.lat || !form.lng) return null
+    if (deliverySettings.freeAbove > 0 && subTotal >= deliverySettings.freeAbove) return 0
+    const dist = haversine(deliverySettings.shopLat, deliverySettings.shopLng!, form.lat, form.lng)
+    const activeZones = deliveryZones.filter(z => z.active).sort((a, b) => a.min_km - b.min_km)
+    const matched = activeZones.find(z => dist >= z.min_km && dist < z.max_km + deliverySettings.tolerance)
+    return matched?.price ?? null
+  })()
+
+  const step1FeeText = !deliveryLoaded
+    ? '...'
+    : isPickup
+      ? 'Retrait'
+      : !deliverySettings.shopLat || !form.lat || !form.lng
+        ? "Calculé à l'étape suivante"
+        : step1LiveFeeResult === null
+          ? "Calculé à l'étape suivante"
+          : step1LiveFeeResult === 0
+            ? 'Gratuit'
+            : `${step1LiveFeeResult} DH`
+
+  const step1FeeColor = step1FeeText === 'Gratuit' || step1FeeText === 'Retrait' ? '#7DD87A' : '#C8B99A'
+
+  const deliveryFee = isPickup ? 0 : step === 'cart' ? (step1LiveFeeResult ?? 0) : (deliveryResult?.fee ?? 0)
   const grandTotal = total() + deliveryFee
   const showModeSelector = deliverySettings.mode === 'all'
   const showAddressSection = !isPickup
@@ -342,6 +382,14 @@ export default function PanierPage() {
     display: 'block', fontSize: 11, fontWeight: 700, color: '#C8B99A',
     textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8,
   }
+
+  const giftIcon = (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+      <path d="M20 12v10H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/>
+      <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+      <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+    </svg>
+  )
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 100 }}>
@@ -400,15 +448,53 @@ export default function PanierPage() {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '11px 0', borderBottom: '1px solid rgba(232,160,32,0.06)', fontSize: 13, color: '#C8B99A' }}>
               <span>Frais de livraison</span>
-              <span style={{ color: '#7DD87A', fontWeight: 600 }}>
-                {!deliveryLoaded ? '...' : isPickup ? 'Retrait' : deliveryResult ? (deliveryResult.fee === 0 ? 'Gratuit' : `${deliveryResult.fee} DH`) : 'Calculé à l\'étape suivante'}
-              </span>
+              <span style={{ color: step1FeeColor, fontWeight: 600 }}>{step1FeeText}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '13px 0', fontSize: 15, fontWeight: 800, fontFamily: 'DM Sans, sans-serif' }}>
               <span style={{ color: '#C8B99A' }}>Total</span>
               <span style={{ color: '#F5C842' }}>{grandTotal.toFixed(2)} DH</span>
             </div>
           </div>
+
+          {/* Badge livraison gratuite */}
+          {deliverySettings.freeAbove > 0 && deliverySettings.mode !== 'pickup_only' && subTotal < deliverySettings.minOrder && subTotal < deliverySettings.freeAbove && (
+            <div style={{ marginTop: 8, padding: '8px 12px', borderRadius: 8, background: 'rgba(91,197,122,0.06)', border: '1px solid rgba(91,197,122,0.2)', fontSize: 12, color: '#5BC57A', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              {giftIcon} Livraison offerte dès {deliverySettings.freeAbove} DH
+            </div>
+          )}
+
+          {/* Message minimum commande */}
+          {deliverySettings.minOrder > 0 && subTotal < deliverySettings.minOrder && deliverySettings.mode !== 'pickup_only' && (
+            <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 10, background: 'rgba(255,107,32,0.06)', border: '1px solid rgba(255,107,32,0.25)', fontSize: 13, color: '#F5A020', lineHeight: 1.5 }}>
+              Livraison disponible à partir de {deliverySettings.minOrder} DH — il vous manque {Math.ceil(deliverySettings.minOrder - subTotal)} DH
+            </div>
+          )}
+
+          {/* Message livraison gratuite */}
+          {deliverySettings.freeAbove > 0 && subTotal >= deliverySettings.minOrder && subTotal < deliverySettings.freeAbove && deliverySettings.mode !== 'pickup_only' && (
+            <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 10, background: 'rgba(91,197,122,0.06)', border: '1px solid rgba(91,197,122,0.25)', fontSize: 13, color: '#5BC57A', lineHeight: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}>
+              {giftIcon} Livraison gratuite à partir de {deliverySettings.freeAbove} DH — Ajoutez {Math.ceil(deliverySettings.freeAbove - subTotal)} DH de plus !
+            </div>
+          )}
+
+          {/* Complète ta commande */}
+          {showSuggestions && suggestedProducts.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#F5C842', marginBottom: 8 }}>Complète ta commande</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                {suggestedProducts.map(p => (
+                  <div key={p.id} style={{ width: '100%', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'rgba(245,200,66,0.05)', border: '1px solid rgba(245,200,66,0.1)' }}>
+                    <img src={p.image_url} alt={p.name} style={{ width: '100%', height: 90, objectFit: 'cover' }} loading="lazy" />
+                    <div style={{ padding: '8px 10px 4px', fontSize: 11, color: '#F5EDD6', fontWeight: 600, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 10px 10px' }}>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: '#F5C842', fontFamily: 'Playfair Display, serif' }}>{p.price.toFixed(2)} DH</span>
+                      <button type="button" onClick={() => add(p)} style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', border: 'none', color: '#0A0804', fontSize: 18, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -437,28 +523,6 @@ export default function PanierPage() {
                 </button>
               </div>
 
-              {isBelowMinOrder && (
-                <div style={{ marginTop: 10 }}>
-                  <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(245,140,0,0.08)', border: '1px solid rgba(245,140,0,0.2)', fontSize: 13, color: '#F5A020', lineHeight: 1.5 }}>
-                    Livraison disponible à partir de {deliverySettings.minOrder} DH — il vous manque {Math.ceil(deliverySettings.minOrder - subTotal)} DH
-                  </div>
-                  {suggestedProducts.length > 0 && (
-                    <div style={{ marginTop: 12 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#F5C842', marginBottom: 8 }}>Complète ta commande</div>
-                      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
-                        {suggestedProducts.map(p => (
-                          <div key={p.id} style={{ flexShrink: 0, background: 'rgba(245,200,66,0.05)', border: '1px solid rgba(245,200,66,0.1)', borderRadius: 12, padding: 10, display: 'flex', flexDirection: 'column', gap: 6, width: 120 }}>
-                            <img src={p.image_url} alt={p.name} style={{ width: 50, height: 50, borderRadius: 8, objectFit: 'cover', alignSelf: 'center' }} loading="lazy" />
-                            <div style={{ fontSize: 11, fontWeight: 600, color: '#F5EDD6', lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{p.name}</div>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: '#F5C842' }}>{p.price.toFixed(2)} DH</div>
-                            <button type="button" onClick={() => add(p)} style={{ padding: '5px 0', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', fontSize: 18, fontWeight: 800, cursor: 'pointer', lineHeight: 1 }}>+</button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           )}
 
@@ -533,11 +597,35 @@ export default function PanierPage() {
                   {!deliveryResult.inZone && (
                     <div style={{ marginTop: 4, padding: '10px 12px', borderRadius: 8, background: 'rgba(255,107,107,0.08)', fontSize: 12, color: '#FF6B6B', lineHeight: 1.5 }}>
                       {deliverySettings.outOfZoneMessage}
-                      {deliverySettings.mode === 'all' && (
-                        <button type="button" onClick={() => setChosenMode('pickup')} style={{ display: 'block', marginTop: 8, padding: '7px 16px', borderRadius: 8, border: '1px solid rgba(232,160,32,0.3)', background: 'transparent', color: '#E8A020', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
-                          Passer en retrait sur place
+                      <div style={{ marginTop: 4, fontSize: 11, color: '#C8B99A', fontStyle: 'italic' }}>
+                        Votre position a peut-être changé depuis votre dernière commande.
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+                        <button type="button" onClick={() => {
+                          setGeoLoading(true)
+                          setGeoError('')
+                          navigator.geolocation.getCurrentPosition(
+                            async pos => {
+                              const { latitude: lat, longitude: lng } = pos.coords
+                              const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
+                              const data = await res.json()
+                              updateForm(f => ({ ...f, lat, lng, address: data.display_name || '', geo_address: data.display_name || '' }))
+                              setGeoLoading(false)
+                            },
+                            () => { setGeoError('Géolocalisation refusée.'); setGeoLoading(false) }
+                          )
+                        }} style={{ padding: '7px 16px', borderRadius: 8, border: '1px solid rgba(91,197,122,0.3)', background: 'rgba(91,197,122,0.08)', color: '#5BC57A', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+                          Utiliser ma position actuelle
                         </button>
-                      )}
+                        <button type="button" onClick={() => updateForm(f => ({ ...f, address: '', lat: null, lng: null, geo_address: '' }))} style={{ padding: '7px 16px', borderRadius: 8, border: '1px solid rgba(232,160,32,0.3)', background: 'transparent', color: '#E8A020', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+                          Modifier mon adresse
+                        </button>
+                        {deliverySettings.mode === 'all' && (
+                          <button type="button" onClick={() => setChosenMode('pickup')} style={{ padding: '7px 16px', borderRadius: 8, border: '1px solid rgba(255,107,107,0.3)', background: 'transparent', color: '#FF6B6B', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+                            Passer en retrait sur place
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -611,7 +699,7 @@ export default function PanierPage() {
         </div>
       )}
 
-      {step === 'cart' && <FeaturesBar alwaysShow />}
+      {step === 'cart' && !showSuggestions && <FeaturesBar alwaysShow />}
 
       {/* ══ BARRE STICKY BAS ══ */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'rgba(8,6,3,0.97)', backdropFilter: 'blur(20px)', padding: '16px 20px', zIndex: 40 }}>

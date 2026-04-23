@@ -33,7 +33,7 @@ export default function LeafletMap({ lat, lng, onPositionChange, height = 250 }:
   const onChangeRef = useRef(onPositionChange)
   const latRef = useRef(lat)
   const lngRef = useRef(lng)
-  const mapId = useRef(`lmap-${Math.random().toString(36).slice(2, 8)}`)
+  const mapId = useRef('')
 
   onChangeRef.current = onPositionChange
   latRef.current = lat
@@ -41,6 +41,7 @@ export default function LeafletMap({ lat, lng, onPositionChange, height = 250 }:
 
   useEffect(() => {
     if (typeof window === 'undefined' || !containerRef.current) return
+    if (!mapId.current) mapId.current = `lmap-${Math.random().toString(36).slice(2, 8)}`
     let cancelled = false
 
     loadLeaflet().then(() => {
@@ -112,6 +113,7 @@ export default function LeafletMap({ lat, lng, onPositionChange, height = 250 }:
       <div
         ref={containerRef}
         id={mapId.current}
+        suppressHydrationWarning
         style={{ height, borderRadius: 12, overflow: 'hidden' }}
       />
       <div style={{ fontSize: 11, color: '#7A6E58', marginTop: 6, textAlign: 'center' }}>

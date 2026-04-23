@@ -21,9 +21,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Créneau non disponible' }, { status: 400 })
   }
 
+  const subtotal = items.reduce((sum: number, item: any) => sum + item.unit_price * item.quantity, 0)
+  const calculatedTotal = subtotal + (delivery_fee ?? 0)
+
   const { data: order, error } = await supabase.from('orders').insert({
     customer_name: name, customer_phone: phone, customer_address: address,
-    customer_note: note, slot_id, total, payment_method: 'livraison', status: 'nouvelle',
+    customer_note: note, slot_id, total: calculatedTotal, payment_method: 'livraison', status: 'nouvelle',
     lat: lat || null, lng: lng || null, geo_address: geo_address || null,
     customer_email: (wantFacture && email) ? email : null,
     delivery_mode: delivery_mode || null, delivery_fee: delivery_fee ?? null, distance_km: distance_km ?? null,
