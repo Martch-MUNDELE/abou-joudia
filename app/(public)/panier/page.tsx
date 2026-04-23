@@ -481,13 +481,13 @@ export default function PanierPage() {
           {showSuggestions && suggestedProducts.length > 0 && (
             <div style={{ marginTop: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#F5C842', marginBottom: 8 }}>Complète ta commande</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
                 {suggestedProducts.map(p => (
-                  <div key={p.id} style={{ width: '100%', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'rgba(245,200,66,0.05)', border: '1px solid rgba(245,200,66,0.1)' }}>
+                  <div key={p.id} style={{ minWidth: 0, overflow: 'hidden', borderRadius: 12, display: 'flex', flexDirection: 'column', background: 'rgba(245,200,66,0.05)', border: '1px solid rgba(245,200,66,0.1)' }}>
                     <img src={p.image_url} alt={p.name} style={{ width: '100%', height: 90, objectFit: 'cover' }} loading="lazy" />
-                    <div style={{ padding: '8px 10px 4px', fontSize: 11, color: '#F5EDD6', fontWeight: 600, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
+                    <div style={{ padding: '8px 10px 4px', fontSize: 10, color: '#F5EDD6', fontWeight: 600, lineHeight: 1.3, wordBreak: 'break-word', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 10px 10px' }}>
-                      <span style={{ fontSize: 14, fontWeight: 800, color: '#F5C842', fontFamily: 'Playfair Display, serif' }}>{p.price.toFixed(2)} DH</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: '#F5C842', fontFamily: 'Playfair Display, serif' }}>{p.price.toFixed(2)} DH</span>
                       <button type="button" onClick={() => add(p)} style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', border: 'none', color: '#0A0804', fontSize: 18, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                     </div>
                   </div>
@@ -535,7 +535,9 @@ export default function PanierPage() {
           {/* Téléphone */}
           <div>
             <label style={labelStyle}>Téléphone <span style={{ color: '#FF6B20' }}>*</span></label>
-            <PhoneInput value={form.phone} initialValue={form.phone} onChange={v => updateForm(f => ({ ...f, phone: v }))} />
+            <div style={{ position: 'relative', zIndex: 500 }}>
+              <PhoneInput value={form.phone} initialValue={form.phone} onChange={v => updateForm(f => ({ ...f, phone: v }))} />
+            </div>
           </div>
 
           {/* Section adresse — visible seulement en mode livraison */}

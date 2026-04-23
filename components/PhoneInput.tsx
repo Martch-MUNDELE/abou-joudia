@@ -88,7 +88,7 @@ export default function PhoneInput({ value, onChange, initialValue }: { value: s
 
       {/* Dropdown pays */}
       {open && (
-        <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, width: 260, background: '#1A1510', border: '1px solid rgba(232,160,32,0.2)', borderRadius: 14, zIndex: 100, boxShadow: '0 16px 48px rgba(0,0,0,0.7)', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, width: 260, background: '#1A1510', border: '1px solid rgba(232,160,32,0.2)', borderRadius: 14, zIndex: 500, boxShadow: '0 16px 48px rgba(0,0,0,0.7)', overflow: 'hidden' }}>
           <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(232,160,32,0.08)' }}>
             <input
               type="text"
