@@ -37,10 +37,10 @@ const NAV_GROUPS = [
         { label: 'Simulateur', anchor: 'simulateur', url: '/admin/livraison' },
       ]},
       { href: '/admin/creneaux', label: 'Créneaux', sub: [
-        { label: 'Horaires', anchor: 'horaires', url: '/admin/creneaux' },
-        { label: 'Pause déjeuner', anchor: 'pause', url: '/admin/creneaux' },
-        { label: 'Jours fermés', anchor: 'fermeture', url: '/admin/creneaux' },
-        { label: 'Génération', anchor: 'generation', url: '/admin/creneaux' },
+        { label: 'Horaires', anchor: 'horaires', url: '/admin/creneaux?tab=horaires' },
+        { label: 'Pause déjeuner', anchor: 'pause', url: '/admin/creneaux?tab=pause' },
+        { label: 'Jours fermés', anchor: 'fermeture', url: '/admin/creneaux?tab=fermeture' },
+        { label: 'Génération', anchor: 'generation', url: '/admin/creneaux?tab=generation' },
       ]},
       { href: '/admin/settings', label: 'Paramètres', sub: [
         { label: 'Statut service', anchor: 'statut', url: '/admin/settings?tab=statut' },
