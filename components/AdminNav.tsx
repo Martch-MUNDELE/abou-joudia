@@ -31,23 +31,23 @@ const NAV_GROUPS = [
     links: [
       { href: '/admin/menu', label: 'Menu' },
       { href: '/admin/livraison', label: 'Livraison', sub: [
-        { label: 'Mode', anchor: 'mode' },
-        { label: 'Position boutique', anchor: 'position' },
-        { label: 'Zone & tarifs', anchor: 'zone' },
-        { label: 'Simulateur', anchor: 'simulateur' },
+        { label: 'Mode', anchor: 'mode', url: '/admin/livraison' },
+        { label: 'Position boutique', anchor: 'position', url: '/admin/livraison' },
+        { label: 'Zone & tarifs', anchor: 'zone', url: '/admin/livraison' },
+        { label: 'Simulateur', anchor: 'simulateur', url: '/admin/livraison' },
       ]},
       { href: '/admin/creneaux', label: 'Créneaux', sub: [
-        { label: 'Horaires', anchor: 'horaires' },
-        { label: 'Pause déjeuner', anchor: 'pause' },
-        { label: 'Jours fermés', anchor: 'fermeture' },
-        { label: 'Génération', anchor: 'generation' },
+        { label: 'Horaires', anchor: 'horaires', url: '/admin/creneaux' },
+        { label: 'Pause déjeuner', anchor: 'pause', url: '/admin/creneaux' },
+        { label: 'Jours fermés', anchor: 'fermeture', url: '/admin/creneaux' },
+        { label: 'Génération', anchor: 'generation', url: '/admin/creneaux' },
       ]},
       { href: '/admin/settings', label: 'Paramètres', sub: [
-        { label: 'Statut service', anchor: 'statut' },
-        { label: 'Identité du site', anchor: 'identite' },
-        { label: 'Fond de page', anchor: 'fond' },
-        { label: 'Image hero', anchor: 'hero' },
-        { label: 'Arguments produit', anchor: 'arguments' },
+        { label: 'Statut service', anchor: 'statut', url: '/admin/settings' },
+        { label: 'Identité du site', anchor: 'identite', url: '/admin/settings' },
+        { label: 'Fond de page', anchor: 'fond', url: '/admin/settings' },
+        { label: 'Image hero', anchor: 'hero', url: '/admin/settings' },
+        { label: 'Arguments produit', anchor: 'arguments', url: '/admin/settings' },
       ]},
     ],
   },
@@ -229,10 +229,8 @@ export default function AdminNav() {
                     <div key={link.href}>
                       <div
                         onClick={() => {
-                          if (!sub) {
-                            close()
-                            window.location.href = link.href
-                          }
+                          close()
+                          window.location.href = link.href
                         }}
                         style={{ textDecoration: 'none', display: 'block', cursor: 'pointer' }}
                       >
