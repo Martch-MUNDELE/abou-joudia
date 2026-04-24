@@ -64,6 +64,14 @@ export default function AdminNav() {
   const [expandedHref, setExpandedHref] = useState<string | null>(null)
 
   useEffect(() => {
+    const anchor = sessionStorage.getItem('aj_scroll_to')
+    if (anchor) {
+      sessionStorage.removeItem('aj_scroll_to')
+      setTimeout(() => { document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth' }) }, 400)
+    }
+  }, [pathname])
+
+  useEffect(() => {
     supabase.from('settings').select('*').then(({ data }) => {
       data?.forEach((s: any) => {
         if (s.key === 'site_name') setSiteName(s.value)
@@ -167,7 +175,7 @@ export default function AdminNav() {
         return (
           <div style={{ position:'fixed', top:56, left:0, right:0, zIndex:97, background:'#0D0B07', borderBottom:'1px solid rgba(232,160,32,0.1)', display:'flex', overflowX:'auto' as const, padding:'0 8px' }}>
             {sub.map((s: any) => (
-              <div key={s.anchor} onClick={() => { if (s.url) { window.location.href = s.url } else { const el = document.getElementById(s.anchor); if (el) { el.scrollIntoView({ behavior:'smooth' }) } else if (activeLink) { window.location.href = activeLink.href; setTimeout(() => { document.getElementById(s.anchor)?.scrollIntoView({ behavior:'smooth' }) }, 600) } } }} style={{ padding:'8px 12px', fontSize:13, fontWeight:600, color:'#C8B99A', cursor:'pointer', whiteSpace:'nowrap' as const, fontFamily:'DM Sans, sans-serif' }}>
+              <div key={s.anchor} onClick={() => { if (s.url) { window.location.href = s.url } else { const el = document.getElementById(s.anchor); if (el) { el.scrollIntoView({ behavior:'smooth' }) } else if (activeLink) { sessionStorage.setItem('aj_scroll_to', s.anchor); window.location.href = activeLink.href } } }} style={{ padding:'8px 12px', fontSize:13, fontWeight:600, color:'#C8B99A', cursor:'pointer', whiteSpace:'nowrap' as const, fontFamily:'DM Sans, sans-serif' }}>
                 {s.label}
               </div>
             ))}
