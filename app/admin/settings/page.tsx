@@ -1,11 +1,20 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 const labelStyle = { fontSize: 11, fontWeight: 700, color: '#C8B99A', display: 'block', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.8px' }
 const inputStyle = { width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontSize: 13, outline: 'none', fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const }
 
 type Feature = { icon: string; title: string; desc: string }
+
+const TABS = [
+  { key: 'statut', label: 'Statut' },
+  { key: 'identite', label: 'Identité' },
+  { key: 'fond', label: 'Fond de page' },
+  { key: 'hero', label: 'Image hero' },
+  { key: 'arguments', label: 'Arguments' },
+]
 
 const ICON_OPTIONS = [
   { value: 'chef', label: 'Toque — Chef' },
@@ -18,7 +27,11 @@ const ICON_OPTIONS = [
   { value: 'fire', label: 'Flamme' },
 ]
 
-export default function SettingsAdmin() {
+function SettingsContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const activeTab = searchParams.get('tab') || 'statut'
+
   const [status, setStatus] = useState('open')
   const [statusMessage, setStatusMessage] = useState('')
   const [heroImage, setHeroImage] = useState('')
@@ -135,234 +148,173 @@ export default function SettingsAdmin() {
 
   return (
     <div style={{ maxWidth: 560, margin: '0 auto' }}>
-      <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 900, color: '#F5EDD6', marginBottom: 28 }}>Paramètres</h1>
-
-      {/* STATUT */}
-      <div id="statut" style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Statut du service</div>
-        <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
-          <button
-            onClick={() => setStatus('open')}
-            style={{ flex: 1, padding: '12px', borderRadius: 10, border: '1px solid', borderColor: status === 'open' ? 'rgba(91,197,122,0.4)' : 'rgba(255,255,255,0.06)', background: status === 'open' ? 'rgba(91,197,122,0.12)' : 'transparent', color: status === 'open' ? '#5BC57A' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
-          >
-            Ouvert
+      <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 900, color: '#F5EDD6', marginBottom: 20 }}>Paramètres</h1>
+      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 24, paddingBottom: 4 }}>
+        {TABS.map(t => (
+          <button key={t.key} onClick={() => router.push(`/admin/settings?tab=${t.key}`)} style={{ padding: '8px 14px', borderRadius: 50, border: '1px solid', borderColor: activeTab === t.key ? 'rgba(232,160,32,0.4)' : 'rgba(232,160,32,0.12)', background: activeTab === t.key ? 'rgba(232,160,32,0.12)' : 'transparent', color: activeTab === t.key ? '#E8A020' : '#C8B99A', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', whiteSpace: 'nowrap' as const }}>
+            {t.label}
           </button>
-          <button
-            onClick={() => setStatus('closed')}
-            style={{ flex: 1, padding: '12px', borderRadius: 10, border: '1px solid', borderColor: status === 'closed' ? 'rgba(255,107,107,0.4)' : 'rgba(255,255,255,0.06)', background: status === 'closed' ? 'rgba(255,107,107,0.12)' : 'transparent', color: status === 'closed' ? '#FF6B6B' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
-          >
-            Fermé
-          </button>
-        </div>
-        <label style={labelStyle}>Message affiché aux clients</label>
-        <input
-          type="text"
-          value={statusMessage}
-          onChange={e => setStatusMessage(e.target.value)}
-          placeholder="Ex: Fermé · Reprise bientôt..."
-          style={inputStyle}
-        />
+        ))}
       </div>
 
-      {/* IDENTITE DU SITE */}
-      <div id="identite" style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Identité du site</div>
-
-        {/* Logo */}
-        <label style={labelStyle}>Logo</label>
-        {siteLogo && (
-          <div style={{ marginBottom: 12, borderRadius: 12, overflow: 'hidden', height: 350, background: '#0A0804', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-            <img src={siteLogo} alt="Logo" style={{ width: '320px', height: '320px', objectFit: 'contain' }} />
-            <button onClick={() => setSiteLogo('')} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#F5EDD6', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '4px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Supprimer</button>
+      {activeTab === 'statut' && (
+        <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Statut du service</div>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+            <button onClick={() => setStatus('open')} style={{ flex: 1, padding: '12px', borderRadius: 10, border: '1px solid', borderColor: status === 'open' ? 'rgba(91,197,122,0.4)' : 'rgba(255,255,255,0.06)', background: status === 'open' ? 'rgba(91,197,122,0.12)' : 'transparent', color: status === 'open' ? '#5BC57A' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Ouvert</button>
+            <button onClick={() => setStatus('closed')} style={{ flex: 1, padding: '12px', borderRadius: 10, border: '1px solid', borderColor: status === 'closed' ? 'rgba(255,107,107,0.4)' : 'rgba(255,255,255,0.06)', background: status === 'closed' ? 'rgba(255,107,107,0.12)' : 'transparent', color: status === 'closed' ? '#FF6B6B' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Fermé</button>
           </div>
-        )}
-        <label style={{ display: 'block', width: '100%', padding: '14px', borderRadius: 10, border: '1.5px dashed rgba(232,160,32,0.25)', background: 'rgba(232,160,32,0.03)', color: uploadingLogo ? '#C8B99A' : '#E8A020', cursor: uploadingLogo ? 'wait' : 'pointer', textAlign: 'center', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const, marginBottom: 14 }}>
-          {uploadingLogo ? 'Upload en cours...' : 'Choisir le logo (PNG recommandé)'}
-          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadLogo(e.target.files[0]) }} />
-        {logoDimensions && <div style={{ fontSize: 11, color: '#5BC57A', marginTop: 6, fontFamily: 'DM Sans, sans-serif' }}>✓ {logoDimensions.w} × {logoDimensions.h} px</div>}
-        </label>
-
-        {/* Nom du site */}
-        <label style={labelStyle}>Nom du site</label>
-        <input type="text" value={siteName} onChange={e => setSiteName(e.target.value)} style={{ ...inputStyle, marginBottom: 14 }} />
-
-        {/* Baseline */}
-        <label style={labelStyle}>Baseline</label>
-        <input type="text" value={siteBaseline} onChange={e => setSiteBaseline(e.target.value)} style={inputStyle} />
-      </div>
-
-      {/* FOND DE PAGE */}
-      <div id="fond" style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Fond de page</div>
-
-        {/* Toggle image active */}
-        <label style={labelStyle}>Image de fond active</label>
-        <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
-          <button
-            onClick={() => setBgImageActive('true')}
-            style={{ flex: 1, padding: '12px', borderRadius: 10, border: '1px solid', borderColor: bgImageActive === 'true' ? 'rgba(91,197,122,0.4)' : 'rgba(255,255,255,0.06)', background: bgImageActive === 'true' ? 'rgba(91,197,122,0.12)' : 'transparent', color: bgImageActive === 'true' ? '#5BC57A' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
-          >Oui</button>
-          <button
-            onClick={() => setBgImageActive('false')}
-            style={{ flex: 1, padding: '12px', borderRadius: 10, border: '1px solid', borderColor: bgImageActive === 'false' ? 'rgba(255,107,107,0.4)' : 'rgba(255,255,255,0.06)', background: bgImageActive === 'false' ? 'rgba(255,107,107,0.12)' : 'transparent', color: bgImageActive === 'false' ? '#FF6B6B' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
-          >Non</button>
+          <label style={labelStyle}>Message affiché aux clients</label>
+          <input type="text" value={statusMessage} onChange={e => setStatusMessage(e.target.value)} placeholder="Ex: Fermé · Reprise bientôt..." style={inputStyle} />
         </div>
+      )}
 
-        {/* Image upload when active */}
-        {bgImageActive === 'true' && (
-          <>
-            {backgroundImage && (
-              <div style={{ marginBottom: 14, borderRadius: 12, overflow: 'hidden', height: 120, position: 'relative' }}>
-                <img src={backgroundImage} alt="Background" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <button
-                  onClick={() => setBackgroundImage('')}
-                  style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#F5EDD6', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '4px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}
-                >Supprimer</button>
-              </div>
-            )}
-            <label style={{ display: 'block', width: '100%', padding: '18px', borderRadius: 10, border: '1.5px dashed rgba(232,160,32,0.25)', background: 'rgba(232,160,32,0.03)', color: uploadingBackground ? '#C8B99A' : '#E8A020', cursor: uploadingBackground ? 'wait' : 'pointer', textAlign: 'center', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const }}>
-              {uploadingBackground ? 'Upload en cours...' : 'Choisir une photo depuis votre tel ou ordinateur'}
-              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadBackgroundImage(e.target.files[0]) }} />
-            </label>
-          </>
-        )}
-
-        {/* Color/Gradient options when inactive */}
-        {bgImageActive === 'false' && (
-          <>
-            {/* Radio type */}
-            <label style={labelStyle}>Type de fond</label>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
-              {(['color', 'gradient'] as const).map(t => (
-                <button
-                  key={t}
-                  onClick={() => setBgType(t)}
-                  style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid', borderColor: bgType === t ? 'rgba(232,160,32,0.5)' : 'rgba(255,255,255,0.06)', background: bgType === t ? 'rgba(232,160,32,0.1)' : 'transparent', color: bgType === t ? '#E8A020' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
-                >
-                  {t === 'color' ? 'Couleur unie' : 'Dégradé'}
-                </button>
-              ))}
+      {activeTab === 'identite' && (
+        <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Identité du site</div>
+          <label style={labelStyle}>Logo</label>
+          {siteLogo && (
+            <div style={{ marginBottom: 12, borderRadius: 12, overflow: 'hidden', height: 350, background: '#0A0804', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <img src={siteLogo} alt="Logo" style={{ width: '320px', height: '320px', objectFit: 'contain' }} />
+              <button onClick={() => setSiteLogo('')} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#F5EDD6', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '4px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Supprimer</button>
             </div>
+          )}
+          <label style={{ display: 'block', width: '100%', padding: '14px', borderRadius: 10, border: '1.5px dashed rgba(232,160,32,0.25)', background: 'rgba(232,160,32,0.03)', color: uploadingLogo ? '#C8B99A' : '#E8A020', cursor: uploadingLogo ? 'wait' : 'pointer', textAlign: 'center', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const, marginBottom: 14 }}>
+            {uploadingLogo ? 'Upload en cours...' : 'Choisir le logo (PNG recommandé)'}
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadLogo(e.target.files[0]) }} />
+            {logoDimensions && <div style={{ fontSize: 11, color: '#5BC57A', marginTop: 6 }}>✓ {logoDimensions.w} × {logoDimensions.h} px</div>}
+          </label>
+          <label style={labelStyle}>Nom du site</label>
+          <input type="text" value={siteName} onChange={e => setSiteName(e.target.value)} style={{ ...inputStyle, marginBottom: 14 }} />
+          <label style={labelStyle}>Baseline</label>
+          <input type="text" value={siteBaseline} onChange={e => setSiteBaseline(e.target.value)} style={inputStyle} />
+        </div>
+      )}
 
-            {bgType === 'color' && (
-              <div style={{ marginBottom: 14 }}>
-                <label style={labelStyle}>Couleur de fond</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)} style={{ width: 48, height: 40, borderRadius: 8, border: '1px solid rgba(232,160,32,0.2)', background: 'transparent', cursor: 'pointer', padding: 2 }} />
-                  <span style={{ color: '#C8B99A', fontSize: 13, fontFamily: 'DM Sans, sans-serif' }}>{bgColor}</span>
+      {activeTab === 'fond' && (
+        <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Fond de page</div>
+          <label style={labelStyle}>Image de fond active</label>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+            <button onClick={() => setBgImageActive('true')} style={{ flex: 1, padding: '12px', borderRadius: 10, border: '1px solid', borderColor: bgImageActive === 'true' ? 'rgba(91,197,122,0.4)' : 'rgba(255,255,255,0.06)', background: bgImageActive === 'true' ? 'rgba(91,197,122,0.12)' : 'transparent', color: bgImageActive === 'true' ? '#5BC57A' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Oui</button>
+            <button onClick={() => setBgImageActive('false')} style={{ flex: 1, padding: '12px', borderRadius: 10, border: '1px solid', borderColor: bgImageActive === 'false' ? 'rgba(255,107,107,0.4)' : 'rgba(255,255,255,0.06)', background: bgImageActive === 'false' ? 'rgba(255,107,107,0.12)' : 'transparent', color: bgImageActive === 'false' ? '#FF6B6B' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Non</button>
+          </div>
+          {bgImageActive === 'true' && (
+            <>
+              {backgroundImage && (
+                <div style={{ marginBottom: 14, borderRadius: 12, overflow: 'hidden', height: 120, position: 'relative' }}>
+                  <img src={backgroundImage} alt="Background" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button onClick={() => setBackgroundImage('')} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#F5EDD6', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '4px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Supprimer</button>
                 </div>
+              )}
+              <label style={{ display: 'block', width: '100%', padding: '18px', borderRadius: 10, border: '1.5px dashed rgba(232,160,32,0.25)', background: 'rgba(232,160,32,0.03)', color: uploadingBackground ? '#C8B99A' : '#E8A020', cursor: uploadingBackground ? 'wait' : 'pointer', textAlign: 'center', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const }}>
+                {uploadingBackground ? 'Upload en cours...' : 'Choisir une photo depuis votre tel ou ordinateur'}
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadBackgroundImage(e.target.files[0]) }} />
+              </label>
+            </>
+          )}
+          {bgImageActive === 'false' && (
+            <>
+              <label style={labelStyle}>Type de fond</label>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+                {(['color', 'gradient'] as const).map(t => (
+                  <button key={t} onClick={() => setBgType(t)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid', borderColor: bgType === t ? 'rgba(232,160,32,0.5)' : 'rgba(255,255,255,0.06)', background: bgType === t ? 'rgba(232,160,32,0.1)' : 'transparent', color: bgType === t ? '#E8A020' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                    {t === 'color' ? 'Couleur unie' : 'Dégradé'}
+                  </button>
+                ))}
               </div>
-            )}
-
-            {bgType === 'gradient' && (
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>Couleur début</label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <input type="color" value={bgGradStart} onChange={e => setBgGradStart(e.target.value)} style={{ width: 44, height: 38, borderRadius: 8, border: '1px solid rgba(232,160,32,0.2)', background: 'transparent', cursor: 'pointer', padding: 2 }} />
-                      <span style={{ color: '#C8B99A', fontSize: 12, fontFamily: 'DM Sans, sans-serif' }}>{bgGradStart}</span>
-                    </div>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>Couleur fin</label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <input type="color" value={bgGradEnd} onChange={e => setBgGradEnd(e.target.value)} style={{ width: 44, height: 38, borderRadius: 8, border: '1px solid rgba(232,160,32,0.2)', background: 'transparent', cursor: 'pointer', padding: 2 }} />
-                      <span style={{ color: '#C8B99A', fontSize: 12, fontFamily: 'DM Sans, sans-serif' }}>{bgGradEnd}</span>
-                    </div>
+              {bgType === 'color' && (
+                <div style={{ marginBottom: 14 }}>
+                  <label style={labelStyle}>Couleur de fond</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)} style={{ width: 48, height: 40, borderRadius: 8, border: '1px solid rgba(232,160,32,0.2)', background: 'transparent', cursor: 'pointer', padding: 2 }} />
+                    <span style={{ color: '#C8B99A', fontSize: 13, fontFamily: 'DM Sans, sans-serif' }}>{bgColor}</span>
                   </div>
                 </div>
-                <label style={labelStyle}>Direction</label>
-                <select value={bgGradDir} onChange={e => setBgGradDir(e.target.value)} style={{ ...inputStyle }}>
-                  <option value="to bottom">Vers le bas</option>
-                  <option value="to right">Vers la droite</option>
-                  <option value="135deg">Diagonal</option>
-                </select>
+              )}
+              {bgType === 'gradient' && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={labelStyle}>Couleur début</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <input type="color" value={bgGradStart} onChange={e => setBgGradStart(e.target.value)} style={{ width: 44, height: 38, borderRadius: 8, border: '1px solid rgba(232,160,32,0.2)', background: 'transparent', cursor: 'pointer', padding: 2 }} />
+                        <span style={{ color: '#C8B99A', fontSize: 12, fontFamily: 'DM Sans, sans-serif' }}>{bgGradStart}</span>
+                      </div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={labelStyle}>Couleur fin</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <input type="color" value={bgGradEnd} onChange={e => setBgGradEnd(e.target.value)} style={{ width: 44, height: 38, borderRadius: 8, border: '1px solid rgba(232,160,32,0.2)', background: 'transparent', cursor: 'pointer', padding: 2 }} />
+                        <span style={{ color: '#C8B99A', fontSize: 12, fontFamily: 'DM Sans, sans-serif' }}>{bgGradEnd}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <label style={labelStyle}>Direction</label>
+                  <select value={bgGradDir} onChange={e => setBgGradDir(e.target.value)} style={inputStyle}>
+                    <option value="to bottom">Vers le bas</option>
+                    <option value="to right">Vers la droite</option>
+                    <option value="135deg">Diagonal</option>
+                  </select>
+                </div>
+              )}
+              <div style={{ marginTop: 14 }}>
+                <label style={labelStyle}>Aperçu</label>
+                <div style={{ height: 60, borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', background: bgType === 'color' ? bgColor : `linear-gradient(${bgGradDir}, ${bgGradStart}, ${bgGradEnd})` }} />
               </div>
-            )}
+            </>
+          )}
+        </div>
+      )}
 
-            {/* Aperçu temps réel */}
-            <div style={{ marginTop: 14 }}>
-              <label style={labelStyle}>Aperçu</label>
-              <div style={{ height: 60, borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', background: bgType === 'color' ? bgColor : `linear-gradient(${bgGradDir}, ${bgGradStart}, ${bgGradEnd})` }} />
+      {activeTab === 'hero' && (
+        <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 20 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Image Hero (page d'accueil)</div>
+          {heroImage && (
+            <div style={{ marginBottom: 14, borderRadius: 12, overflow: 'hidden', height: 180, position: 'relative' }}>
+              <img src={heroImage} alt="Hero" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <button onClick={() => setHeroImage('')} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#F5EDD6', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '4px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Supprimer</button>
             </div>
-          </>
-        )}
-      </div>
-
-      {/* HERO IMAGE */}
-      <div id="hero" style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 20 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Image Hero (page d'accueil)</div>
-        {heroImage && (
-          <div style={{ marginBottom: 14, borderRadius: 12, overflow: 'hidden', height: 180, position: 'relative' }}>
-            <img src={heroImage} alt="Hero" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            <button
-              onClick={() => setHeroImage('')}
-              style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#F5EDD6', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '4px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}
-            >
-              Supprimer
-            </button>
-          </div>
-        )}
-        <label style={{ display: 'block', width: '100%', padding: '18px', borderRadius: 10, border: '1.5px dashed rgba(232,160,32,0.25)', background: 'rgba(232,160,32,0.03)', color: uploading ? '#C8B99A' : '#E8A020', cursor: uploading ? 'wait' : 'pointer', textAlign: 'center', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const }}>
-          {uploading ? 'Upload en cours...' : 'Choisir une photo depuis votre tel ou ordinateur'}
-          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadHeroImage(e.target.files[0]) }} />
-        </label>
-      </div>
-
-      {/* ARGUMENTS PRODUIT */
-      }
-      <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Arguments produit</div>
-
-        {/* Argument 1 */}
-        <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid rgba(232,160,32,0.08)' }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#E8A020', marginBottom: 10 }}>Argument 1</div>
-          <label style={labelStyle}>Icône</label>
-          <select value={feature1.icon} onChange={e => setFeature1({ ...feature1, icon: e.target.value })} style={{ ...inputStyle, marginBottom: 10, cursor: 'pointer' }}>
-            {ICON_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-          <label style={labelStyle}>Titre</label>
-          <input type="text" value={feature1.title} onChange={e => setFeature1({ ...feature1, title: e.target.value })} style={{ ...inputStyle, marginBottom: 10 }} />
-          <label style={labelStyle}>Description</label>
-          <textarea value={feature1.desc} onChange={e => setFeature1({ ...feature1, desc: e.target.value })} rows={2} style={{ ...inputStyle, resize: 'vertical' as const }} />
+          )}
+          <label style={{ display: 'block', width: '100%', padding: '18px', borderRadius: 10, border: '1.5px dashed rgba(232,160,32,0.25)', background: 'rgba(232,160,32,0.03)', color: uploading ? '#C8B99A' : '#E8A020', cursor: uploading ? 'wait' : 'pointer', textAlign: 'center', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const }}>
+            {uploading ? 'Upload en cours...' : 'Choisir une photo depuis votre tel ou ordinateur'}
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadHeroImage(e.target.files[0]) }} />
+          </label>
         </div>
+      )}
 
-        {/* Argument 2 */}
-        <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid rgba(232,160,32,0.08)' }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#E8A020', marginBottom: 10 }}>Argument 2</div>
-          <label style={labelStyle}>Icône</label>
-          <select value={feature2.icon} onChange={e => setFeature2({ ...feature2, icon: e.target.value })} style={{ ...inputStyle, marginBottom: 10, cursor: 'pointer' }}>
-            {ICON_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-          <label style={labelStyle}>Titre</label>
-          <input type="text" value={feature2.title} onChange={e => setFeature2({ ...feature2, title: e.target.value })} style={{ ...inputStyle, marginBottom: 10 }} />
-          <label style={labelStyle}>Description</label>
-          <textarea value={feature2.desc} onChange={e => setFeature2({ ...feature2, desc: e.target.value })} rows={2} style={{ ...inputStyle, resize: 'vertical' as const }} />
+      {activeTab === 'arguments' && (
+        <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Arguments produit</div>
+          {([{ feat: feature1, setFeat: setFeature1, label: 'Argument 1' }, { feat: feature2, setFeat: setFeature2, label: 'Argument 2' }, { feat: feature3, setFeat: setFeature3, label: 'Argument 3' }] as const).map(({ feat, setFeat, label }, idx) => (
+            <div key={label} style={{ marginBottom: idx < 2 ? 20 : 0, paddingBottom: idx < 2 ? 20 : 0, borderBottom: idx < 2 ? '1px solid rgba(232,160,32,0.08)' : 'none' }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#E8A020', marginBottom: 10 }}>{label}</div>
+              <label style={labelStyle}>Icône</label>
+              <select value={feat.icon} onChange={e => setFeat({ ...feat, icon: e.target.value })} style={{ ...inputStyle, marginBottom: 10, cursor: 'pointer' }}>
+                {ICON_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              <label style={labelStyle}>Titre</label>
+              <input type="text" value={feat.title} onChange={e => setFeat({ ...feat, title: e.target.value })} style={{ ...inputStyle, marginBottom: 10 }} />
+              <label style={labelStyle}>Description</label>
+              <textarea value={feat.desc} onChange={e => setFeat({ ...feat, desc: e.target.value })} rows={2} style={{ ...inputStyle, resize: 'vertical' as const }} />
+            </div>
+          ))}
         </div>
+      )}
 
-        {/* Argument 3 */}
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#E8A020', marginBottom: 10 }}>Argument 3</div>
-          <label style={labelStyle}>Icône</label>
-          <select value={feature3.icon} onChange={e => setFeature3({ ...feature3, icon: e.target.value })} style={{ ...inputStyle, marginBottom: 10, cursor: 'pointer' }}>
-            {ICON_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-          <label style={labelStyle}>Titre</label>
-          <input type="text" value={feature3.title} onChange={e => setFeature3({ ...feature3, title: e.target.value })} style={{ ...inputStyle, marginBottom: 10 }} />
-          <label style={labelStyle}>Description</label>
-          <textarea value={feature3.desc} onChange={e => setFeature3({ ...feature3, desc: e.target.value })} rows={2} style={{ ...inputStyle, resize: 'vertical' as const }} />
-        </div>
+      <div style={{ marginTop: 20 }}>
+        <button onClick={save} disabled={saving} style={{ width: '100%', padding: '14px', background: saved ? 'rgba(91,197,122,0.15)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', color: saved ? '#5BC57A' : '#0A0804', border: saved ? '1px solid rgba(91,197,122,0.3)' : 'none', borderRadius: 50, fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 14, cursor: saving ? 'wait' : 'pointer' }}>
+          {saved ? 'Enregistré ✓' : saving ? 'Enregistrement...' : 'Enregistrer'}
+        </button>
       </div>
-
-      {/* SAVE */}
-      <button
-        onClick={save}
-        disabled={saving}
-        style={{ width: '100%', padding: '14px', background: saved ? 'rgba(91,197,122,0.15)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', color: saved ? '#5BC57A' : '#0A0804', border: saved ? '1px solid rgba(91,197,122,0.3)' : 'none', borderRadius: 50, fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 14, cursor: saving ? 'wait' : 'pointer' }}
-      >
-        {saved ? 'Enregistré' : saving ? 'Enregistrement...' : 'Enregistrer'}
-      </button>
     </div>
+  )
+}
+
+export default function SettingsAdmin() {
+  return (
+    <Suspense fallback={<div style={{ color: '#C8B99A', padding: 40 }}>Chargement...</div>}>
+      <SettingsContent />
+    </Suspense>
   )
 }
