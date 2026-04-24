@@ -258,7 +258,7 @@ function LivraisonContent() {
             <button onClick={searchAddress} disabled={geoLoading} style={{ padding: '10px 16px', borderRadius: 10, border: 'none', flexShrink: 0, background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', fontSize: 12, fontWeight: 700, cursor: geoLoading ? 'wait' : 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Rechercher</button>
           </div>
           {geoError && <div style={{ fontSize: 12, color: '#FF6B6B', marginBottom: 12 }}>{geoError}</div>}
-          <div style={{ marginBottom: 14 }}>
+          <div style={{ marginBottom: 14, position: 'relative', zIndex: 0 }}>
             <LeafletMap lat={mapLat} lng={mapLng} onPositionChange={(newLat, newLng, addr) => { setShopLat(newLat.toFixed(6)); setShopLng(newLng.toFixed(6)); if (addr) setShopAddress(addr) }} />
           </div>
           <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: '12px 14px', marginBottom: 14, border: '1px solid rgba(232,160,32,0.08)' }}>
