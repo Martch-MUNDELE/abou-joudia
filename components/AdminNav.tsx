@@ -31,10 +31,10 @@ const NAV_GROUPS = [
     links: [
       { href: '/admin/menu', label: 'Menu' },
       { href: '/admin/livraison', label: 'Livraison', sub: [
-        { label: 'Mode', anchor: 'mode', url: '/admin/livraison' },
-        { label: 'Position boutique', anchor: 'position', url: '/admin/livraison' },
-        { label: 'Zone & tarifs', anchor: 'zone', url: '/admin/livraison' },
-        { label: 'Simulateur', anchor: 'simulateur', url: '/admin/livraison' },
+        { label: 'Mode', anchor: 'mode', url: '/admin/livraison?tab=mode' },
+        { label: 'Position boutique', anchor: 'position', url: '/admin/livraison?tab=position' },
+        { label: 'Zone & tarifs', anchor: 'zone', url: '/admin/livraison?tab=zone' },
+        { label: 'Simulateur', anchor: 'simulateur', url: '/admin/livraison?tab=simulateur' },
       ]},
       { href: '/admin/creneaux', label: 'Créneaux', sub: [
         { label: 'Horaires', anchor: 'horaires', url: '/admin/creneaux?tab=horaires' },
