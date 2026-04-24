@@ -224,14 +224,34 @@ export default function PanierPage() {
 
   useEffect(() => {
     if (!showSuggestions) { setSuggestedProducts([]); return }
-    supabase
-      .from('products')
-      .select('*')
-      .eq('active', true)
-      .order('popular', { ascending: false })
-      .order('price', { ascending: true })
-      .limit(3)
-      .then(({ data }) => { if (data) setSuggestedProducts(data as Product[]) })
+    const cartSubcategories = items.map(i => i.product.subcategory)
+    const hasChaud = cartSubcategories.includes('chaudes')
+    const hasFroid = cartSubcategories.includes('froides')
+    const cartIds = items.map(i => i.product.id)
+    supabase.from('products').select('*').eq('active', true).then(({ data }) => {
+      if (!data) return
+      const pool = data.filter((p: Product) => !cartIds.includes(p.id))
+      const result: Product[] = []
+      // 1. Un produit en promo
+      const promo = pool.filter((p: Product) => (p.discount ?? 0) > 0)
+      if (promo.length > 0) result.push(promo[Math.floor(Math.random() * promo.length)])
+      // 2. Une boisson froide si pas dans le panier
+      if (!hasFroid && result.length < 3) {
+        const froides = pool.filter((p: Product) => p.subcategory === 'froides' && !result.find(r => r.id === p.id))
+        if (froides.length > 0) result.push(froides[Math.floor(Math.random() * froides.length)])
+      }
+      // 3. Une boisson chaude si pas dans le panier
+      if (!hasChaud && result.length < 3) {
+        const chaudes = pool.filter((p: Product) => p.subcategory === 'chaudes' && !result.find(r => r.id === p.id))
+        if (chaudes.length > 0) result.push(chaudes[Math.floor(Math.random() * chaudes.length)])
+      }
+      // 4. Compléter avec produits populaires
+      if (result.length < 3) {
+        const reste = pool.filter((p: Product) => !result.find(r => r.id === p.id)).sort((a: Product, b: Product) => (b.popular ? 1 : 0) - (a.popular ? 1 : 0))
+        result.push(...reste.slice(0, 3 - result.length))
+      }
+      setSuggestedProducts(result.slice(0, 3) as Product[])
+    })
   }, [showSuggestions])
 
   // ── Form helpers ───────────────────────────────────────────────────────────
@@ -485,8 +505,8 @@ export default function PanierPage() {
                 {suggestedProducts.map(p => (
                   <div key={p.id} style={{ minWidth: 0, overflow: 'hidden', borderRadius: 12, display: 'flex', flexDirection: 'column', background: 'rgba(245,200,66,0.05)', border: '1px solid rgba(245,200,66,0.1)' }}>
                     <img src={p.image_url} alt={p.name} style={{ width: '100%', height: 90, objectFit: 'cover' }} loading="lazy" />
-                    <div style={{ padding: '8px 10px 4px', fontSize: 10, color: '#F5EDD6', fontWeight: 600, lineHeight: 1.3, wordBreak: 'break-word', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 10px 10px' }}>
+                    <div style={{ flex: 1, padding: '8px 10px 4px', fontSize: 10, color: '#F5EDD6', fontWeight: 600, lineHeight: 1.3, wordBreak: 'break-word', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 10px 10px', marginTop: 'auto' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
                         {(p.discount ?? 0) > 0 && <span style={{ fontSize: 9, color: '#7A6E58', textDecoration: 'line-through', fontFamily: 'DM Sans, sans-serif', fontWeight: 600 }}>{p.price.toFixed(2)}</span>}
                         <span style={{ fontSize: 12, fontWeight: 800, color: '#F5C842', fontFamily: 'Playfair Display, serif' }}>{(p.discount ?? 0) > 0 ? (p.price * (1 - (p.discount ?? 0) / 100)).toFixed(2) : p.price.toFixed(2)} DH</span>
