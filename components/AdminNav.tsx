@@ -167,7 +167,7 @@ export default function AdminNav() {
         return (
           <div style={{ position:'fixed', top:56, left:0, right:0, zIndex:97, background:'#0D0B07', borderBottom:'1px solid rgba(232,160,32,0.1)', display:'flex', overflowX:'auto' as const, padding:'0 8px' }}>
             {sub.map((s: any) => (
-              <div key={s.anchor} onClick={() => { if (s.url) { window.location.href = s.url } else { const el = document.getElementById(s.anchor); if (el) { el.scrollIntoView({ behavior:'smooth' }); } else if (activeLink) { window.location.href = activeLink.href + '#' + s.anchor } } }} style={{ padding:'8px 12px', fontSize:13, fontWeight:600, color:'#C8B99A', cursor:'pointer', whiteSpace:'nowrap' as const, fontFamily:'DM Sans, sans-serif' }}>
+              <div key={s.anchor} onClick={() => { if (s.url) { window.location.href = s.url } else { const el = document.getElementById(s.anchor); if (el) { el.scrollIntoView({ behavior:'smooth' }) } else if (activeLink) { window.location.href = activeLink.href; setTimeout(() => { document.getElementById(s.anchor)?.scrollIntoView({ behavior:'smooth' }) }, 600) } } }} style={{ padding:'8px 12px', fontSize:13, fontWeight:600, color:'#C8B99A', cursor:'pointer', whiteSpace:'nowrap' as const, fontFamily:'DM Sans, sans-serif' }}>
                 {s.label}
               </div>
             ))}
