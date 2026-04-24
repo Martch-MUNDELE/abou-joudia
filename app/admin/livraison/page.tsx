@@ -234,7 +234,7 @@ export default function LivraisonAdmin() {
 
       {/* MODE */}
       <div style={sectionStyle}>
-        <div style={sectionTitleStyle}>Mode de livraison</div>
+        <div id="mode" style={sectionTitleStyle}>Mode de livraison</div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {([
             { value: 'all', label: 'Livraison + Retrait' },
@@ -257,8 +257,9 @@ export default function LivraisonAdmin() {
       </div>
 
       {/* POSITION BOUTIQUE */}
+
       <div style={sectionStyle}>
-        <div style={sectionTitleStyle}>Position de la boutique</div>
+        <div id="position" style={sectionTitleStyle}>Position de la boutique</div>
 
         <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
           <button onClick={useGPS} disabled={geoLoading} style={{
@@ -323,7 +324,7 @@ export default function LivraisonAdmin() {
 
       {/* ZONE */}
       <div style={sectionStyle}>
-        <div style={sectionTitleStyle}>Zone de livraison</div>
+        <div id="zone" style={sectionTitleStyle}>Zone de livraison</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
           <div>
             <label style={labelStyle}>Rayon maximum (km)</label>
@@ -535,7 +536,7 @@ export default function LivraisonAdmin() {
 
       {/* SIMULATEUR */}
       <div style={sectionStyle}>
-        <div style={sectionTitleStyle}>Simulateur de test</div>
+        <div id="simulateur" style={sectionTitleStyle}>Simulateur de test</div>
         <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
           <input
             value={simAddress}

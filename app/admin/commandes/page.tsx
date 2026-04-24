@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 const STATUSES = ['nouvelle', 'confirmée', 'en_preparation', 'en_livraison', 'livrée', 'annulée']
@@ -96,9 +97,10 @@ const IconCal = () => (
   </svg>
 )
 
-export default function CommandesAdmin() {
+function CommandesAdminInner() {
   const [orders, setOrders] = useState<any[]>([])
-  const [filter, setFilter] = useState('nouvelle')
+  const searchParams = useSearchParams()
+  const [filter, setFilter] = useState(() => searchParams.get('tab') || 'nouvelle')
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [slots, setSlots] = useState<Record<string, any>>({})
   const [pendingStatuses, setPendingStatuses] = useState<Record<string, string>>({})
@@ -132,6 +134,10 @@ export default function CommandesAdmin() {
       .then(({ data }) => { if (data) setShopAddress(data.value || '') })
   }, [])
 
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && tab !== filter) setFilter(tab)
+  }, [searchParams])
   useEffect(() => { load() }, [filter])
 
   const updateStatus = async (id: string, status: string) => {
@@ -279,5 +285,13 @@ export default function CommandesAdmin() {
         })}
       </div>
     </div>
+  )
+}
+
+export default function CommandesAdmin() {
+  return (
+    <Suspense fallback={<div style={{ padding: 40, color: '#C8B99A', fontFamily: 'DM Sans, sans-serif' }}>Chargement...</div>}>
+      <CommandesAdminInner />
+    </Suspense>
   )
 }

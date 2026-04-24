@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -22,9 +23,15 @@ const IconTrash = () => (
   </svg>
 )
 
-export default function ProduitsAdmin() {
+function ProduitsAdminInner() {
   const [products, setProducts] = useState<Product[]>([])
-  const [tab, setTab] = useState('actifs')
+  const searchParams = useSearchParams()
+  const [tab, setTab] = useState(() => searchParams.get('tab') || 'actifs')
+  const [search, setSearch] = useState('')
+  useEffect(() => {
+    const t = searchParams.get('tab')
+    if (t && t !== tab) setTab(t)
+  }, [searchParams])
   const supabase = createClient()
   const router = useRouter()
 
@@ -65,7 +72,7 @@ export default function ProduitsAdmin() {
     })))
   }
 
-  const filtered = products.filter(p => tab === 'actifs' ? p.active : !p.active)
+  const filtered = products.filter(p => tab === 'actifs' ? p.active : !p.active).filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
 
   const grouped = SUBCAT_ORDER.reduce<Record<string, Product[]>>((acc, sub) => {
     const items = filtered.filter(p => p.subcategory === sub)
@@ -82,13 +89,21 @@ export default function ProduitsAdmin() {
         </button>
       </div>
 
+      {/* RECHERCHE */}
+      <input
+        type="text"
+        placeholder="Rechercher un produit..."
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        style={{ width: '100%', padding: '10px 14px', borderRadius: 50, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontSize: 13, outline: 'none', fontFamily: 'DM Sans, sans-serif', marginBottom: 16, boxSizing: 'border-box' as const }}
+      />
       {/* ONGLETS */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-        <button onClick={() => setTab('actifs')} style={{ padding: '8px 20px', borderRadius: 50, border: 'none', background: tab === 'actifs' ? 'linear-gradient(135deg,#F5C842,#FF6B20)' : 'rgba(255,255,255,0.05)', color: tab === 'actifs' ? '#0A0804' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-          Actifs ({products.filter(p => p.active).length})
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' as const }}>
+        <button onClick={() => setTab('actifs')} style={{ padding: '6px 16px', borderRadius: 50, border: '1px solid', borderColor: tab === 'actifs' ? 'rgba(245,200,66,0.4)' : 'rgba(255,255,255,0.06)', background: tab === 'actifs' ? 'rgba(245,200,66,0.12)' : 'transparent', color: tab === 'actifs' ? '#F5C842' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+          Actifs <span style={{ marginLeft: 4, background: tab === 'actifs' ? 'rgba(245,200,66,0.2)' : 'rgba(255,255,255,0.06)', padding: '1px 7px', borderRadius: 50, fontSize: 10 }}>{products.filter(p => p.active).length}</span>
         </button>
-        <button onClick={() => setTab('inactifs')} style={{ padding: '8px 20px', borderRadius: 50, border: 'none', background: tab === 'inactifs' ? 'rgba(255,107,107,0.15)' : 'rgba(255,255,255,0.05)', color: tab === 'inactifs' ? '#FF6B6B' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-          Inactifs ({products.filter(p => !p.active).length})
+        <button onClick={() => setTab('inactifs')} style={{ padding: '6px 16px', borderRadius: 50, border: '1px solid', borderColor: tab === 'inactifs' ? 'rgba(255,107,107,0.4)' : 'rgba(255,255,255,0.06)', background: tab === 'inactifs' ? 'rgba(255,107,107,0.08)' : 'transparent', color: tab === 'inactifs' ? '#FF6B6B' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+          Inactifs <span style={{ marginLeft: 4, background: tab === 'inactifs' ? 'rgba(255,107,107,0.2)' : 'rgba(255,255,255,0.06)', padding: '1px 7px', borderRadius: 50, fontSize: 10 }}>{products.filter(p => !p.active).length}</span>
         </button>
       </div>
 
@@ -130,5 +145,13 @@ export default function ProduitsAdmin() {
         </div>
       ))}
     </div>
+  )
+}
+
+export default function ProduitsAdmin() {
+  return (
+    <Suspense fallback={<div style={{ padding: 40, color: '#C8B99A', fontFamily: 'DM Sans, sans-serif' }}>Chargement...</div>}>
+      <ProduitsAdminInner />
+    </Suspense>
   )
 }

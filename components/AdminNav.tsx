@@ -5,14 +5,52 @@ import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import Logo from '@/components/Logo'
 
-const LINKS = [
-  { href: '/admin', label: 'Dashboard', exact: true },
-  { href: '/admin/commandes', label: 'Commandes' },
-  { href: '/admin/produits', label: 'Produits' },
-  { href: '/admin/menu', label: 'Menu' },
-  { href: '/admin/creneaux', label: 'Créneaux' },
-  { href: '/admin/livraison', label: 'Livraison' },
-  { href: '/admin/settings', label: 'Paramètres' },
+const NAV_GROUPS = [
+  {
+    label: 'BOUTIQUE',
+    links: [
+      { href: '/admin', label: 'Dashboard', exact: true },
+      { href: '/admin/commandes', label: 'Commandes', sub: [
+        { label: 'Nouvelles', anchor: 'nouvelle', url: '/admin/commandes?tab=nouvelle' },
+        { label: 'Confirmées', anchor: 'confirmee', url: '/admin/commandes?tab=confirmée' },
+        { label: 'Préparation', anchor: 'preparation', url: '/admin/commandes?tab=en_preparation' },
+        { label: 'Livraison', anchor: 'livraison', url: '/admin/commandes?tab=en_livraison' },
+        { label: 'Livrées', anchor: 'livree', url: '/admin/commandes?tab=livrée' },
+        { label: 'Annulées', anchor: 'annulee', url: '/admin/commandes?tab=annulée' },
+        { label: 'Retrait', anchor: 'retrait', url: '/admin/commandes?tab=retrait' },
+      ]},
+      { href: '/admin/produits', label: 'Produits', sub: [
+        { label: '+ Ajouter', anchor: 'nouveau', url: '/admin/produits/nouveau' },
+        { label: 'Actifs', anchor: 'actifs', url: '/admin/produits?tab=actifs' },
+        { label: 'Inactifs', anchor: 'inactifs', url: '/admin/produits?tab=inactifs' },
+      ]},
+    ],
+  },
+  {
+    label: 'CONFIGURATION',
+    links: [
+      { href: '/admin/menu', label: 'Menu' },
+      { href: '/admin/livraison', label: 'Livraison', sub: [
+        { label: 'Mode', anchor: 'mode' },
+        { label: 'Position boutique', anchor: 'position' },
+        { label: 'Zone & tarifs', anchor: 'zone' },
+        { label: 'Simulateur', anchor: 'simulateur' },
+      ]},
+      { href: '/admin/creneaux', label: 'Créneaux', sub: [
+        { label: 'Horaires', anchor: 'horaires' },
+        { label: 'Pause déjeuner', anchor: 'pause' },
+        { label: 'Jours fermés', anchor: 'fermeture' },
+        { label: 'Génération', anchor: 'generation' },
+      ]},
+      { href: '/admin/settings', label: 'Paramètres', sub: [
+        { label: 'Statut service', anchor: 'statut' },
+        { label: 'Identité du site', anchor: 'identite' },
+        { label: 'Fond de page', anchor: 'fond' },
+        { label: 'Image hero', anchor: 'hero' },
+        { label: 'Arguments produit', anchor: 'arguments' },
+      ]},
+    ],
+  },
 ]
 
 export default function AdminNav() {
@@ -21,20 +59,23 @@ export default function AdminNav() {
   const supabase = createClient()
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [siteName, setSiteName] = useState('Abou Joudia')
-  const [siteBaseline, setSiteBaseline] = useState('AGADIR · LIVRAISON')
   const [siteLogo, setSiteLogo] = useState<string | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     supabase.from('settings').select('*').then(({ data }) => {
       data?.forEach((s: any) => {
         if (s.key === 'site_name') setSiteName(s.value)
-        if (s.key === 'site_baseline') setSiteBaseline(s.value)
         if (s.key === 'site_logo') setSiteLogo(s.value || '')
       })
     })
     supabase.auth.getUser().then(async ({ data }) => {
       if (data.user?.email) {
-        const { data: admin } = await supabase.from('admins').select('role').eq('email', data.user.email).single()
+        const { data: admin } = await supabase
+          .from('admins')
+          .select('role')
+          .eq('email', data.user.email)
+          .single()
         setIsSuperAdmin(admin?.role === 'superadmin')
       }
     })
@@ -48,55 +89,211 @@ export default function AdminNav() {
     router.push('/admin/login')
   }
 
-  return (
-    <nav style={{ background: 'rgba(8,6,3,0.97)', borderBottom: '1px solid rgba(232,160,32,0.1)', position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(20px)' }}>
+  const close = () => setMenuOpen(false)
 
-      {/* LIGNE 1 : Logo + Déconnexion */}
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '8px 24px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/admin" style={{ textDecoration: 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {siteLogo === null ? <div style={{ width: 36, height: 36, flexShrink: 0 }} /> : siteLogo ? (
-              <img src={siteLogo} alt={siteName} style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }} />
-            ) : (
-              <Logo size={36} />
-            )}
-            <div>
-              <div style={{ fontSize: 8, color: '#E8A020', letterSpacing: '2px', textTransform: 'uppercase', lineHeight: 1, marginBottom: 2, fontWeight: 700 }}>Admin</div>
-              <div style={{ fontFamily: 'Playfair Display, serif', fontWeight: 700, fontSize: 15, background: 'linear-gradient(90deg,#FFD060,#E8901A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.3px', lineHeight: 1.1 }}>{siteName}</div>
-              <div style={{ fontSize: 8, color: '#A89880', letterSpacing: '2px', textTransform: 'uppercase', lineHeight: 1, marginTop: 2 }}>{siteBaseline}</div>
-            </div>
+  const allGroups = [
+    ...NAV_GROUPS,
+    ...(isSuperAdmin
+      ? [{ label: 'ADMIN', links: [{ href: '/admin/superadmin', label: 'Super Admin' }] }]
+      : []),
+  ]
+
+  const renderLogo = (size: number) =>
+    siteLogo === null ? (
+      <div style={{ width: size, height: size, flexShrink: 0 }} />
+    ) : siteLogo ? (
+      <img src={siteLogo} alt={siteName} style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} />
+    ) : (
+      <Logo size={size} />
+    )
+
+  return (
+    <>
+      {/* Fixed header */}
+      <header style={{
+        height: 56,
+        background: '#0D0B07',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 16px',
+        borderBottom: '1px solid rgba(232,160,32,0.1)',
+      }}>
+        <Link href="/admin" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+          {renderLogo(28)}
+          <div style={{
+            fontFamily: 'Playfair Display, serif',
+            fontWeight: 700,
+            fontSize: 14,
+            background: 'linear-gradient(90deg,#FFD060,#E8901A)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>
+            {siteName}
           </div>
         </Link>
 
-        <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, fontFamily: 'DM Sans, sans-serif', color: '#FF6B6B', background: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.25)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-          Déconnexion
+        <button
+          onClick={() => setMenuOpen(o => !o)}
+          style={{
+            width: 40,
+            height: 40,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: '#F5C842',
+            fontSize: 22,
+            lineHeight: 1,
+          }}
+          aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+        >
+          {menuOpen ? '✕' : '≡'}
         </button>
-      </div>
+      </header>
 
-      {/* LIGNE 2 : Menu */}
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px 10px', display: 'flex', alignItems: 'center', gap: 4, overflowX: 'auto', scrollbarWidth: 'none' }}>
-        {LINKS.map(l => (
-          <Link key={l.href} href={l.href} style={{ textDecoration: 'none', flexShrink: 0 }}>
-            <div style={{ padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', color: isActive(l.href, l.exact) ? '#0A0804' : '#E8DCC8', background: isActive(l.href, l.exact) ? 'linear-gradient(135deg,#F5C842,#FF6B20)' : 'transparent', whiteSpace: 'nowrap' as const }}>
-              {l.label}
-            </div>
-          </Link>
-        ))}
+      {/* Transparent overlay to close on outside click */}
+      {menuOpen && (
+        <div
+          onClick={close}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 98,
+          }}
+        />
+      )}
 
-        {isSuperAdmin && (
-          <Link href="/admin/superadmin" style={{ textDecoration: 'none', flexShrink: 0 }}>
-            <div style={{ padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, fontFamily: 'DM Sans, sans-serif', color: pathname.startsWith('/admin/superadmin') ? '#0A0804' : '#F5C842', background: pathname.startsWith('/admin/superadmin') ? 'linear-gradient(135deg,#F5C842,#FF6B20)' : 'rgba(245,200,66,0.08)', border: pathname.startsWith('/admin/superadmin') ? 'none' : '1px solid rgba(245,200,66,0.2)', whiteSpace: 'nowrap' as const }}>
-              Super Admin
-            </div>
-          </Link>
-        )}
-      </div>
+      {/* Dropdown below header */}
+      {menuOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 56,
+          left: 0,
+          right: 0,
+          background: '#0D0B07',
+          zIndex: 99,
+          borderBottom: '1px solid rgba(232,160,32,0.15)',
+          maxHeight: 'calc(100vh - 56px)',
+          overflowY: 'auto',
+        }}>
+          <div style={{ padding: '8px 0' }}>
+            {allGroups.map(group => (
+              <div key={group.label}>
+                <div style={{
+                  fontSize: 9,
+                  fontWeight: 800,
+                  color: '#7A6E58',
+                  letterSpacing: '1.5px',
+                  textTransform: 'uppercase' as const,
+                  padding: '12px 16px 4px',
+                  fontFamily: 'DM Sans, sans-serif',
+                }}>
+                  {group.label}
+                </div>
+                {group.links.map(link => {
+                  const active = isActive(link.href, (link as any).exact)
+                  const sub = (link as any).sub
+                  return (
+                    <div key={link.href}>
+                      <Link
+                        href={link.href}
+                        onClick={close}
+                        style={{ textDecoration: 'none', display: 'block' }}
+                      >
+                        <div style={{
+                          padding: '9px 16px',
+                          fontSize: 13,
+                          fontWeight: 500,
+                          fontFamily: 'DM Sans, sans-serif',
+                          color: active ? '#F5C842' : '#C8B99A',
+                          background: active ? 'rgba(245,200,66,0.08)' : 'transparent',
+                          borderLeft: active ? '2px solid #F5C842' : '2px solid transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}>
+                          {link.label}
+                          {sub && <span style={{ fontSize: 9, opacity: 0.5 }}>{active ? '▲' : '▼'}</span>}
+                        </div>
+                      </Link>
+                      {sub && active && (
+                        <div style={{
+                          borderLeft: '1px solid rgba(232,160,32,0.1)',
+                          marginLeft: 16,
+                        }}>
+                          {sub.map((s: any) => (
+                            <div
+                              key={s.anchor}
+                              onClick={() => {
+                                close()
+                                if (s.url) {
+                                  window.location.href = s.url
+                                } else {
+                                  setTimeout(() => {
+                                    document.getElementById(s.anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                  }, 100)
+                                }
+                              }}
+                              style={{
+                                padding: '6px 16px',
+                                fontSize: 11,
+                                fontWeight: 500,
+                                fontFamily: 'DM Sans, sans-serif',
+                                color: '#7A6E58',
+                                cursor: 'pointer',
+                              }}
+                              onMouseEnter={e => (e.currentTarget.style.color = '#E8A020')}
+                              onMouseLeave={e => (e.currentTarget.style.color = '#7A6E58')}
+                            >
+                              › {s.label}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
 
-    </nav>
+          <div style={{ borderTop: '1px solid rgba(232,160,32,0.08)', padding: '8px 0' }}>
+            <button
+              onClick={() => { close(); logout() }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '10px 16px',
+                fontSize: 12,
+                fontWeight: 700,
+                fontFamily: 'DM Sans, sans-serif',
+                color: '#FF6B6B',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                width: '100%',
+                textAlign: 'left' as const,
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              Déconnexion
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

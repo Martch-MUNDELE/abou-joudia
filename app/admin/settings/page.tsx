@@ -138,7 +138,7 @@ export default function SettingsAdmin() {
       <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 900, color: '#F5EDD6', marginBottom: 28 }}>Paramètres</h1>
 
       {/* STATUT */}
-      <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
+      <div id="statut" style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Statut du service</div>
         <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
           <button
@@ -165,7 +165,7 @@ export default function SettingsAdmin() {
       </div>
 
       {/* IDENTITE DU SITE */}
-      <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
+      <div id="identite" style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Identité du site</div>
 
         {/* Logo */}
@@ -192,7 +192,7 @@ export default function SettingsAdmin() {
       </div>
 
       {/* FOND DE PAGE */}
-      <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
+      <div id="fond" style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Fond de page</div>
 
         {/* Toggle image active */}
@@ -291,7 +291,7 @@ export default function SettingsAdmin() {
       </div>
 
       {/* HERO IMAGE */}
-      <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 20 }}>
+      <div id="hero" style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 20 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Image Hero (page d'accueil)</div>
         {heroImage && (
           <div style={{ marginBottom: 14, borderRadius: 12, overflow: 'hidden', height: 180, position: 'relative' }}>
@@ -310,7 +310,8 @@ export default function SettingsAdmin() {
         </label>
       </div>
 
-      {/* ARGUMENTS PRODUIT */}
+      {/* ARGUMENTS PRODUIT */
+      }
       <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Arguments produit</div>
 

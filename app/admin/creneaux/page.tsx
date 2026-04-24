@@ -113,7 +113,7 @@ export default function CreneauxAdmin() {
       <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 900, color: '#F5EDD6', marginBottom: 24 }}>Créneaux</h1>
 
       <div style={sectionStyle}>
-        <div style={sectionTitle}>Horaires & durée</div>
+        <div id="horaires" style={sectionTitle}>Horaires & durée</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div>
             <label style={labelStyle}>Heure de début</label>
@@ -135,7 +135,7 @@ export default function CreneauxAdmin() {
       </div>
 
       <div style={sectionStyle}>
-        <div style={{ ...sectionTitle, marginBottom: 4 }}>Pause déjeuner</div>
+        <div id="pause" style={{ ...sectionTitle, marginBottom: 4 }}>Pause déjeuner</div>
         <div style={{ fontSize: 12, color: '#C8B99A', marginBottom: 16, fontFamily: 'DM Sans, sans-serif' }}>Laisser vide = pas de pause</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div>
@@ -150,7 +150,7 @@ export default function CreneauxAdmin() {
       </div>
 
       <div style={sectionStyle}>
-        <div style={sectionTitle}>Jours de fermeture</div>
+        <div id="fermeture" style={sectionTitle}>Jours de fermeture</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
           {DAYS.map(({ label, value }) => {
             const closed = slotsClosedDays.includes(value)
@@ -168,7 +168,7 @@ export default function CreneauxAdmin() {
       </div>
 
       <div style={{ ...sectionStyle, marginBottom: 20 }}>
-        <div style={sectionTitle}>Génération</div>
+        <div id="generation" style={sectionTitle}>Génération</div>
         <label style={labelStyle}>Jours à générer en avance</label>
         <input type="number" min={1} max={90} value={slotsDaysAhead} onChange={e => setSlotsDaysAhead(e.target.value)} style={{ ...inputStyle, boxSizing: 'border-box' as const, appearance: 'none' as const }} />
       </div>
