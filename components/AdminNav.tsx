@@ -229,13 +229,8 @@ export default function AdminNav() {
                     <div key={link.href}>
                       <div
                         onClick={() => {
-                          if (sub) {
-                            setExpandedHref(prev => prev === link.href ? null : link.href)
-                            if (!active) window.location.href = link.href
-                          } else {
-                            close()
-                            window.location.href = link.href
-                          }
+                          close()
+                          window.location.href = link.href
                         }}
                         style={{ textDecoration: 'none', display: 'block', cursor: 'pointer' }}
                       >
@@ -252,10 +247,10 @@ export default function AdminNav() {
                           justifyContent: 'space-between',
                         }}>
                           {link.label}
-                          {sub && <span style={{ fontSize: 9, opacity: 0.5 }}>{expandedHref === link.href || active ? '▲' : '▼'}</span>}
+                          
                         </div>
                       </div>
-                      {sub && (active || expandedHref === link.href) && (
+                      {sub && (
                         <div style={{
                           borderLeft: '1px solid rgba(232,160,32,0.1)',
                           marginLeft: 16,
