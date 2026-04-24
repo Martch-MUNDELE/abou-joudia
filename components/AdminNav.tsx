@@ -231,6 +231,7 @@ export default function AdminNav() {
                         onClick={() => {
                           if (sub) {
                             setExpandedHref(prev => prev === link.href ? null : link.href)
+                            if (!active) window.location.href = link.href
                           } else {
                             close()
                             window.location.href = link.href
