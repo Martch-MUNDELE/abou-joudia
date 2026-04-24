@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { useCart } from '@/store/cart'
 
 export default function ConfirmationPage() {
   const params = useParams()
@@ -11,6 +12,9 @@ export default function ConfirmationPage() {
   const [slot, setSlot] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
+  const clear = useCart(s => s.clear)
+
+  useEffect(() => { clear() }, [])
 
   useEffect(() => {
     const fetchOrder = async () => {

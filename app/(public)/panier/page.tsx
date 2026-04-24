@@ -319,7 +319,7 @@ export default function PanierPage() {
       })
       const data = await res.json()
       if (data.error) { setOrderError(data.error); setLoading(false); return }
-      if (data.id) { clear(); router.push(`/confirmation/${data.id}`) }
+      if (data.id) { router.push(`/confirmation/${data.id}`) }
     } catch (e) { console.error(e) }
     setLoading(false)
   }
