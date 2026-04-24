@@ -270,7 +270,7 @@ export default function AdminNav() {
                               }}
                               style={{
                                 padding: '6px 16px',
-                                fontSize: 11,
+                                fontSize: 15,
                                 fontWeight: 500,
                                 fontFamily: 'DM Sans, sans-serif',
                                 color: '#7A6E58',
