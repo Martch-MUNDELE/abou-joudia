@@ -32,6 +32,7 @@ export default function SuperAdminPage() {
   const [msg, setMsg] = useState('')
   const [showPwd, setShowPwd] = useState<Record<string, boolean>>({})
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [purging, setPurging] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -59,6 +60,21 @@ export default function SuperAdminPage() {
       target_email: targetEmail || null,
       details: details || null,
     })
+  }
+
+  const purgeCommandes = async () => {
+    if (!confirm('⚠️ Supprimer TOUTES les commandes ? Cette action est irréversible.')) return
+    if (!confirm('Dernière confirmation — vraiment tout effacer ?')) return
+    setPurging(true)
+    try {
+      const res = await fetch('/api/superadmin/purge-commandes', { method: 'POST' })
+      if (!res.ok) throw new Error('Erreur API')
+      await logAction('PURGE_COMMANDES', undefined, 'Toutes les commandes et order_items supprimés, slots remis à zéro')
+      setMsg('✅ Toutes les commandes ont été supprimées et les créneaux remis à zéro.')
+    } catch (e) {
+      setMsg('❌ Erreur lors de la purge')
+    }
+    setPurging(false)
   }
 
   const createAdmin = async () => {
@@ -178,6 +194,20 @@ export default function SuperAdminPage() {
           </div>
         </div>
       )}
+
+      {/* ZONE DANGER */}
+      <div style={{ background: 'rgba(255,107,107,0.04)', border: '1px solid rgba(255,107,107,0.15)', borderRadius: 16, padding: '18px 20px', marginBottom: 24 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: '#FF6B6B', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 12 }}>⚠️ Zone danger</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#F5EDD6', marginBottom: 2 }}>Purger toutes les commandes</div>
+            <div style={{ fontSize: 11, color: '#C8B99A' }}>Supprime toutes les commandes, les items et remet les créneaux à zéro. Irréversible.</div>
+          </div>
+          <button onClick={purgeCommandes} disabled={purging} style={{ flexShrink: 0, padding: '9px 18px', borderRadius: 50, border: '1px solid rgba(255,107,107,0.4)', background: 'rgba(255,107,107,0.08)', color: '#FF6B6B', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 12, cursor: purging ? 'not-allowed' : 'pointer', opacity: purging ? 0.6 : 1, whiteSpace: 'nowrap' }}>
+            {purging ? 'Purge...' : '🗑 Purger'}
+          </button>
+        </div>
+      </div>
 
       {/* TABS */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
