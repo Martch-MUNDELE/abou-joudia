@@ -229,8 +229,10 @@ export default function AdminNav() {
                     <div key={link.href}>
                       <div
                         onClick={() => {
-                          close()
-                          window.location.href = link.href
+                          if (!sub) {
+                            close()
+                            window.location.href = link.href
+                          }
                         }}
                         style={{ textDecoration: 'none', display: 'block', cursor: 'pointer' }}
                       >
