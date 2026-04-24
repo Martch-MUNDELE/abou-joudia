@@ -61,6 +61,7 @@ export default function AdminNav() {
   const [siteName, setSiteName] = useState('Abou Joudia')
   const [siteLogo, setSiteLogo] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [expandedHref, setExpandedHref] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.from('settings').select('*').then(({ data }) => {
@@ -89,7 +90,7 @@ export default function AdminNav() {
     router.push('/admin/login')
   }
 
-  const close = () => setMenuOpen(false)
+  const close = () => { setMenuOpen(false); setExpandedHref(null) }
 
   const allGroups = [
     ...NAV_GROUPS,
@@ -239,7 +240,7 @@ export default function AdminNav() {
                           {sub && <span style={{ fontSize: 9, opacity: 0.5 }}>{active ? '▲' : '▼'}</span>}
                         </div>
                       </Link>
-                      {sub && active && (
+                      {sub && (active || expandedHref === link.href) && (
                         <div style={{
                           borderLeft: '1px solid rgba(232,160,32,0.1)',
                           marginLeft: 16,
