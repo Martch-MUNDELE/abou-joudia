@@ -167,7 +167,7 @@ export default function AdminNav() {
         return (
           <div style={{ position:'fixed', top:56, left:0, right:0, zIndex:97, background:'#0D0B07', borderBottom:'1px solid rgba(232,160,32,0.1)', display:'flex', overflowX:'auto' as const, padding:'0 8px' }}>
             {sub.map((s: any) => (
-              <div key={s.anchor} onClick={() => { if (s.url) window.location.href = s.url; else document.getElementById(s.anchor)?.scrollIntoView({ behavior:'smooth' }) }} style={{ padding:'8px 12px', fontSize:11, fontWeight:600, color:'#C8B99A', cursor:'pointer', whiteSpace:'nowrap' as const, fontFamily:'DM Sans, sans-serif' }}>
+              <div key={s.anchor} onClick={() => { if (s.url) window.location.href = s.url; else document.getElementById(s.anchor)?.scrollIntoView({ behavior:'smooth' }) }} style={{ padding:'8px 12px', fontSize:13, fontWeight:600, color:'#C8B99A', cursor:'pointer', whiteSpace:'nowrap' as const, fontFamily:'DM Sans, sans-serif' }}>
                 {s.label}
               </div>
             ))}
@@ -219,14 +219,20 @@ export default function AdminNav() {
                   const sub = (link as any).sub
                   return (
                     <div key={link.href}>
-                      <Link
-                        href={link.href}
-                        onClick={close}
-                        style={{ textDecoration: 'none', display: 'block' }}
+                      <div
+                        onClick={() => {
+                          if (sub) {
+                            setExpandedHref(prev => prev === link.href ? null : link.href)
+                          } else {
+                            close()
+                            window.location.href = link.href
+                          }
+                        }}
+                        style={{ textDecoration: 'none', display: 'block', cursor: 'pointer' }}
                       >
                         <div style={{
                           padding: '9px 16px',
-                          fontSize: 13,
+                          fontSize: 15,
                           fontWeight: 500,
                           fontFamily: 'DM Sans, sans-serif',
                           color: active ? '#F5C842' : '#C8B99A',
@@ -237,9 +243,9 @@ export default function AdminNav() {
                           justifyContent: 'space-between',
                         }}>
                           {link.label}
-                          {sub && <span style={{ fontSize: 9, opacity: 0.5 }}>{active ? '▲' : '▼'}</span>}
+                          {sub && <span style={{ fontSize: 9, opacity: 0.5 }}>{expandedHref === link.href || active ? '▲' : '▼'}</span>}
                         </div>
-                      </Link>
+                      </div>
                       {sub && (active || expandedHref === link.href) && (
                         <div style={{
                           borderLeft: '1px solid rgba(232,160,32,0.1)',
