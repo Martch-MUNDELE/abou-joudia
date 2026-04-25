@@ -1,10 +1,19 @@
 'use client'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 export default function NotFound() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const router = useRouter()
+  const [heroImage, setHeroImage] = useState<string | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.from('settings').select('value').eq('key', 'hero_image').single().then(({ data }) => {
+      if (data?.value) setHeroImage(data.value)
+    })
+  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -92,9 +101,22 @@ export default function NotFound() {
       <div style={{ position: 'relative', width: 220, height: 220, marginBottom: 8 }}>
         <canvas ref={canvasRef} style={{ position: 'absolute', top: -80, left: -50, pointerEvents: 'none', opacity: 0.9 }} />
 
-        {/* Sandwich SVG */}
+        {/* Image hero dynamique ou SVG fallback */}
+        {heroImage ? (
+          <img
+            src={heroImage}
+            alt="hero"
+            style={{
+              position: 'relative',
+              zIndex: 2,
+              width: 220,
+              height: 220,
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 8px 40px rgba(245,200,66,0.2))',
+            }}
+          />
+        ) : (
         <svg viewBox="0 0 200 180" width="220" height="198" style={{ position: 'relative', zIndex: 2, filter: 'drop-shadow(0 8px 32px rgba(245,200,66,0.15))' }}>
-          {/* Rayons soleil */}
           {Array.from({ length: 12 }, (_, i) => {
             const angle = (i * 30 - 90) * Math.PI / 180
             const r1 = 72, r2 = 88
@@ -108,31 +130,20 @@ export default function NotFound() {
               />
             )
           })}
-          {/* Pain du haut */}
           <ellipse cx="100" cy="62" rx="52" ry="28" fill="#E8A020" opacity="0.95"/>
           <ellipse cx="100" cy="58" rx="48" ry="22" fill="#F5B830"/>
           <ellipse cx="100" cy="55" rx="44" ry="16" fill="#F5C842" opacity="0.6"/>
-          {/* Graines */}
           <ellipse cx="88" cy="53" rx="4" ry="2" fill="#E8A020" transform="rotate(-20 88 53)"/>
           <ellipse cx="106" cy="50" rx="4" ry="2" fill="#E8A020" transform="rotate(10 106 50)"/>
           <ellipse cx="118" cy="56" rx="3.5" ry="1.8" fill="#E8A020" transform="rotate(-10 118 56)"/>
-          {/* Laitue */}
           <path d="M48 88 Q70 78 100 82 Q130 78 152 88 Q130 96 100 92 Q70 96 48 88Z" fill="#5BC57A" opacity="0.9"/>
-          <path d="M52 86 Q75 80 100 83 Q125 80 148 86" fill="none" stroke="#3DA85A" strokeWidth="1"/>
-          {/* Galette */}
           <rect x="50" y="92" width="100" height="10" rx="5" fill="#C8781A" opacity="0.9"/>
-          {/* Tomate */}
           <path d="M50 106 Q100 100 150 106 Q150 118 100 120 Q50 118 50 106Z" fill="#E8402A" opacity="0.85"/>
-          <line x1="100" y1="101" x2="100" y2="119" stroke="#C83020" strokeWidth="0.8" opacity="0.5"/>
-          <line x1="75" y1="102" x2="75" y2="119" stroke="#C83020" strokeWidth="0.8" opacity="0.5"/>
-          <line x1="125" y1="102" x2="125" y2="119" stroke="#C83020" strokeWidth="0.8" opacity="0.5"/>
-          {/* Pain du bas */}
           <ellipse cx="100" cy="130" rx="55" ry="14" fill="#E8A020"/>
           <ellipse cx="100" cy="128" rx="52" ry="12" fill="#F5B830"/>
-          {/* Assiette / base */}
           <ellipse cx="100" cy="154" rx="60" ry="8" fill="#1A1408" opacity="0.4"/>
-          <ellipse cx="100" cy="152" rx="58" ry="6" fill="#2A1E0A" opacity="0.6"/>
         </svg>
+        )}
       </div>
 
       {/* 404 */}
