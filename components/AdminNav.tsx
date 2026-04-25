@@ -78,12 +78,13 @@ export default function AdminNav() {
         if (s.key === 'site_logo') setSiteLogo(s.value || '')
       })
     })
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (data.user?.email) {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const email = session?.user?.email
+      if (email) {
         const { data: admin } = await supabase
           .from('admins')
           .select('role')
-          .eq('email', data.user.email)
+          .eq('email', email)
           .single()
         setIsSuperAdmin(admin?.role === 'superadmin')
       }
