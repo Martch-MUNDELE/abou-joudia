@@ -317,8 +317,8 @@ export default function SuperAdminPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
               { title: 'Clients & Contrats', desc: 'Gérer les contrats, modes de rémunération et règles variables par client.', href: '/admin/superadmin/facturation/contrats', ready: true },
-              { title: 'Périodes de facturation', desc: 'Consulter, clôturer et marquer les périodes comme facturées ou payées.', href: '/admin/superadmin/facturation/periodes', ready: false },
-              { title: 'Ajustements', desc: 'Ajouter des remises, avoirs, corrections ou frais sur une période donnée.', href: '/admin/superadmin/facturation/ajustements', ready: false },
+              { title: 'Périodes de facturation', desc: 'Consulter, clôturer et marquer les périodes comme facturées ou payées.', href: '/admin/superadmin/facturation/periodes', ready: true },
+              { title: 'Ajustements', desc: 'Ajouter des remises, avoirs, corrections ou frais sur une période donnée.', href: '/admin/superadmin/facturation/ajustements', ready: true },
             ].map(section => (
               section.ready ? (
                 <a key={section.title} href={section.href} style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.15)', borderRadius: 14, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textDecoration: 'none' }}>
