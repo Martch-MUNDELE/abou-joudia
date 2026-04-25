@@ -57,24 +57,20 @@ export default function ContratsPage() {
     setContracts(c || [])
     setPeriods(p || [])
     setRules(r || [])
-
-    // Catégories dynamiques depuis les produits actifs
     const slugs = [...new Set((prods || []).map((p: any) => p.subcategory).filter(Boolean))]
-    const cats = slugs.map(slug => ({
-      slug,
-      label: SUBCATEGORY_LABELS[slug] || slug,
-    }))
+    const cats = slugs.map(slug => ({ slug, label: SUBCATEGORY_LABELS[slug] || slug }))
     setCategories(cats)
     setCatRates(Object.fromEntries(cats.map(c => [c.slug, ''])))
   }
 
-  const getContract = (adminId: string) => contracts.find(c => c.client_id === adminId)
-  const getPeriod   = (adminId: string) => periods.find(p => p.client_id === adminId)
+  const getAuthId = (admin: any) => admin.auth_user_id || admin.id
+  const getContract = (admin: any) => contracts.find(c => c.client_id === getAuthId(admin))
+  const getPeriod   = (admin: any) => periods.find(p => p.client_id === getAuthId(admin))
   const getRules    = (contractId: string) => rules.filter(r => r.contract_id === contractId)
 
   const selectAdmin = (admin: any) => {
     setSelected(admin)
-    const existing = getContract(admin.id)
+    const existing = getContract(admin)
     if (existing) {
       setMode(existing.billing_mode)
       setFlatFee(String(existing.flat_fee_amount))
@@ -112,53 +108,55 @@ export default function ContratsPage() {
         inserts.push({ contract_id: contractId, rule_type: 'tier', tier_from: Number(t.from), tier_to: t.to ? Number(t.to) : null, rate_percent: Number(t.rate) })
       })
     }
-    if (mode === 'flat_percent' && flatPercent) {
-      inserts.push({ contract_id: contractId, rule_type: 'flat_percent', rate_percent: Number(flatPercent) })
-    }
+    if (mode === 'flat_percent' && flatPercent) inserts.push({ contract_id: contractId, rule_type: 'flat_percent', rate_percent: Number(flatPercent) })
     if (mode === 'flat_category') {
       categories.forEach(cat => {
         if (catRates[cat.slug]) inserts.push({ contract_id: contractId, rule_type: 'category', category_slug: cat.slug, rate_percent: Number(catRates[cat.slug]) })
       })
     }
-    if (mode === 'flat_per_order' && perOrderAmount) {
-      inserts.push({ contract_id: contractId, rule_type: 'per_order', amount_per_order: Number(perOrderAmount) })
-    }
+    if (mode === 'flat_per_order' && perOrderAmount) inserts.push({ contract_id: contractId, rule_type: 'per_order', amount_per_order: Number(perOrderAmount) })
     if (inserts.length > 0) await supabase.from('commission_rules').insert(inserts)
   }
 
   const saveContract = async () => {
     if (!selected) return
     if (!flatFee || isNaN(Number(flatFee))) { setMsg('❌ Montant invalide'); return }
+    const authId = getAuthId(selected)
+    if (!authId) { setMsg('❌ Auth ID introuvable pour ce client'); return }
     setSaving(true)
     try {
-      const existing = getContract(selected.id)
+      const existing = getContract(selected)
       let contractId = existing?.id
       if (existing) {
         await supabase.from('contract_history').insert({ contract_id: existing.id, changed_by: currentUser?.id, old_snapshot: existing, new_snapshot: { billing_mode: mode, flat_fee_amount: Number(flatFee) }, reason: 'Modification via Super Admin' })
         await supabase.from('client_contracts').update({ billing_mode: mode, flat_fee_amount: Number(flatFee), updated_at: new Date().toISOString() }).eq('id', existing.id)
       } else {
-        const { data: newContract, error } = await supabase.from('client_contracts').insert({ client_id: selected.id, started_at: startDate, billing_mode: mode, flat_fee_amount: Number(flatFee) }).select().single()
+        const { data: newContract, error } = await supabase
+          .from('client_contracts')
+          .insert({ client_id: authId, started_at: startDate, billing_mode: mode, flat_fee_amount: Number(flatFee) })
+          .select().single()
         if (error || !newContract) throw error
         contractId = newContract.id
-        if (!getPeriod(selected.id)) {
+        if (!getPeriod(selected)) {
           const { start, end } = getMonthRange()
-          await supabase.from('billing_periods').insert({ client_id: selected.id, period_start: start, period_end: end, status: 'en_cours', flat_fee_amount: Number(flatFee) })
+          await supabase.from('billing_periods').insert({ client_id: authId, period_start: start, period_end: end, status: 'en_cours', flat_fee_amount: Number(flatFee) })
         }
       }
       if (contractId) await saveRules(contractId)
-      const p = getPeriod(selected.id)
+      const p = getPeriod(selected)
       if (p) { setRecalculating(true); await recalculatePeriod(p.id); setRecalculating(false) }
-      setMsg(existing ? '✅ Contrat et règles mis à jour' : '✅ Contrat créé et période ouverte')
+      setMsg(existing ? '✅ Contrat mis à jour' : '✅ Contrat créé et période ouverte')
       await loadAll()
     } catch (e) {
       setMsg('❌ Erreur lors de la sauvegarde')
+      console.error(e)
     }
     setSaving(false)
   }
 
   const triggerRecalculate = async () => {
     if (!selected) return
-    const p = getPeriod(selected.id)
+    const p = getPeriod(selected)
     if (!p) { setMsg('❌ Aucune période en cours'); return }
     setRecalculating(true)
     const result = await recalculatePeriod(p.id)
@@ -171,7 +169,7 @@ export default function ContratsPage() {
   const lbl: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: '#C8B99A', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.8px' }
   const sml: React.CSSProperties = { width: '100%', padding: '8px 12px', borderRadius: 10, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontSize: 13, outline: 'none', fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' }
 
-  const period = selected ? getPeriod(selected.id) : null
+  const period = selected ? getPeriod(selected) : null
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 16px', fontFamily: 'DM Sans, sans-serif' }}>
@@ -187,8 +185,8 @@ export default function ContratsPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {admins.length === 0 && <div style={{ color: '#7A6E58', fontSize: 13, padding: '20px 0' }}>Aucun client admin trouvé.</div>}
             {admins.map(admin => {
-              const contract = getContract(admin.id)
-              const p = getPeriod(admin.id)
+              const contract = getContract(admin)
+              const p = getPeriod(admin)
               const isActive = selected?.id === admin.id
               return (
                 <div key={admin.id} onClick={() => selectAdmin(admin)} style={{ background: isActive ? 'rgba(232,160,32,0.08)' : '#131009', border: `1px solid ${isActive ? 'rgba(232,160,32,0.4)' : 'rgba(232,160,32,0.1)'}`, borderRadius: 12, padding: '14px 16px', cursor: 'pointer' }}>
@@ -221,7 +219,7 @@ export default function ContratsPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#F5EDD6', marginBottom: 2 }}>{selected.email}</div>
-                  <div style={{ fontSize: 11, color: '#7A6E58' }}>{getContract(selected.id) ? 'Modifier le contrat' : 'Créer un contrat'}</div>
+                  <div style={{ fontSize: 11, color: '#7A6E58' }}>{getContract(selected) ? 'Modifier le contrat' : 'Créer un contrat'}</div>
                 </div>
                 {period && (
                   <button onClick={triggerRecalculate} disabled={recalculating} style={{ padding: '6px 14px', borderRadius: 50, border: '1px solid rgba(56,182,255,0.3)', background: 'rgba(56,182,255,0.06)', color: '#38B6FF', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
@@ -262,7 +260,7 @@ export default function ContratsPage() {
                 <input type="number" min="0" step="0.01" value={flatFee} onChange={e => setFlatFee(e.target.value)} placeholder="Ex: 500" style={inp} />
               </div>
 
-              {!getContract(selected.id) && (
+              {!getContract(selected) && (
                 <div style={{ marginBottom: 16 }}>
                   <label style={lbl}>Date de début</label>
                   <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={inp} />
@@ -284,18 +282,9 @@ export default function ContratsPage() {
                   </div>
                   {tiers.map((tier, i) => (
                     <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 8, marginBottom: 8, alignItems: 'flex-end' }}>
-                      <div>
-                        <div style={{ fontSize: 10, color: '#7A6E58', marginBottom: 4 }}>De (MAD)</div>
-                        <input type="number" value={tier.from} onChange={e => setTiers(t => t.map((x, j) => j === i ? { ...x, from: e.target.value } : x))} style={sml} />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 10, color: '#7A6E58', marginBottom: 4 }}>À (MAD)</div>
-                        <input type="number" value={tier.to} onChange={e => setTiers(t => t.map((x, j) => j === i ? { ...x, to: e.target.value } : x))} placeholder="∞" style={sml} />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 10, color: '#7A6E58', marginBottom: 4 }}>Taux (%)</div>
-                        <input type="number" min="0" max="100" step="0.01" value={tier.rate} onChange={e => setTiers(t => t.map((x, j) => j === i ? { ...x, rate: e.target.value } : x))} placeholder="%" style={sml} />
-                      </div>
+                      <div><div style={{ fontSize: 10, color: '#7A6E58', marginBottom: 4 }}>De (MAD)</div><input type="number" value={tier.from} onChange={e => setTiers(t => t.map((x, j) => j === i ? { ...x, from: e.target.value } : x))} style={sml} /></div>
+                      <div><div style={{ fontSize: 10, color: '#7A6E58', marginBottom: 4 }}>À (MAD)</div><input type="number" value={tier.to} onChange={e => setTiers(t => t.map((x, j) => j === i ? { ...x, to: e.target.value } : x))} placeholder="∞" style={sml} /></div>
+                      <div><div style={{ fontSize: 10, color: '#7A6E58', marginBottom: 4 }}>Taux (%)</div><input type="number" min="0" max="100" step="0.01" value={tier.rate} onChange={e => setTiers(t => t.map((x, j) => j === i ? { ...x, rate: e.target.value } : x))} placeholder="%" style={sml} /></div>
                       {tiers.length > 1 && <button onClick={() => setTiers(t => t.filter((_, j) => j !== i))} style={{ marginBottom: 2, background: 'none', border: 'none', color: '#FF6B6B', cursor: 'pointer', fontSize: 16 }}>×</button>}
                     </div>
                   ))}
@@ -305,7 +294,7 @@ export default function ContratsPage() {
               {mode === 'flat_category' && (
                 <div style={{ marginBottom: 16 }}>
                   <label style={lbl}>Taux par catégorie (%)</label>
-                  {categories.length === 0 && <div style={{ fontSize: 12, color: '#7A6E58' }}>Aucune catégorie trouvée dans les produits actifs.</div>}
+                  {categories.length === 0 && <div style={{ fontSize: 12, color: '#7A6E58' }}>Aucune catégorie trouvée.</div>}
                   {categories.map(cat => (
                     <div key={cat.slug} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8, alignItems: 'center' }}>
                       <div style={{ fontSize: 12, color: '#C8B99A' }}>{cat.label}</div>
@@ -323,7 +312,7 @@ export default function ContratsPage() {
               )}
 
               <button onClick={saveContract} disabled={saving || recalculating} style={{ width: '100%', padding: '12px', borderRadius: 50, border: 'none', background: (saving || recalculating) ? 'rgba(232,160,32,0.3)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 13, cursor: (saving || recalculating) ? 'not-allowed' : 'pointer' }}>
-                {saving ? 'Enregistrement...' : recalculating ? 'Calcul en cours...' : getContract(selected.id) ? 'Mettre à jour' : 'Créer le contrat'}
+                {saving ? 'Enregistrement...' : recalculating ? 'Calcul en cours...' : getContract(selected) ? 'Mettre à jour' : 'Créer le contrat'}
               </button>
             </div>
           )}
