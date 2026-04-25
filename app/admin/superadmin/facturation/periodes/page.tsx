@@ -161,7 +161,7 @@ export default function PeriodesPage() {
               </div>
 
               {/* Chiffres */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8, marginBottom: 14 }}>
                 {[
                   { label: 'Commandes', value: String(period.orders_count) },
                   { label: 'Base', value: formatMAD(period.orders_base_amount) },

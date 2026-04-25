@@ -121,7 +121,7 @@ function AjustementsContent() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
         <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 14, padding: '20px' }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#F5EDD6', marginBottom: 16 }}>Nouvel ajustement</div>
 

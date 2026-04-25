@@ -179,7 +179,7 @@ export default function ContratsPage() {
         <p style={{ fontSize: 12, color: '#C8B99A', marginTop: 4 }}>Associer un contrat de facturation à chaque client admin.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10 }}>Clients ({admins.length})</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
