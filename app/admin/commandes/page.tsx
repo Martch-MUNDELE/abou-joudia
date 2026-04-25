@@ -101,10 +101,12 @@ function CommandesAdminInner() {
   const [orders, setOrders] = useState<any[]>([])
   const searchParams = useSearchParams()
   const [filter, setFilter] = useState(() => searchParams.get('tab') || 'nouvelle')
+  const [highlightIdParam] = useState(() => searchParams.get('highlight'))
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [slots, setSlots] = useState<Record<string, any>>({})
   const [pendingStatuses, setPendingStatuses] = useState<Record<string, string>>({})
   const [shopAddress, setShopAddress] = useState('')
+  const [highlightId, setHighlightId] = useState<string | null>(null)
   const supabase = createClient()
 
   const load = async () => {
@@ -135,9 +137,19 @@ function CommandesAdminInner() {
   }, [])
 
   useEffect(() => {
+    if (!highlightIdParam) return
+    setHighlightId(highlightIdParam)
+    setTimeout(() => {
+      const el = document.getElementById(`order-${highlightIdParam}`)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 500)
+    setTimeout(() => setHighlightId(null), 3500)
+  }, [orders, highlightIdParam])
+
+  useEffect(() => {
     const tab = searchParams.get('tab')
     if (tab && tab !== filter) setFilter(tab)
-  }, [searchParams])
+  }, [searchParams.toString()])
   useEffect(() => { load() }, [filter])
 
   const updateStatus = async (id: string, status: string) => {
@@ -181,7 +193,7 @@ function CommandesAdminInner() {
           const transitions = STATUS_TRANSITIONS[order.status] || []
           const pending = pendingStatuses[order.id] || ''
           return (
-            <div key={order.id} style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.1)', borderRadius: 16, padding: '18px 20px' }}>
+            <div key={order.id} id={`order-${order.id}`} style={{ background: '#131009', border: highlightId === order.id ? '2px solid #F5C842' : '1px solid rgba(232,160,32,0.1)', borderRadius: 16, padding: '18px 20px', transition: 'border 0.3s', boxShadow: highlightId === order.id ? '0 0 20px rgba(245,200,66,0.2)' : 'none' }}>
 
               {/* HEADER */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>

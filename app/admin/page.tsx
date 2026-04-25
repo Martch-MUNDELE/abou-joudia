@@ -273,7 +273,7 @@ export default function AdminDashboard() {
                   col.slice(0, 5).map(o => (
                     <a
                       key={o.id}
-                      href="/admin/commandes"
+                      href={`/admin/commandes?tab=${o.status}&highlight=${o.id}`}
                       style={{ display: 'block', background: '#131009', borderRadius: 8, padding: '8px 10px', marginBottom: 6, textDecoration: 'none', border: '1px solid rgba(232,160,32,0.07)' }}
                     >
                       <div style={{ fontSize: 12, fontWeight: 600, color: '#F5EDD6', marginBottom: 3, whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' }}>
