@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Logo from '@/components/Logo'
@@ -9,8 +9,19 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [siteName, setSiteName] = useState('Abou Joudia')
+  const [siteLogo, setSiteLogo] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    supabase.from('settings').select('*').then(({ data }) => {
+      data?.forEach((s: any) => {
+        if (s.key === 'site_name') setSiteName(s.value)
+        if (s.key === 'site_logo') setSiteLogo(s.value || '')
+      })
+    })
+  }, [])
 
   const login = async () => {
     setLoading(true); setError('')
@@ -25,8 +36,10 @@ export default function AdminLogin() {
       <div style={{ width: '100%', maxWidth: 380 }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <div style={{ margin: '0 auto 16px', display: 'flex', justifyContent: 'center' }}><Logo size={64} /></div>
-          <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, fontWeight: 900, color: '#F5EDD6', margin: 0 }}>Abou Joudia</h1>
+          <div style={{ margin: '0 auto 16px', display: 'flex', justifyContent: 'center' }}>
+            {siteLogo === null ? <div style={{ width: 64, height: 64 }} /> : siteLogo ? <img src={siteLogo} alt={siteName} style={{ width: 64, height: 64, objectFit: 'contain' }} /> : <Logo size={64} />}
+          </div>
+          <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 22, fontWeight: 900, color: '#F5EDD6', margin: 0 }}>{siteName}</h1>
           <div style={{ fontSize: 11, color: '#C8B99A', letterSpacing: '2px', textTransform: 'uppercase', marginTop: 4 }}>Administration</div>
         </div>
 
