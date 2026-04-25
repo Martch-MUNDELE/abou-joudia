@@ -136,7 +136,13 @@ export default function AdminNav() {
     ...NAV_GROUPS,
     { label: 'FACTURATION', links: [{ href: '/admin/abonnement', label: 'Mon abonnement' }] },
     ...(isSuperAdmin
-      ? [{ label: 'ADMIN', links: [{ href: '/admin/superadmin', label: 'Super Admin' }] }]
+      ? [{ label: 'ADMIN', links: [{ href: '/admin/superadmin', label: 'Super Admin', sub: [
+        { label: 'Administrateurs', url: '/admin/superadmin' },
+        { label: 'Journal', url: '/admin/superadmin' },
+        { label: 'Clients & Contrats', url: '/admin/superadmin/facturation/contrats' },
+        { label: 'Périodes', url: '/admin/superadmin/facturation/periodes' },
+        { label: 'Ajustements', url: '/admin/superadmin/facturation/ajustements' },
+      ] }] }]
       : []),
   ]
 
@@ -303,7 +309,7 @@ export default function AdminNav() {
                           fontSize: 21,
                           fontWeight: 500,
                           fontFamily: 'DM Sans, sans-serif',
-                          color: active ? '#F5C842' : '#C8B99A',
+                          color: active ? '#F5C842' : '#FFFFFF',
                           background: active ? 'rgba(245,200,66,0.08)' : 'transparent',
                           borderLeft: active ? '2px solid #F5C842' : '2px solid transparent',
                           display: 'flex',
@@ -341,7 +347,7 @@ export default function AdminNav() {
                                 cursor: 'pointer',
                               }}
                               onMouseEnter={e => (e.currentTarget.style.color = '#E8A020')}
-                              onMouseLeave={e => (e.currentTarget.style.color = '#7A6E58')}
+                              onMouseLeave={e => (e.currentTarget.style.color = '#FFFFFF')}
                             >
                               › {s.label}
                             </div>
