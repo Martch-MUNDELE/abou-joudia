@@ -343,7 +343,7 @@ export default function AdminNav() {
                                 fontSize: 15,
                                 fontWeight: 500,
                                 fontFamily: 'DM Sans, sans-serif',
-                                color: '#7A6E58',
+                                color: '#FFFFFF',
                                 cursor: 'pointer',
                               }}
                               onMouseEnter={e => (e.currentTarget.style.color = '#E8A020')}
