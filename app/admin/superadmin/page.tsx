@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
@@ -23,7 +24,7 @@ export default function SuperAdminPage() {
   const [admins, setAdmins] = useState<any[]>([])
   const [logs, setLogs] = useState<any[]>([])
   const [credentials, setCredentials] = useState<Record<string, string>>({})
-  const [tab, setTab] = useState<'admins' | 'logs'>('admins')
+  const [tab, setTab] = useState<'admins' | 'logs' | 'facturation'>('admins')
   const [showNew, setShowNew] = useState(false)
   const [newEmail, setNewEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -34,6 +35,7 @@ export default function SuperAdminPage() {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [purging, setPurging] = useState(false)
   const supabase = createClient()
+  const router = useRouter()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUser(data.user))
@@ -140,9 +142,11 @@ export default function SuperAdminPage() {
           <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 24, fontWeight: 900, color: '#F5C842', margin: 0 }}>Super Admin</h1>
           <div style={{ fontSize: 11, color: '#C8B99A', marginTop: 4 }}>Accès restreint · {currentUser?.email}</div>
         </div>
-        <button onClick={() => { setShowNew(true); if (autoGen) setNewPassword(generatePassword()) }} style={{ padding: '9px 18px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>
-          + Nouvel admin
-        </button>
+        {tab === 'admins' && (
+          <button onClick={() => { setShowNew(true); if (autoGen) setNewPassword(generatePassword()) }} style={{ padding: '9px 18px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>
+            + Nouvel admin
+          </button>
+        )}
       </div>
 
       {/* MESSAGE */}
@@ -161,12 +165,10 @@ export default function SuperAdminPage() {
               <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, color: '#F5EDD6', margin: 0 }}>Nouvel administrateur</h2>
               <button onClick={() => setShowNew(false)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 50, width: 32, height: 32, color: '#C8B99A', cursor: 'pointer', fontSize: 16 }}>×</button>
             </div>
-
             <div style={{ marginBottom: 14 }}>
               <label style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.8px' }}>Email</label>
               <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="admin@example.com" style={inputStyle} />
             </div>
-
             <div style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Mot de passe</label>
@@ -184,7 +186,6 @@ export default function SuperAdminPage() {
                 <input type="text" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Min. 8 caractères" style={inputStyle} />
               )}
             </div>
-
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setShowNew(false)} style={{ flex: 1, padding: '11px', borderRadius: 50, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#C8B99A', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 13 }}>Annuler</button>
               <button onClick={createAdmin} disabled={loading} style={{ flex: 2, padding: '11px', borderRadius: 50, border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 13 }}>
@@ -195,25 +196,31 @@ export default function SuperAdminPage() {
         </div>
       )}
 
-      {/* ZONE DANGER */}
-      <div style={{ background: 'rgba(255,107,107,0.04)', border: '1px solid rgba(255,107,107,0.15)', borderRadius: 16, padding: '18px 20px', marginBottom: 24 }}>
-        <div style={{ fontSize: 10, fontWeight: 800, color: '#FF6B6B', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 12 }}>⚠️ Zone danger</div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#F5EDD6', marginBottom: 2 }}>Purger toutes les commandes</div>
-            <div style={{ fontSize: 11, color: '#C8B99A' }}>Supprime toutes les commandes, les items et remet les créneaux à zéro. Irréversible.</div>
+      {/* ZONE DANGER — masquée sur l'onglet facturation */}
+      {tab !== 'facturation' && (
+        <div style={{ background: 'rgba(255,107,107,0.04)', border: '1px solid rgba(255,107,107,0.15)', borderRadius: 16, padding: '18px 20px', marginBottom: 24 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#FF6B6B', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 12 }}>⚠️ Zone danger</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#F5EDD6', marginBottom: 2 }}>Purger toutes les commandes</div>
+              <div style={{ fontSize: 11, color: '#C8B99A' }}>Supprime toutes les commandes, les items et remet les créneaux à zéro. Irréversible.</div>
+            </div>
+            <button onClick={purgeCommandes} disabled={purging} style={{ flexShrink: 0, padding: '9px 18px', borderRadius: 50, border: '1px solid rgba(255,107,107,0.4)', background: 'rgba(255,107,107,0.08)', color: '#FF6B6B', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 12, cursor: purging ? 'not-allowed' : 'pointer', opacity: purging ? 0.6 : 1, whiteSpace: 'nowrap' }}>
+              {purging ? 'Purge...' : '🗑 Purger'}
+            </button>
           </div>
-          <button onClick={purgeCommandes} disabled={purging} style={{ flexShrink: 0, padding: '9px 18px', borderRadius: 50, border: '1px solid rgba(255,107,107,0.4)', background: 'rgba(255,107,107,0.08)', color: '#FF6B6B', fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 12, cursor: purging ? 'not-allowed' : 'pointer', opacity: purging ? 0.6 : 1, whiteSpace: 'nowrap' }}>
-            {purging ? 'Purge...' : '🗑 Purger'}
-          </button>
         </div>
-      </div>
+      )}
 
       {/* TABS */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        {(['admins', 'logs'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} style={{ padding: '7px 16px', borderRadius: 50, border: '1px solid', borderColor: tab === t ? 'rgba(232,160,32,0.4)' : 'rgba(232,160,32,0.12)', background: tab === t ? 'rgba(232,160,32,0.12)' : 'transparent', color: tab === t ? '#E8A020' : '#C8B99A', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}>
-            {t === 'admins' ? `Administrateurs (${admins.filter(a => a.status !== 'deleted').length})` : 'Journal'}
+        {([
+          { key: 'admins', label: `Administrateurs (${admins.filter(a => a.status !== 'deleted').length})` },
+          { key: 'logs', label: 'Journal' },
+          { key: 'facturation', label: 'Facturation plateforme' },
+        ] as const).map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)} style={{ padding: '7px 16px', borderRadius: 50, border: '1px solid', borderColor: tab === t.key ? 'rgba(232,160,32,0.4)' : 'rgba(232,160,32,0.12)', background: tab === t.key ? 'rgba(232,160,32,0.12)' : 'transparent', color: tab === t.key ? '#E8A020' : '#C8B99A', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}>
+            {t.label}
           </button>
         ))}
       </div>
@@ -240,8 +247,6 @@ export default function SuperAdminPage() {
                     {admin.last_login && <div>Connecté {new Date(admin.last_login).toLocaleDateString('fr-FR')}</div>}
                   </div>
                 </div>
-
-                {/* Mot de passe temporaire */}
                 {pwd && admin.role !== 'superadmin' && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, padding: '8px 12px', background: 'rgba(232,160,32,0.04)', border: '1px solid rgba(232,160,32,0.1)', borderRadius: 8 }}>
                     <span style={{ fontSize: 11, color: '#C8B99A' }}>Mot de passe :</span>
@@ -254,8 +259,6 @@ export default function SuperAdminPage() {
                     <button onClick={() => { navigator.clipboard.writeText(pwd); setMsg('Copié !') }} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 50, border: '1px solid rgba(232,160,32,0.15)', background: 'transparent', color: '#E8A020', cursor: 'pointer' }}>Copier</button>
                   </div>
                 )}
-
-                {/* Actions */}
                 {admin.role !== 'superadmin' && (
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {admin.status === 'active' ? (
@@ -291,6 +294,51 @@ export default function SuperAdminPage() {
             </div>
           ))}
           {logs.length === 0 && <div style={{ textAlign: 'center', color: '#C8B99A', padding: '40px 0', fontSize: 14 }}>Aucune action enregistrée</div>}
+        </div>
+      )}
+
+      {/* FACTURATION PLATEFORME */}
+      {tab === 'facturation' && (
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+            {[
+              { label: 'Total dû (ce mois)', value: '—', note: 'Tous clients confondus' },
+              { label: 'Total encaissé', value: '—', note: 'Mois en cours' },
+              { label: 'Impayés', value: '—', note: 'Périodes non réglées' },
+            ].map(stat => (
+              <div key={stat.label} style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.1)', borderRadius: 14, padding: '16px 18px' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#C8B99A', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8 }}>{stat.label}</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: '#F5EDD6', marginBottom: 4 }}>{stat.value}</div>
+                <div style={{ fontSize: 11, color: '#7A6E58' }}>{stat.note}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              { title: 'Clients & Contrats', desc: 'Gérer les contrats, modes de rémunération et règles variables par client.', href: '/admin/superadmin/facturation/contrats', ready: true },
+              { title: 'Périodes de facturation', desc: 'Consulter, clôturer et marquer les périodes comme facturées ou payées.', href: '/admin/superadmin/facturation/periodes', ready: false },
+              { title: 'Ajustements', desc: 'Ajouter des remises, avoirs, corrections ou frais sur une période donnée.', href: '/admin/superadmin/facturation/ajustements', ready: false },
+            ].map(section => (
+              section.ready ? (
+                <a key={section.title} href={section.href} style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.15)', borderRadius: 14, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textDecoration: 'none' }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#F5EDD6', marginBottom: 4 }}>{section.title}</div>
+                    <div style={{ fontSize: 11, color: '#C8B99A' }}>{section.desc}</div>
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 50, background: 'rgba(91,197,122,0.1)', color: '#5BC57A', whiteSpace: 'nowrap', marginLeft: 16 }}>Accéder →</span>
+                </a>
+              ) : (
+                <div key={section.title} style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.08)', borderRadius: 14, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.5 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#F5EDD6', marginBottom: 4 }}>{section.title}</div>
+                    <div style={{ fontSize: 11, color: '#C8B99A' }}>{section.desc}</div>
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 50, background: 'rgba(232,160,32,0.08)', color: '#E8A020', whiteSpace: 'nowrap', marginLeft: 16 }}>Bientôt</span>
+                </div>
+              )
+            ))}
+          </div>
         </div>
       )}
     </div>
