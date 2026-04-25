@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import Logo from '@/components/Logo'
 
 const NAV_GROUPS = [
@@ -62,6 +62,10 @@ export default function AdminNav() {
   const [siteLogo, setSiteLogo] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [expandedHref, setExpandedHref] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ name: string; total: number } | null>(null)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const prevOrderIds = useRef<Set<string>>(new Set())
+  const isFirstLoad = useRef(true)
 
   useEffect(() => {
     const anchor = sessionStorage.getItem('aj_scroll_to')
@@ -89,6 +93,33 @@ export default function AdminNav() {
         setIsSuperAdmin(admin?.role === 'superadmin')
       }
     })
+  }, [])
+
+  useEffect(() => {
+    const sb = createClient()
+    // Charge les IDs existants sans déclencher de toast
+    sb.from('orders').select('id').then(({ data }) => {
+      prevOrderIds.current = new Set((data || []).map((o: any) => o.id))
+      isFirstLoad.current = false
+    })
+
+    const channel = sb
+      .channel('adminnav-orders')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
+        const o = payload.new as any
+        if (!prevOrderIds.current.has(o.id)) {
+          prevOrderIds.current.add(o.id)
+          if (toastTimer.current) clearTimeout(toastTimer.current)
+          setToast({ name: o.customer_name, total: o.total || 0 })
+          toastTimer.current = setTimeout(() => setToast(null), 8000)
+        }
+      })
+      .subscribe()
+
+    return () => {
+      sb.removeChannel(channel)
+      if (toastTimer.current) clearTimeout(toastTimer.current)
+    }
   }, [])
 
   const isActive = (href: string, exact?: boolean) =>
@@ -119,6 +150,51 @@ export default function AdminNav() {
 
   return (
     <>
+      {/* Toast nouvelle commande — global toutes pages admin */}
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          top: 64,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 200,
+          background: 'linear-gradient(135deg, #1A1408, #231C0A)',
+          border: '1px solid rgba(245,200,66,0.5)',
+          borderRadius: 14,
+          padding: '12px 18px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          minWidth: 260,
+          maxWidth: 'calc(100vw - 32px)',
+          animation: 'slide-in-toast 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+          fontFamily: 'DM Sans, sans-serif',
+        }}>
+          <style>{`
+            @keyframes slide-in-toast {
+              from { transform: translate(-50%, -80px); opacity: 0; }
+              to   { transform: translate(-50%, 0);    opacity: 1; }
+            }
+          `}</style>
+          <div style={{ fontSize: 20 }}>🛎️</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, color: '#F5C842', fontWeight: 700, marginBottom: 2 }}>
+              Nouvelle commande !
+            </div>
+            <div style={{ fontSize: 13, color: '#F5EDD6', fontWeight: 600 }}>
+              {toast.name} — {toast.total.toFixed(0)} DH
+            </div>
+          </div>
+          <button
+            onClick={() => setToast(null)}
+            style={{ background: 'none', border: 'none', color: '#7A6E58', cursor: 'pointer', fontSize: 16, padding: 4, lineHeight: 1 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Fixed header */}
       <header style={{
         height: 56,

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Order } from '@/lib/types'
 
@@ -50,17 +50,55 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [hoveredBar, setHoveredBar] = useState<number | null>(null)
+  const [toast, setToast] = useState<{ name: string; total: number } | null>(null)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const prevOrderIds = useRef<Set<string>>(new Set())
+  const isFirstLoad = useRef(true)
 
-  useEffect(() => {
-    const supabase = createClient()
+  const fetchOrders = useCallback(async (supabase: ReturnType<typeof createClient>) => {
     const since = new Date(Date.now() - 30 * 86400000).toISOString()
-    supabase
+    const { data } = await supabase
       .from('orders')
       .select('*')
       .gte('created_at', since)
       .order('created_at', { ascending: false })
-      .then(({ data }) => { setOrders(data || []); setLoading(false) })
+    const fetched = data || []
+
+    if (!isFirstLoad.current) {
+      const newOnes = fetched.filter((o: any) => !prevOrderIds.current.has(o.id))
+      if (newOnes.length > 0) {
+        const latest = newOnes[0]
+        if (toastTimer.current) clearTimeout(toastTimer.current)
+        setToast({ name: latest.customer_name, total: latest.total || 0 })
+        toastTimer.current = setTimeout(() => setToast(null), 8000)
+      }
+    }
+
+    prevOrderIds.current = new Set(fetched.map((o: any) => o.id))
+    isFirstLoad.current = false
+    setOrders(fetched)
+    setLoading(false)
   }, [])
+
+  useEffect(() => {
+    const supabase = createClient()
+    fetchOrders(supabase)
+
+    const channel = supabase
+      .channel('dashboard-orders')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        fetchOrders(supabase)
+      })
+      .subscribe()
+
+    const interval = setInterval(() => fetchOrders(supabase), 30000)
+
+    return () => {
+      supabase.removeChannel(channel)
+      clearInterval(interval)
+      if (toastTimer.current) clearTimeout(toastTimer.current)
+    }
+  }, [fetchOrders])
 
   const today     = new Date().toISOString().slice(0, 10)
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
@@ -101,7 +139,48 @@ export default function AdminDashboard() {
           0%, 100% { opacity: 1; }
           50%       { opacity: 0.72; }
         }
+        @keyframes slide-in-toast {
+          from { transform: translateY(-80px); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
       `}</style>
+
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          top: 64,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 200,
+          background: 'linear-gradient(135deg, #1A1408, #231C0A)',
+          border: '1px solid rgba(245,200,66,0.5)',
+          borderRadius: 14,
+          padding: '12px 18px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          animation: 'slide-in-toast 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+          minWidth: 260,
+          maxWidth: 'calc(100vw - 32px)',
+        }}>
+          <div style={{ fontSize: 20 }}>🛎️</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, color: '#F5C842', fontWeight: 700, marginBottom: 2 }}>
+              Nouvelle commande !
+            </div>
+            <div style={{ fontSize: 13, color: '#F5EDD6', fontWeight: 600 }}>
+              {toast.name} — {toast.total.toFixed(0)} DH
+            </div>
+          </div>
+          <button
+            onClick={() => setToast(null)}
+            style={{ background: 'none', border: 'none', color: '#7A6E58', cursor: 'pointer', fontSize: 16, padding: 4, lineHeight: 1 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
