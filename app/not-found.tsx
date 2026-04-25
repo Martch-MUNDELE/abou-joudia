@@ -21,43 +21,61 @@ export default function NotFound() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    canvas.width = 320
-    canvas.height = 320
+    canvas.width = 500
+    canvas.height = 400
 
-    const particles: { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; size: number }[] = []
+    type Particle = { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; size: number; wobble: number; wobbleSpeed: number }
+    const particles: Particle[] = []
+
+    // Points de sortie de fumée — haut du burger (centre du canvas)
+    const sources = [
+      { x: 220, y: 280 },
+      { x: 250, y: 275 },
+      { x: 280, y: 280 },
+    ]
 
     const addParticle = () => {
-      const x = 160 + (Math.random() - 0.5) * 30
+      const src = sources[Math.floor(Math.random() * sources.length)]
       particles.push({
-        x, y: 120,
-        vx: (Math.random() - 0.5) * 0.6,
-        vy: -(Math.random() * 1.2 + 0.4),
+        x: src.x + (Math.random() - 0.5) * 20,
+        y: src.y,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: -(Math.random() * 1.8 + 0.8),
         life: 0,
-        maxLife: 80 + Math.random() * 40,
-        size: Math.random() * 8 + 4,
+        maxLife: 100 + Math.random() * 60,
+        size: Math.random() * 14 + 8,
+        wobble: Math.random() * Math.PI * 2,
+        wobbleSpeed: 0.03 + Math.random() * 0.02,
       })
     }
 
     let frame = 0
     const animate = () => {
-      ctx.clearRect(0, 0, 320, 320)
-
-      if (frame % 4 === 0) addParticle()
+      ctx.clearRect(0, 0, 500, 400)
+      if (frame % 3 === 0) addParticle()
       frame++
 
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i]
-        p.x += p.vx + Math.sin(p.life * 0.08) * 0.4
+        p.wobble += p.wobbleSpeed
+        p.x += p.vx + Math.sin(p.wobble) * 0.8
         p.y += p.vy
+        p.vy *= 0.99
+        p.size += 0.15
         p.life++
         if (p.life > p.maxLife) { particles.splice(i, 1); continue }
+
         const t = p.life / p.maxLife
-        const alpha = t < 0.2 ? t / 0.2 : 1 - (t - 0.2) / 0.8
+        const alpha = t < 0.15
+          ? (t / 0.15) * 0.5
+          : (1 - (t - 0.15) / 0.85) * 0.5
+
         ctx.save()
-        ctx.globalAlpha = alpha * 0.35
+        ctx.globalAlpha = alpha
         const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size)
-        grad.addColorStop(0, '#F5C842')
-        grad.addColorStop(1, 'transparent')
+        grad.addColorStop(0, 'rgba(245, 220, 140, 0.9)')
+        grad.addColorStop(0.4, 'rgba(200, 160, 80, 0.5)')
+        grad.addColorStop(1, 'rgba(80, 60, 20, 0)')
         ctx.fillStyle = grad
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
@@ -98,8 +116,8 @@ export default function NotFound() {
       }} />
 
       {/* Canvas fumée */}
-      <div style={{ position: 'relative', width: 220, height: 220, marginBottom: 8 }}>
-        <canvas ref={canvasRef} style={{ position: 'absolute', top: -80, left: -50, pointerEvents: 'none', opacity: 0.9 }} />
+      <div style={{ position: 'relative', width: 308, height: 308, marginBottom: 8, marginTop: 150 }}>
+        <canvas ref={canvasRef} style={{ position: 'absolute', top: -120, left: -60, pointerEvents: 'none', opacity: 0.9, zIndex: 3 }} />
 
         {/* Image hero dynamique ou SVG fallback */}
         {heroImage ? (
@@ -109,14 +127,14 @@ export default function NotFound() {
             style={{
               position: 'relative',
               zIndex: 2,
-              width: 220,
-              height: 220,
+              width: 308,
+              height: 308,
               objectFit: 'contain',
-              filter: 'drop-shadow(0 8px 40px rgba(245,200,66,0.2))',
+              filter: 'drop-shadow(0 8px 40px rgba(245,200,66,0.25))',
             }}
           />
         ) : (
-        <svg viewBox="0 0 200 180" width="220" height="198" style={{ position: 'relative', zIndex: 2, filter: 'drop-shadow(0 8px 32px rgba(245,200,66,0.15))' }}>
+        <svg viewBox="0 0 200 180" width="308" height="277" style={{ position: 'relative', zIndex: 2, filter: 'drop-shadow(0 8px 32px rgba(245,200,66,0.15))' }}>
           {Array.from({ length: 12 }, (_, i) => {
             const angle = (i * 30 - 90) * Math.PI / 180
             const r1 = 72, r2 = 88
