@@ -244,21 +244,7 @@ export default function AdminNav() {
           {menuOpen ? '✕' : '≡'}
         </button>
       </header>
-      {/* Sous-navigation fixe pour la page active */}
-      {(() => {
-        const activeLink = allGroups.flatMap(g => g.links).find(l => isActive(l.href, (l as any).exact))
-        const sub = activeLink ? (activeLink as any).sub : null
-        if (!sub) return null
-        return (
-          <div style={{ position:'fixed', top:56, left:0, right:0, zIndex:97, background:'#0D0B07', borderBottom:'1px solid rgba(232,160,32,0.1)', display:'flex', overflowX:'auto' as const, padding:'0 8px' }}>
-            {sub.map((s: any) => (
-              <div key={s.anchor} onClick={() => { if (s.url) { window.location.href = s.url } else { const el = document.getElementById(s.anchor); if (el) { el.scrollIntoView({ behavior:'smooth' }) } else if (activeLink) { sessionStorage.setItem('aj_scroll_to', s.anchor); window.location.href = activeLink.href } } }} style={{ padding:'8px 12px', fontSize:18, fontWeight:600, color:'#C8B99A', cursor:'pointer', whiteSpace:'nowrap' as const, fontFamily:'DM Sans, sans-serif' }}>
-                {s.label}
-              </div>
-            ))}
-          </div>
-        )
-      })()}
+      {/* Sous-navigation supprimée — chaque page a ses propres onglets */}
 
       {/* Transparent overlay to close on outside click */}
       {menuOpen && (
