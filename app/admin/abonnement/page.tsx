@@ -21,12 +21,13 @@ export default function AbonnementPage() {
 
   useEffect(() => {
     const load = async () => {
-      // Charger le premier client admin du site (il n'y en a qu'un par site)
-      const { data: client } = await supabase
+      // Charger le premier client admin du site
+      const { data: clients } = await supabase
         .from('admins')
         .select('email, auth_user_id')
         .eq('role', 'admin')
-        .single()
+        .limit(1)
+      const client = clients?.[0]
 
       if (!client?.auth_user_id) { setLoading(false); return }
       setClientEmail(client.email)
