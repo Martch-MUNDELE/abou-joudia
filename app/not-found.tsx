@@ -30,54 +30,57 @@ export default function NotFound() {
       life: number; maxLife: number
       size: number
       wobble: number; wobbleSpeed: number
-      gray: number
     }
     const particles: Particle[] = []
 
-    // Sources au niveau du pain supérieur du burger — y=310 = sommet du pain
+    // 2-3 points de sortie discrets — sommet du pain
+    const sources = [
+      { x: 215, y: 318 },
+      { x: 250, y: 312 },
+      { x: 285, y: 318 },
+    ]
+
     const addParticle = () => {
+      const src = sources[Math.floor(Math.random() * sources.length)]
       particles.push({
-        x: 180 + Math.random() * 140,   // large — toute la largeur du burger
-        y: 310,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: -(Math.random() * 1.4 + 0.6),
+        x: src.x + (Math.random() - 0.5) * 12,
+        y: src.y,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: -(Math.random() * 0.9 + 0.5),
         life: 0,
-        maxLife: 120 + Math.random() * 80,
-        size: Math.random() * 22 + 18,  // grosses volutes
+        maxLife: 90 + Math.random() * 60,
+        size: Math.random() * 8 + 5,   // filets fins au départ
         wobble: Math.random() * Math.PI * 2,
-        wobbleSpeed: 0.02 + Math.random() * 0.015,
-        gray: 180 + Math.floor(Math.random() * 60), // gris clair à blanc
+        wobbleSpeed: 0.025 + Math.random() * 0.015,
       })
     }
 
     let frame = 0
     const animate = () => {
       ctx.clearRect(0, 0, 500, 500)
-      if (frame % 2 === 0) addParticle()
+      if (frame % 5 === 0) addParticle()   // moins fréquent
       frame++
 
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i]
         p.wobble += p.wobbleSpeed
-        p.x += p.vx + Math.sin(p.wobble) * 1.2
+        p.x += p.vx + Math.sin(p.wobble) * 0.6
         p.y += p.vy
-        p.size += 0.3          // les volutes s'élargissent en montant
+        p.size += 0.18         // s'élargit doucement
         p.life++
         if (p.life > p.maxLife) { particles.splice(i, 1); continue }
 
         const t = p.life / p.maxLife
-        // Apparition douce, disparition douce
-        const alpha = t < 0.2
-          ? (t / 0.2) * 0.45
-          : (1 - (t - 0.2) / 0.8) * 0.45
+        const alpha = t < 0.25
+          ? (t / 0.25) * 0.18
+          : (1 - (t - 0.25) / 0.75) * 0.18   // max 0.18 — très subtil
 
         ctx.save()
         ctx.globalAlpha = alpha
-        const g = p.gray
         const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size)
-        grad.addColorStop(0,   `rgba(${g},${g},${g}, 0.9)`)
-        grad.addColorStop(0.5, `rgba(${g},${g},${g}, 0.4)`)
-        grad.addColorStop(1,   `rgba(${g},${g},${g}, 0)`)
+        grad.addColorStop(0,   'rgba(220,220,220,1)')
+        grad.addColorStop(0.6, 'rgba(200,200,200,0.4)')
+        grad.addColorStop(1,   'rgba(180,180,180,0)')
         ctx.fillStyle = grad
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
@@ -118,7 +121,7 @@ export default function NotFound() {
       }} />
 
       {/* Canvas fumée */}
-      <div style={{ position: 'relative', width: 308, height: 308, marginBottom: 8, marginTop: 150 }}>
+      <div style={{ position: 'relative', width: 308, height: 308, marginBottom: -60, marginTop: 150 }}>
         <canvas ref={canvasRef} style={{ position: 'absolute', top: -200, left: -96, pointerEvents: 'none', opacity: 1, zIndex: 10 }} />
 
         {/* Image hero dynamique ou SVG fallback */}
