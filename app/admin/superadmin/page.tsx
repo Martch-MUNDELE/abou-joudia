@@ -88,8 +88,17 @@ export default function SuperAdminPage() {
   const router = useRouter()
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setCurrentUser(data.user))
-    load()
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) { router.replace('/admin'); return }
+      setCurrentUser(data.user)
+      const { data: admin } = await supabase
+        .from('admins')
+        .select('role')
+        .eq('email', data.user.email)
+        .single()
+      if (admin?.role !== 'superadmin') { router.replace('/admin'); return }
+      load()
+    })
   }, [])
 
   const load = async () => {
