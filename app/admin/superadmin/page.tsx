@@ -20,6 +20,56 @@ function generatePassword() {
   return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
 
+
+function FacturationOverview() {
+  const [stats, setStats] = useState<{ totalDu: number; totalPaye: number; impayes: number } | null>(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: periods } = await supabase
+        .from('billing_periods')
+        .select('status, total_due, total_paid')
+
+      if (!periods) return
+
+      const now = new Date()
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
+
+      const totalDu = periods
+        .filter(p => p.status === 'en_cours' || p.status === 'cloture' || p.status === 'facture')
+        .reduce((s, p) => s + (p.total_due || 0), 0)
+
+      const totalPaye = periods
+        .filter(p => p.status === 'paye')
+        .reduce((s, p) => s + (p.total_paid || 0), 0)
+
+      const impayes = periods.filter(p => p.status === 'facture').length
+
+      setStats({ totalDu, totalPaye, impayes })
+    }
+    load()
+  }, [])
+
+  const fmt = (n: number) => `${n.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} MAD`
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+      {[
+        { label: 'Total dû', value: stats ? fmt(stats.totalDu) : '...', note: 'Périodes en cours + facturées', color: '#F5C842' },
+        { label: 'Total encaissé', value: stats ? fmt(stats.totalPaye) : '...', note: 'Périodes payées', color: '#5BC57A' },
+        { label: 'Impayés', value: stats ? String(stats.impayes) : '...', note: stats?.impayes ? 'Périodes facturées non réglées' : 'Aucun impayé', color: stats?.impayes ? '#FF6B6B' : '#5BC57A' },
+      ].map(stat => (
+        <div key={stat.label} style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.1)', borderRadius: 14, padding: '16px 18px' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#C8B99A', textTransform: 'uppercase' as const, letterSpacing: '0.8px', marginBottom: 8 }}>{stat.label}</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: stat.color, marginBottom: 4 }}>{stat.value}</div>
+          <div style={{ fontSize: 11, color: '#7A6E58' }}>{stat.note}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function SuperAdminPage() {
   const [admins, setAdmins] = useState<any[]>([])
   const [logs, setLogs] = useState<any[]>([])
@@ -300,19 +350,7 @@ export default function SuperAdminPage() {
       {/* FACTURATION PLATEFORME */}
       {tab === 'facturation' && (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
-            {[
-              { label: 'Total dû (ce mois)', value: '—', note: 'Tous clients confondus' },
-              { label: 'Total encaissé', value: '—', note: 'Mois en cours' },
-              { label: 'Impayés', value: '—', note: 'Périodes non réglées' },
-            ].map(stat => (
-              <div key={stat.label} style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.1)', borderRadius: 14, padding: '16px 18px' }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#C8B99A', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8 }}>{stat.label}</div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: '#F5EDD6', marginBottom: 4 }}>{stat.value}</div>
-                <div style={{ fontSize: 11, color: '#7A6E58' }}>{stat.note}</div>
-              </div>
-            ))}
-          </div>
+          <FacturationOverview />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[

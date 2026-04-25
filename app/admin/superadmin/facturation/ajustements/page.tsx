@@ -41,7 +41,7 @@ function AjustementsContent() {
   const loadAll = async () => {
     const [{ data: p }, { data: a }] = await Promise.all([
       supabase.from('billing_periods').select('*').order('period_start', { ascending: false }),
-      supabase.from('admins').select('id, email').eq('role', 'admin'),
+      supabase.from('admins').select('id, email, auth_user_id').eq('role', 'admin'),
     ])
     setPeriods(p || [])
     setAdmins(a || [])
@@ -58,7 +58,7 @@ function AjustementsContent() {
   }
 
   const getAdminEmail = (clientId: string) =>
-    admins.find(a => a.id === clientId)?.email || clientId.slice(0, 8) + '...'
+    admins.find(a => a.auth_user_id === clientId)?.email || clientId.slice(0, 8) + '...'
 
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })

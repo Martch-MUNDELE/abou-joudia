@@ -29,7 +29,7 @@ export default function PeriodesPage() {
 
   const loadAll = async () => {
     const [{ data: a }, { data: p }] = await Promise.all([
-      supabase.from('admins').select('id, email').eq('role', 'admin'),
+      supabase.from('admins').select('id, email, auth_user_id').eq('role', 'admin'),
       supabase.from('billing_periods').select('*').order('period_start', { ascending: false }),
     ])
     setAdmins(a || [])
@@ -37,7 +37,7 @@ export default function PeriodesPage() {
   }
 
   const getAdminEmail = (clientId: string) =>
-    admins.find(a => a.id === clientId)?.email || clientId.slice(0, 8) + '...'
+    admins.find(a => a.auth_user_id === clientId)?.email || clientId.slice(0, 8) + '...'
 
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
