@@ -2,6 +2,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getFactureUrl } from '@/app/actions/facture'
 
 const STATUSES = ['nouvelle', 'confirmée', 'en_preparation', 'en_livraison', 'livrée', 'annulée']
 const STATUS_LABELS: Record<string, string> = {
@@ -37,7 +38,7 @@ function cleanPhone(phone: string) {
   return p.startsWith('+') ? p : p.replace(/^0/, '212')
 }
 
-function buildWhatsAppUrl(order: any, slot: any, targetStatus: string, formatDate: (d: string) => string, shopAddress?: string): string | null {
+function buildWhatsAppUrl(order: any, slot: any, targetStatus: string, formatDate: (d: string) => string, shopAddress?: string, factureUrl?: string): string | null {
   const name = order.customer_name
   let msg: string | null = null
 
@@ -63,13 +64,19 @@ function buildWhatsAppUrl(order: any, slot: any, targetStatus: string, formatDat
   } else if (targetStatus === 'en_livraison') {
     msg = `Bonjour ${name}, votre commande Abou Joudia est en route ! Notre livreur arrive bientôt chez vous.`
   } else if (targetStatus === 'livrée') {
-    msg = `Merci ${name} ! Votre commande a bien été livrée. Bon appétit et à très bientôt chez Abou Joudia !`
+    const factureLine = factureUrl ? `\n\n🧾 Votre facture (72h) : ${factureUrl}` : ''
+    msg = `Merci ${name} ! Votre commande a bien été livrée. Bon appétit et à très bientôt chez Abou Joudia !${factureLine}`
   } else if (targetStatus === 'annulée') {
     msg = `Bonjour ${name}, nous sommes désolés mais votre commande a dû être annulée. Contactez-nous pour plus d'informations.`
   }
 
   if (!msg) return null
   return `https://wa.me/${cleanPhone(order.customer_phone)}?text=${encodeURIComponent(msg)}`
+}
+
+function sendStatusBeacon(orderId: string, status: string) {
+  const blob = new Blob([JSON.stringify({ orderId, status })], { type: 'application/json' })
+  navigator.sendBeacon('/api/update-order-status', blob)
 }
 
 const IconPhone = () => (
@@ -105,6 +112,7 @@ function CommandesAdminInner() {
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [slots, setSlots] = useState<Record<string, any>>({})
   const [pendingStatuses, setPendingStatuses] = useState<Record<string, string>>({})
+  const [factureUrls, setFactureUrls] = useState<Record<string, string>>({})
   const [shopAddress, setShopAddress] = useState('')
   const [highlightId, setHighlightId] = useState<string | null>(null)
   const supabase = createClient()
@@ -152,9 +160,17 @@ function CommandesAdminInner() {
   }, [searchParams.toString()])
   useEffect(() => { load() }, [filter])
 
-  const updateStatus = async (id: string, status: string) => {
-    await supabase.from('orders').update({ status }).eq('id', id)
-    load()
+  const prefetchFactureUrl = (orderId: string) => {
+    if (factureUrls[orderId]) return
+    getFactureUrl(orderId)
+      .then(url => { if (url) setFactureUrls(prev => ({ ...prev, [orderId]: url })) })
+      .catch(() => {})
+  }
+
+  const applyStatusChange = (orderId: string, newStatus: string) => {
+    setOrders(prev => prev.filter(o => o.id !== orderId))
+    setPendingStatuses(prev => { const n = { ...prev }; delete n[orderId]; return n })
+    setTimeout(() => load(), 2000)
   }
 
   const formatDate = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -258,7 +274,11 @@ function CommandesAdminInner() {
                     <div style={{ position: 'relative' }}>
                       <select
                         value={pending}
-                        onChange={e => setPendingStatuses(prev => ({ ...prev, [order.id]: e.target.value }))}
+                        onChange={e => {
+                          const newStatus = e.target.value
+                          setPendingStatuses(prev => ({ ...prev, [order.id]: newStatus }))
+                          if (newStatus === 'livrée') prefetchFactureUrl(order.id)
+                        }}
                         style={{ background: '#1A1510', border: '1px solid rgba(232,160,32,0.25)', color: pending ? (STATUS_COLORS[pending]?.color || '#E8A020') : '#7A6E58', borderRadius: 8, padding: '7px 32px 7px 12px', fontSize: 12, fontWeight: 700, outline: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', appearance: 'none', WebkitAppearance: 'none' }}
                       >
                         <option value="" disabled style={{ background: '#131009', color: '#7A6E58' }}>— Changer statut —</option>
@@ -273,18 +293,26 @@ function CommandesAdminInner() {
                   )}
                 </div>
                 {pending && pending !== order.status && (() => {
-                  const url = buildWhatsAppUrl(order, slots[order.slot_id] ?? null, pending, formatDate, shopAddress)
-                  if (!url) return null
+                  const btnStyle = { marginTop: 10, display: 'inline-block', float: 'right' as const, background: '#25D366', color: '#0A0804', borderRadius: 50, padding: '6px 16px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', textDecoration: 'none', border: 'none' }
+                  const waUrl = buildWhatsAppUrl(
+                    order,
+                    slots[order.slot_id] ?? null,
+                    pending,
+                    formatDate,
+                    shopAddress,
+                    pending === 'livrée' ? factureUrls[order.id] : undefined
+                  )
+                  if (!waUrl) return null
                   return (
                     <a
-                      href={url}
+                      href={waUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={async () => {
-                        await updateStatus(order.id, pending)
-                        setPendingStatuses(prev => { const n = { ...prev }; delete n[order.id]; return n })
+                      onClick={() => {
+                        sendStatusBeacon(order.id, pending)
+                        applyStatusChange(order.id, pending)
                       }}
-                      style={{ marginTop: 10, display: 'inline-block', float: 'right', background: '#25D366', color: '#0A0804', borderRadius: 50, padding: '6px 16px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', textDecoration: 'none' }}
+                      style={btnStyle}
                     >
                       {WA_BUTTON_LABELS[pending] || 'Envoyer message WhatsApp'}
                     </a>
