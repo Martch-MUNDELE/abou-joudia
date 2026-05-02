@@ -1,13 +1,19 @@
+import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
-import { generateFactureToken } from '@/lib/facture-token'
 
-export const dynamic = 'force-dynamic'
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
-export async function GET(req: NextRequest) {
-  const order_id = req.nextUrl.searchParams.get('order_id')
-  if (!order_id) return NextResponse.json({ error: 'Missing order_id' }, { status: 400 })
-  const token = generateFactureToken(order_id)
-  const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://abou-joudia.vercel.app'
-  const url = `${base}/facture/${order_id}?token=${token}`
-  return NextResponse.json({ url })
+const VALID_STATUSES = ['nouvelle', 'confirmée', 'en_preparation', 'en_livraison', 'livrée', 'annulée']
+
+export async function POST(req: NextRequest) {
+  const { orderId, status } = await req.json()
+  if (!orderId || !status || !VALID_STATUSES.includes(status)) {
+    return NextResponse.json({ error: 'invalid params' }, { status: 400 })
+  }
+  const { error } = await supabase.from('orders').update({ status }).eq('id', orderId)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
 }
