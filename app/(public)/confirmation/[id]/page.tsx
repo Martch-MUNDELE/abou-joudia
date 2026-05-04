@@ -1,9 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
-import Link from 'next/link'
+import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useCart } from '@/store/cart'
+import { useCatalogue } from '@/store/catalogue'
 
 export default function ConfirmationPage() {
   const params = useParams()
@@ -13,6 +13,9 @@ export default function ConfirmationPage() {
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
   const clear = useCart(s => s.clear)
+  const resetCatalogue = useCatalogue(s => s.reset)
+  const router = useRouter()
+  const handleRetour = () => { resetCatalogue(); router.push('/') }
 
   useEffect(() => { clear() }, [])
 
@@ -40,7 +43,7 @@ export default function ConfirmationPage() {
   if (!order) return (
     <div style={{ textAlign: 'center', padding: '80px 20px' }}>
       <p style={{ color: '#C8B99A' }}>Commande introuvable</p>
-      <Link href="/" style={{ color: '#E8A020' }}>Retour à l'accueil</Link>
+      <button onClick={handleRetour} style={{ color: '#E8A020', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>Retour à l'accueil</button>
     </div>
   )
 
@@ -157,9 +160,7 @@ export default function ConfirmationPage() {
         </div>
       </div>
 
-      <Link href="/" style={{ textDecoration: 'none', display: 'block', textAlign: 'center', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', padding: '16px', borderRadius: 50, fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 15, boxShadow: '0 4px 20px rgba(232,160,32,0.25)' }}>
-        Commander autre chose
-      </Link>
+      <button onClick={handleRetour} style={{ textDecoration: 'none', display: 'block', width: '100%', textAlign: 'center', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', padding: '16px', borderRadius: 50, fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 15, boxShadow: '0 4px 20px rgba(232,160,32,0.25)', border: 'none', cursor: 'pointer' }}>Commander autre chose</button>
 
     </div>
   )
