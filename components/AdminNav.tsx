@@ -59,6 +59,7 @@ export default function AdminNav() {
   const router = useRouter()
   const supabase = createClient()
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [roleLoaded, setRoleLoaded] = useState(false)
   const [siteName, setSiteName] = useState('Abou Joudia')
   const [siteLogo, setSiteLogo] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -92,6 +93,7 @@ export default function AdminNav() {
           .eq('email', email)
           .single()
         setIsSuperAdmin(admin?.role === 'superadmin')
+        setRoleLoaded(true)
       }
     })
   }, [])
@@ -136,7 +138,7 @@ export default function AdminNav() {
   const allGroups = [
     ...NAV_GROUPS,
     { label: 'FACTURATION', links: [{ href: '/admin/abonnement', label: 'Mon abonnement' }] },
-    ...(isSuperAdmin
+    ...(roleLoaded && isSuperAdmin
       ? [{ label: 'ADMIN', links: [{ href: '/admin/superadmin', label: 'Super Admin', sub: [
         { label: 'Administrateurs', url: '/admin/superadmin' },
         { label: 'Journal', url: '/admin/superadmin' },
