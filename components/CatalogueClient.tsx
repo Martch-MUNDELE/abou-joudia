@@ -3,7 +3,7 @@ import ProductCard from '@/components/ProductCard'
 import { useCatalogue } from '@/store/catalogue'
 import type { Product } from '@/lib/types'
 
-type GroupeFilter = { id: string; sous: { id: string }[] }
+type GroupeFilter = { id: string; label?: string; sous: { id: string; label?: string }[] }
 
 const GROUPES_FALLBACK: GroupeFilter[] = [
   { id: 'boissons', sous: [{ id: 'chaudes' }, { id: 'froides' }] },
