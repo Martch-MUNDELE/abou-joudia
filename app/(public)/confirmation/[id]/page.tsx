@@ -154,6 +154,20 @@ export default function ConfirmationPage() {
             </div>
           ))}
         </div>
+        {order.delivery_fee > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, marginTop: 4 }}>
+            <span style={{ fontSize: 13, color: '#C8B99A' }}>Sous-total produits</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#F5EDD6', fontFamily: 'DM Sans, sans-serif' }}>{(order.total - order.delivery_fee).toFixed(2)} DH</span>
+          </div>
+        )}
+        {order.delivery_mode !== 'pickup' && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 6 }}>
+            <span style={{ fontSize: 13, color: '#C8B99A' }}>Frais de livraison</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: order.delivery_fee === 0 ? '#7DD87A' : '#F5C842', fontFamily: 'DM Sans, sans-serif' }}>
+              {order.delivery_fee === 0 ? 'Gratuit' : `${order.delivery_fee?.toFixed(2)} DH`}
+            </span>
+          </div>
+        )}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(232,160,32,0.12)' }}>
           <span style={{ fontWeight: 700, fontSize: 15, color: '#F5EDD6' }}>Total</span>
           <span style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 20, color: '#F5C842', letterSpacing: '-0.5px' }}>{order.total?.toFixed(2)} DH</span>
