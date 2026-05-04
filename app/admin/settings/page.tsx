@@ -14,6 +14,7 @@ const TABS = [
   { key: 'fond', label: 'Fond de page' },
   { key: 'hero', label: 'Image hero' },
   { key: 'arguments', label: 'Arguments' },
+  { key: 'devise', label: 'Devise' },
 ]
 
 const ICON_OPTIONS = [
@@ -31,6 +32,7 @@ function SettingsContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const activeTab = searchParams.get('tab') || 'statut'
+  const [currency, setCurrency] = useState('DH')
 
   const [status, setStatus] = useState('open')
   const [statusMessage, setStatusMessage] = useState('')
@@ -60,6 +62,7 @@ function SettingsContent() {
     supabase.from('settings').select('*').then(({ data }) => {
       data?.forEach((s: any) => {
         if (s.key === 'status') setStatus(s.value)
+        if (s.key === 'currency') setCurrency(s.value)
         if (s.key === 'status_message') setStatusMessage(s.value)
         if (s.key === 'hero_image') setHeroImage(s.value)
         if (s.key === 'background_image') setBackgroundImage(s.value)
@@ -125,6 +128,7 @@ function SettingsContent() {
     setSaving(true)
     await Promise.all([
       supabase.from('settings').upsert({ key: 'status', value: status }),
+      supabase.from('settings').upsert({ key: 'currency', value: currency }),
       supabase.from('settings').upsert({ key: 'status_message', value: statusMessage }),
       supabase.from('settings').upsert({ key: 'hero_image', value: heroImage }),
       supabase.from('settings').upsert({ key: 'background_image', value: backgroundImage }),
@@ -283,6 +287,21 @@ function SettingsContent() {
         </div>
       )}
 
+      {activeTab === 'devise' && (
+        <div>
+          <label style={labelStyle}>Sélectionner la devise</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+            {(['DH', 'USD', 'FC', 'EUR', 'XOF', 'GBP'] as const).map(opt => (
+              <button key={opt} onClick={() => setCurrency(opt)} style={{ padding: '9px 20px', borderRadius: 50, border: '1px solid', borderColor: currency === opt ? 'rgba(232,160,32,0.5)' : 'rgba(255,255,255,0.08)', background: currency === opt ? 'rgba(232,160,32,0.12)' : 'transparent', color: currency === opt ? '#E8A020' : '#C8B99A', cursor: 'pointer', fontSize: 13, fontWeight: currency === opt ? 700 : 500, fontFamily: 'DM Sans, sans-serif' }}>
+                {opt}
+              </button>
+            ))}
+          </div>
+          <p style={{ fontSize: 12, color: '#7A6E58', marginTop: 12 }}>
+            Devise actuellement sélectionnée : <strong style={{ color: '#E8A020' }}>{currency}</strong>
+          </p>
+        </div>
+      )}
       {activeTab === 'arguments' && (
         <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Arguments produit</div>
