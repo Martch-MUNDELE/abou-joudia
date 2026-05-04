@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   )
 
   await resend.emails.send({
-    from: 'Abou Joudia <onboarding@resend.dev>',
+    from: `${siteName} <onboarding@resend.dev>`,
     to: order.customer_email,
     subject: `🧾 Facture ${factureNum} — ${siteName}`,
     html: `<!DOCTYPE html>
