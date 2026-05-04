@@ -88,20 +88,38 @@ export default function AdminNav() {
     let active = true
     let handled = false
 
-    // onAuthStateChange émet INITIAL_SESSION après initialisation complète du client,
-    // contrairement à getSession() qui peut retourner null si appelé trop tôt.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const fetchRole = async (email: string) => {
+      try {
+        const { data: admin } = await supabase
+          .from('admins')
+          .select('role')
+          .eq('email', email)
+          .single()
+        if (active) setIsSuperAdmin(admin?.role === 'superadmin')
+      } catch {
+        // erreur réseau ou RLS : pas superadmin
+      } finally {
+        // toujours libérer le verrou, même en cas d'erreur
+        if (active) setRoleLoaded(true)
+      }
+    }
+
+    // Fast-path : session déjà en cache côté client
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!active || handled) return
       const email = session?.user?.email
       if (!email) return
       handled = true
-      const { data: admin } = await supabase
-        .from('admins')
-        .select('role')
-        .eq('email', email)
-        .single()
-      if (active) setIsSuperAdmin(admin?.role === 'superadmin')
-      if (active) setRoleLoaded(true)
+      fetchRole(email)
+    })
+
+    // Fallback : INITIAL_SESSION / SIGNED_IN si getSession() retourne null trop tôt
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active || handled) return
+      const email = session?.user?.email
+      if (!email) return
+      handled = true
+      fetchRole(email)
     })
 
     return () => {
