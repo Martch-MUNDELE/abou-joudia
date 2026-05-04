@@ -93,8 +93,8 @@ export default function AdminNav() {
           .eq('email', email)
           .single()
         setIsSuperAdmin(admin?.role === 'superadmin')
-        setRoleLoaded(true)
       }
+      setRoleLoaded(true)
     })
   }, [])
 
