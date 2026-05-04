@@ -68,7 +68,7 @@ export function FacturePDF({ order, items, slot, siteName, siteBaseline, facture
         <View style={styles.header}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View>
-              <Text style={styles.logoText}>{siteName ?? 'BLACK DEEW'}</Text>
+              <Text style={styles.logoText}>{siteName ?? 'ABOU JOUDIA'}</Text>
               <Text style={styles.logoSub}>{siteBaseline ?? 'Agadir · Livraison à domicile'}</Text>
             </View>
             <View style={styles.headerRight}>
@@ -167,7 +167,7 @@ export function FacturePDF({ order, items, slot, siteName, siteBaseline, facture
         <View style={styles.divider}/>
         <View style={styles.footer}>
           <Text style={styles.footerLeft}>Merci pour votre confiance !</Text>
-          <Text style={styles.footerRight}>Abou Joudia — Agadir, Maroc</Text>
+          <Text style={styles.footerRight}>{siteName ?? 'Abou Joudia'} — {siteBaseline ?? 'Agadir, Maroc'}</Text>
         </View>
 
       </Page>
