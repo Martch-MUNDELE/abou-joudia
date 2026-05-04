@@ -92,16 +92,15 @@ export default function AdminNav() {
     // contrairement à getSession() qui peut retourner null si appelé trop tôt.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!active || handled) return
-      handled = true
       const email = session?.user?.email
-      if (email) {
-        const { data: admin } = await supabase
-          .from('admins')
-          .select('role')
-          .eq('email', email)
-          .single()
-        if (active) setIsSuperAdmin(admin?.role === 'superadmin')
-      }
+      if (!email) return
+      handled = true
+      const { data: admin } = await supabase
+        .from('admins')
+        .select('role')
+        .eq('email', email)
+        .single()
+      if (active) setIsSuperAdmin(admin?.role === 'superadmin')
       if (active) setRoleLoaded(true)
     })
 
