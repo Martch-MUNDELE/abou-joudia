@@ -84,7 +84,15 @@ export default function AdminNav() {
         if (s.key === 'site_logo') setSiteLogo(s.value || '')
       })
     })
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+
+    let active = true
+    let handled = false
+
+    // onAuthStateChange émet INITIAL_SESSION après initialisation complète du client,
+    // contrairement à getSession() qui peut retourner null si appelé trop tôt.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!active || handled) return
+      handled = true
       const email = session?.user?.email
       if (email) {
         const { data: admin } = await supabase
@@ -92,10 +100,15 @@ export default function AdminNav() {
           .select('role')
           .eq('email', email)
           .single()
-        setIsSuperAdmin(admin?.role === 'superadmin')
+        if (active) setIsSuperAdmin(admin?.role === 'superadmin')
       }
-      setRoleLoaded(true)
+      if (active) setRoleLoaded(true)
     })
+
+    return () => {
+      active = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   useEffect(() => {
