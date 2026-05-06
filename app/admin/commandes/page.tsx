@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getFactureUrl } from '@/app/actions/facture'
 
+const PAGE_SIZE = 50
 const STATUSES = ['nouvelle', 'confirmée', 'en_preparation', 'en_livraison', 'livrée', 'annulée']
 const STATUS_LABELS: Record<string, string> = {
   nouvelle: 'Nouvelle', confirmée: 'Confirmée', en_preparation: 'Préparation',
@@ -115,20 +116,43 @@ function CommandesAdminInner() {
   const [factureUrls, setFactureUrls] = useState<Record<string, string>>({})
   const [shopAddress, setShopAddress] = useState('')
   const [highlightId, setHighlightId] = useState<string | null>(null)
+  const [page, setPage] = useState(0)
+  const [totalCount, setTotalCount] = useState(0)
   const supabase = createClient()
 
   const load = async () => {
-    const { data: all } = await supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending: false })
-    if (!all) return
+    const countPromises = [
+      ...STATUSES.map(s =>
+        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', s)
+      ),
+      supabase.from('orders').select('*', { count: 'exact', head: true }).eq('delivery_mode', 'pickup'),
+    ]
+    const countResults = await Promise.all(countPromises)
     const c: Record<string, number> = {}
-    all.forEach(o => {
-      c[o.status] = (c[o.status] || 0) + 1
-      if (o.delivery_mode === 'pickup') c['retrait'] = (c['retrait'] || 0) + 1
-    })
+    STATUSES.forEach((s, i) => { c[s] = countResults[i].count || 0 })
+    c['retrait'] = countResults[STATUSES.length].count || 0
     setCounts(c)
-    setOrders(filter === 'retrait' ? all.filter(o => o.delivery_mode === 'pickup') : all.filter(o => o.status === filter))
 
-    const slotIds = [...new Set(all.filter(o => o.slot_id).map(o => o.slot_id as string))]
+    const currentTotal = filter === 'retrait' ? c['retrait'] : (c[filter] || 0)
+    setTotalCount(currentTotal)
+
+    const from = page * PAGE_SIZE
+    const to = from + PAGE_SIZE - 1
+    let query = supabase
+      .from('orders')
+      .select('*, order_items(*)')
+      .order('created_at', { ascending: false })
+      .range(from, to)
+    if (filter === 'retrait') {
+      query = query.eq('delivery_mode', 'pickup')
+    } else {
+      query = query.eq('status', filter)
+    }
+    const { data: ordersData } = await query
+    if (!ordersData) return
+    setOrders(ordersData)
+
+    const slotIds = [...new Set(ordersData.filter(o => o.slot_id).map(o => o.slot_id as string))]
     if (slotIds.length > 0) {
       const { data: slotData } = await supabase.from('delivery_slots').select('*').in('id', slotIds)
       if (slotData) {
@@ -158,7 +182,8 @@ function CommandesAdminInner() {
     const tab = searchParams.get('tab')
     if (tab && tab !== filter) setFilter(tab)
   }, [searchParams.toString()])
-  useEffect(() => { load() }, [filter])
+  useEffect(() => { setPage(0) }, [filter])
+  useEffect(() => { load() }, [filter, page])
 
   const prefetchFactureUrl = (orderId: string) => {
     if (factureUrls[orderId]) return
@@ -324,6 +349,28 @@ function CommandesAdminInner() {
           )
         })}
       </div>
+
+      {totalCount > PAGE_SIZE && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: 24, fontFamily: 'DM Sans, sans-serif' }}>
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+            style={{ padding: '7px 16px', borderRadius: 50, border: '1px solid rgba(232,160,32,0.25)', background: page === 0 ? 'transparent' : 'rgba(232,160,32,0.08)', color: page === 0 ? '#7A6E58' : '#E8A020', cursor: page === 0 ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600 }}
+          >
+            ← Précédent
+          </button>
+          <span style={{ color: '#C8B99A', fontSize: 12, fontWeight: 600 }}>
+            Page {page + 1} / {Math.ceil(totalCount / PAGE_SIZE)}
+          </span>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={(page + 1) * PAGE_SIZE >= totalCount}
+            style={{ padding: '7px 16px', borderRadius: 50, border: '1px solid rgba(232,160,32,0.25)', background: (page + 1) * PAGE_SIZE >= totalCount ? 'transparent' : 'rgba(232,160,32,0.08)', color: (page + 1) * PAGE_SIZE >= totalCount ? '#7A6E58' : '#E8A020', cursor: (page + 1) * PAGE_SIZE >= totalCount ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600 }}
+          >
+            Suivant →
+          </button>
+        </div>
+      )}
     </div>
   )
 }
