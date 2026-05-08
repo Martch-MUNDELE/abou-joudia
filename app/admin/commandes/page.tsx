@@ -185,6 +185,19 @@ function CommandesAdminInner() {
   useEffect(() => { setPage(0) }, [filter])
   useEffect(() => { load() }, [filter, page])
 
+  // Refresh auto + realtime
+  useEffect(() => {
+    const channel = supabase
+      .channel(`admin-commandes-${filter}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => load())
+      .subscribe()
+    const interval = setInterval(() => load(), 30000)
+    return () => {
+      supabase.removeChannel(channel)
+      clearInterval(interval)
+    }
+  }, [filter])
+
   const prefetchFactureUrl = (orderId: string) => {
     if (factureUrls[orderId]) return
     getFactureUrl(orderId)
