@@ -16,6 +16,8 @@ export async function POST(req: NextRequest) {
   }
   const { data: currencyRow } = await supabase.from('settings').select('value').eq('key', 'currency').single()
   const currency = currencyRow?.value || 'DH'
+  const { data: siteNameRow } = await supabase.from('settings').select('value').eq('key', 'site_name').single()
+  const siteName = siteNameRow?.value || 'Abou Joudia'
   const { name, phone, address, note, slot_id, items, total, lat, lng, geo_address, email, wantFacture, delivery_mode, delivery_fee, distance_km } = body
 
   const { data: slot } = await supabase.from('delivery_slots').select('*').eq('id', slot_id).single()
@@ -47,7 +49,7 @@ export async function POST(req: NextRequest) {
 
   await supabase.from('order_items').insert(items.map((item: any) => ({ order_id: order.id, product_id: item.product_id, product_name: item.product_name, quantity: item.quantity, unit_price: item.unit_price })))
   await supabase.from('delivery_slots').update({ booked: slot.booked + 1 }).eq('id', slot_id)
-  await sendOrderNotification({ ...order, items, slot }, currency)
+  await sendOrderNotification({ ...order, items, slot }, currency, siteName)
 
   if (wantFacture && email) {
     try {
