@@ -15,6 +15,7 @@ const TABS = [
   { key: 'hero', label: 'Image hero' },
   { key: 'arguments', label: 'Arguments' },
   { key: 'devise', label: 'Devise' },
+  { key: 'notifications', label: 'Notifications' },
 ]
 
 const ICON_OPTIONS = [
@@ -33,6 +34,7 @@ function SettingsContent() {
   const router = useRouter()
   const activeTab = searchParams.get('tab') || 'statut'
   const [currency, setCurrency] = useState('DH')
+  const [notificationEmail, setNotificationEmail] = useState('')
 
   const [status, setStatus] = useState('open')
   const [statusMessage, setStatusMessage] = useState('')
@@ -63,6 +65,7 @@ function SettingsContent() {
       data?.forEach((s: any) => {
         if (s.key === 'status') setStatus(s.value)
         if (s.key === 'currency') setCurrency(s.value)
+        if (s.key === 'notification_email') setNotificationEmail(s.value)
         if (s.key === 'status_message') setStatusMessage(s.value)
         if (s.key === 'hero_image') setHeroImage(s.value)
         if (s.key === 'background_image') setBackgroundImage(s.value)
@@ -129,6 +132,7 @@ function SettingsContent() {
     await Promise.all([
       supabase.from('settings').upsert({ key: 'status', value: status }),
       supabase.from('settings').upsert({ key: 'currency', value: currency }),
+      supabase.from('settings').upsert({ key: 'notification_email', value: notificationEmail }),
       supabase.from('settings').upsert({ key: 'status_message', value: statusMessage }),
       supabase.from('settings').upsert({ key: 'hero_image', value: heroImage }),
       supabase.from('settings').upsert({ key: 'background_image', value: backgroundImage }),
@@ -287,6 +291,22 @@ function SettingsContent() {
         </div>
       )}
 
+      {activeTab === 'notifications' && (
+        <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Notifications commandes</div>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#C8B99A', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8 }}>Email de notification (nouvelles commandes)</label>
+          <input
+            type="email"
+            value={notificationEmail}
+            onChange={e => setNotificationEmail(e.target.value)}
+            placeholder="ex: contact@abou-joudia.com"
+            style={{ width: '100%', padding: '13px 16px', borderRadius: 12, border: '1.5px solid rgba(232,160,32,0.15)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontFamily: 'DM Sans, sans-serif', fontSize: 14, outline: 'none', boxSizing: 'border-box' as const }}
+          />
+          <div style={{ fontSize: 11, color: '#7A6E58', marginTop: 8, fontFamily: 'DM Sans, sans-serif' }}>
+            Si vide, l'email par défaut du serveur sera utilisé.
+          </div>
+        </div>
+      )}
       {activeTab === 'devise' && (
         <div>
           <label style={labelStyle}>Sélectionner la devise</label>
