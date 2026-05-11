@@ -27,6 +27,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Créneau non disponible' }, { status: 400 })
   }
 
+  // Stock check
+  const { data: stockEnabledRow } = await supabase.from('settings').select('value').eq('key', 'stock_enabled').single()
+  const stockEnabled = stockEnabledRow?.value === 'true'
+  
+  if (stockEnabled) {
+    const productIds = items.map((item: any) => item.product_id)
+    const { data: products } = await supabase.from('products').select('id, name, stock').in('id', productIds)
+    
+    for (const item of items) {
+      const product = products?.find((p: any) => p.id === item.product_id)
+      if (product && product.stock !== null && product.stock < item.quantity) {
+        return NextResponse.json({ 
+          error: `Stock insuffisant pour ${product.name} (${product.stock} disponible)` 
+        }, { status: 400 })
+      }
+    }
+  }
+
   const subtotal = items.reduce((sum: number, item: any) => sum + item.unit_price * item.quantity, 0)
   const calculatedTotal = subtotal + (delivery_fee ?? 0)
 
@@ -50,6 +68,13 @@ export async function POST(req: NextRequest) {
   if (error || !order) return NextResponse.json({ error: 'Erreur création commande' }, { status: 500 })
 
   await supabase.from('order_items').insert(items.map((item: any) => ({ order_id: order.id, product_id: item.product_id, product_name: item.product_name, quantity: item.quantity, unit_price: item.unit_price })))
+
+  // Decrement stock if enabled
+  if (stockEnabled) {
+    for (const item of items) {
+      await supabase.rpc('decrement_stock', { product_id: item.product_id, qty: item.quantity })
+    }
+  }
   await supabase.from('delivery_slots').update({ booked: slot.booked + 1 }).eq('id', slot_id)
   await sendOrderNotification({ ...order, items, slot }, currency, siteName, adminEmail)
 

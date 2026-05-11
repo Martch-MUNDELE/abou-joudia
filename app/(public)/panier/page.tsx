@@ -99,6 +99,7 @@ export default function PanierPage() {
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [orderError, setOrderError] = useState('')
+  const [stockWarnings, setStockWarnings] = useState<Record<string, number | null>>({})
 
   // Delivery config loaded from Supabase
   const [deliverySettings, setDeliverySettings] = useState<DeliverySettings>({
@@ -199,6 +200,29 @@ export default function PanierPage() {
       setDeliveryResult(result)
     }
   }, [form.lat, form.lng, deliveryLoaded])
+
+  // ── Stock check effect ─────────────────────────────────────────────────────
+
+  useEffect(() => {
+    async function checkStock() {
+      if (items.length === 0) return
+      const { data: stockEnabledRow } = await supabase.from('settings').select('value').eq('key', 'stock_enabled').single()
+      if (stockEnabledRow?.value !== 'true') return
+      const productIds = items.map(i => i.product.id)
+      const { data: products } = await supabase.from('products').select('id, stock').in('id', productIds)
+      if (!products) return
+      const warnings: Record<string, number | null> = {}
+      for (const item of items) {
+        const prod = products.find((p: any) => p.id === item.product.id)
+        if (prod && prod.stock !== null) {
+          warnings[item.product.id] = prod.stock
+          if (item.quantity > prod.stock) update(item.product.id, Math.max(0, prod.stock))
+        }
+      }
+      setStockWarnings(warnings)
+    }
+    checkStock()
+  }, [items.length])
 
   // ── Min order ─────────────────────────────────────────────────────────────
 
@@ -471,8 +495,13 @@ export default function PanierPage() {
                     {item.quantity === 1 ? '×' : '−'}
                   </button>
                   <span style={{ fontWeight: 800, fontSize: 14, color: '#F5EDD6', minWidth: 20, textAlign: 'center', fontFamily: 'DM Sans, sans-serif' }}>{item.quantity}</span>
-                  <button onClick={() => update(item.product.id, item.quantity + 1)} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, lineHeight: 1 }}>+</button>
+                  <button onClick={() => update(item.product.id, item.quantity + 1)} disabled={stockWarnings[item.product.id] != null && item.quantity >= stockWarnings[item.product.id]!} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: stockWarnings[item.product.id] != null && item.quantity >= stockWarnings[item.product.id]! ? 'rgba(200,185,154,0.3)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', cursor: stockWarnings[item.product.id] != null && item.quantity >= stockWarnings[item.product.id]! ? 'not-allowed' : 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, lineHeight: 1 }}>+</button>
                 </div>
+                {stockWarnings[item.product.id] != null && stockWarnings[item.product.id]! <= 5 && (
+                  <div style={{ fontSize: 11, color: '#F5A020', marginTop: 4, padding: '4px 8px', background: 'rgba(245,160,32,0.1)', borderRadius: 6 }}>
+                    ⚠️ Plus que {stockWarnings[item.product.id]} en stock
+                  </div>
+                )}
               </div>
             ))}
           </div>

@@ -14,14 +14,22 @@ export default function PopularCard({ fallback }: { fallback?: React.ReactNode }
   const [product, setProduct] = useState<Product | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [allProducts, setAllProducts] = useState<Product[]>([])
+  const [stockEnabled, setStockEnabled] = useState(false)
 
   useEffect(() => {
     if (!hasSelected) { setProduct(null); return }
     const supabase = createClient()
-    supabase.from('products').select('*').eq('subcategory', activeSous).eq('active', true).then(({ data }) => {
-      const all = (data as Product[]) || []
-      setAllProducts(all)
-      setProduct(all.find(p => p.popular) || null)
+    supabase.from('settings').select('value').eq('key', 'stock_enabled').single().then(({ data }) => {
+      const isStockEnabled = data?.value === 'true'
+      setStockEnabled(isStockEnabled)
+      supabase.from('products').select('*').eq('subcategory', activeSous).eq('active', true).then(({ data: prodData }) => {
+        let all = (prodData as Product[]) || []
+        if (isStockEnabled) {
+          all = all.filter(p => p.stock === null || p.stock > 0)
+        }
+        setAllProducts(all)
+        setProduct(all.find(p => p.popular) || null)
+      })
     })
   }, [activeSous, hasSelected])
 

@@ -4,17 +4,19 @@ import { useCart } from '@/store/cart'
 import type { Product } from '@/lib/types'
 import { useCurrency } from '@/lib/currency'
 
-export default function ProductOverlay({ product, allProducts, onClose }: { product: Product, allProducts: Product[], onClose: () => void }) {
+export default function ProductOverlay({ product, allProducts, onClose, stockEnabled = false }: { product: Product, allProducts: Product[], onClose: () => void, stockEnabled?: boolean }) {
   const currency = useCurrency()
   const { add, items, update } = useCart()
   const [current, setCurrent] = useState(product)
   const quantity = items.find(i => i.product.id === current.id)?.quantity || 0
+  const maxStock = stockEnabled && current.stock !== null ? current.stock : Infinity
+  const canAdd = quantity < maxStock
   const [added, setAdded] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
   const sheetRef = useRef<HTMLDivElement>(null)
   const handleClose = () => { setIsClosing(true); setTimeout(onClose, 280) }
 
-  const handleAdd = () => { add(current); setAdded(true); setTimeout(() => setAdded(false), 800) }
+  const handleAdd = () => { if (!canAdd) return; add(current); setAdded(true); setTimeout(() => setAdded(false), 800) }
   const handleRemove = () => { if (quantity > 0) update(current.id, quantity - 1) }
 
   const related = allProducts.filter(p => p.subcategory === current.subcategory && p.id !== current.id)
@@ -78,7 +80,7 @@ export default function ProductOverlay({ product, allProducts, onClose }: { prod
                   <span style={{ fontFamily: 'Playfair Display, serif', fontWeight: 900, fontSize: 16, color: '#F5EDD6', minWidth: 16, textAlign: 'center' }}>{quantity}</span>
                 </>
               )}
-              <button onClick={handleAdd} style={{ width: 42, height: 42, background: added ? 'rgba(232,160,32,0.15)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', border: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: added ? 14 : 22, fontWeight: 700, color: added ? '#E8A020' : '#080603', cursor: 'pointer', boxShadow: added ? 'none' : '0 4px 16px rgba(232,160,32,0.35)', transition: 'all 0.2s' }}>
+              <button onClick={handleAdd} disabled={!canAdd} style={{ width: 42, height: 42, background: !canAdd ? 'rgba(255,255,255,0.05)' : added ? 'rgba(232,160,32,0.15)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', border: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: added ? 14 : 22, fontWeight: 700, color: !canAdd ? '#555' : added ? '#E8A020' : '#080603', cursor: canAdd ? 'pointer' : 'not-allowed', boxShadow: (!canAdd || added) ? 'none' : '0 4px 16px rgba(232,160,32,0.35)', transition: 'all 0.2s' }}>
                 {added ? '✓' : '+'}
               </button>
             </div>

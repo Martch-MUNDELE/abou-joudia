@@ -3,8 +3,9 @@ import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useCurrency } from '@/lib/currency'
 
-type Product = { id: string; name: string; price: number; image_url: string; subcategory: string; active: boolean; featured: boolean; popular: boolean }
+type Product = { id: string; name: string; price: number; image_url: string; subcategory: string; active: boolean; featured: boolean; popular: boolean; stock: number | null; discount: number | null }
 
 
 
@@ -35,10 +36,15 @@ function ProduitsAdminInner() {
     const t = searchParams.get('tab')
     if (t && t !== tab) setTab(t)
   }, [searchParams])
+  const currency = useCurrency()
+  const [stockEnabled, setStockEnabled] = useState(false)
+  const [editingStock, setEditingStock] = useState<{id: string, value: string} | null>(null)
   const supabase = createClient()
   const router = useRouter()
 
   const loadCats = async () => {
+    const { data: stockRows } = await supabase.from('settings').select('value').eq('key', 'stock_enabled')
+    setStockEnabled(stockRows?.[0]?.value === 'true')
     const [{ data: parents }, { data: children }] = await Promise.all([
       supabase.from('menu_categories').select('id,slug,name').eq('level', 0).eq('active', true).order('display_order'),
       supabase.from('menu_categories').select('slug,name,parent_id').eq('level', 1).eq('active', true).order('display_order'),
@@ -98,6 +104,20 @@ function ProduitsAdminInner() {
       ...p,
       popular: p.subcategory === subcategory ? p.id === id : p.popular
     })))
+  }
+
+  const toggleStock = async () => {
+    const next = !stockEnabled
+    setStockEnabled(next)
+    await supabase.from('settings').upsert({ key: 'stock_enabled', value: next ? 'true' : 'false' }, { onConflict: 'key' })
+  }
+
+  const saveStock = async (id: string, value: string) => {
+    const parsed = value.trim() === '' ? null : parseInt(value)
+    if (value.trim() !== '' && isNaN(parsed as number)) { setEditingStock(null); return }
+    await supabase.from('products').update({ stock: parsed }).eq('id', id)
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, stock: parsed } : p))
+    setEditingStock(null)
   }
 
   const filtered = products.filter(p => tab === 'actifs' ? p.active : !p.active)

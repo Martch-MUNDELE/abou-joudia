@@ -6,8 +6,18 @@ import { useCart } from '@/store/cart'
 import { useCurrency } from '@/lib/currency'
 import type { Product } from '@/lib/types'
 
-export default function ProductCard({ product, featured = false, isOpen, allProducts = [] }: { product: Product, featured?: boolean, isOpen: boolean, allProducts?: Product[] }) {
+export default function ProductCard({ product, featured = false, isOpen, allProducts = [], stockEnabled = false }: { product: Product, featured?: boolean, isOpen: boolean, allProducts?: Product[], stockEnabled?: boolean }) {
   const [added, setAdded] = useState(false)
+  const [qty, setQty] = useState(0)
+  const cartItems = useCart(s => s.items)
+  
+  useEffect(() => {
+    const inCart = cartItems.find(i => i.product.id === product.id)
+    setQty(inCart ? inCart.quantity : 0)
+  }, [cartItems, product.id])
+  
+  const maxStock = stockEnabled && product.stock !== null ? product.stock : Infinity
+  const canAdd = qty < maxStock
   const [showOverlay, setShowOverlay] = useState(false)
   const add = useCart(s => s.add)
   const currency = useCurrency()
@@ -21,7 +31,7 @@ export default function ProductCard({ product, featured = false, isOpen, allProd
   }, [])
 
   const handleAdd = () => {
-    if (!isOpen) return
+    if (!isOpen || !canAdd) return
     add(product)
     setAdded(true)
     setTimeout(() => setAdded(false), 1500)
@@ -86,7 +96,7 @@ export default function ProductCard({ product, featured = false, isOpen, allProd
           ) : (
             <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 15, background: 'linear-gradient(90deg,#F5C842,#E8901A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{product.price} {currency}</div>
           )}
-          <button onClick={handleAdd} disabled={!isOpen} style={{ width: 34, height: 34, background: !isOpen ? 'rgba(255,255,255,0.05)' : added ? 'rgba(232,160,32,0.15)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', border: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: added ? 14 : 20, fontWeight: 700, color: !isOpen ? '#555' : added ? '#E8A020' : '#080603', cursor: isOpen ? 'pointer' : 'not-allowed', flexShrink: 0, boxShadow: (!isOpen || added) ? 'none' : '0 3px 12px rgba(232,160,32,0.3)', transition: 'all 0.2s' }}>
+          <button onClick={handleAdd} disabled={!isOpen || !canAdd} style={{ width: 34, height: 34, background: (!isOpen || !canAdd) ? 'rgba(255,255,255,0.05)' : added ? 'rgba(232,160,32,0.15)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', border: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: added ? 14 : 20, fontWeight: 700, color: (!isOpen || !canAdd) ? '#555' : added ? '#E8A020' : '#080603', cursor: (isOpen && canAdd) ? 'pointer' : 'not-allowed', flexShrink: 0, boxShadow: (!isOpen || added) ? 'none' : '0 3px 12px rgba(232,160,32,0.3)', transition: 'all 0.2s' }}>
             {added ? '✓' : '+'}
           </button>
         </div>
