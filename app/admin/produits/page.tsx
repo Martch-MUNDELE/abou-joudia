@@ -218,6 +218,9 @@ function ProduitsAdminInner() {
         <button onClick={() => setTab('inactifs')} style={{ padding: '6px 16px', borderRadius: 50, border: '1px solid', borderColor: tab === 'inactifs' ? 'rgba(255,107,107,0.4)' : 'rgba(255,255,255,0.06)', background: tab === 'inactifs' ? 'rgba(255,107,107,0.08)' : 'transparent', color: tab === 'inactifs' ? '#FF6B6B' : '#C8B99A', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
           Inactifs <span style={{ marginLeft: 4, background: tab === 'inactifs' ? 'rgba(255,107,107,0.2)' : 'rgba(255,255,255,0.06)', padding: '1px 7px', borderRadius: 50, fontSize: 10 }}>{products.filter(p => !p.active).length}</span>
         </button>
+          <button onClick={toggleStock} style={{ marginLeft: 'auto', padding: '6px 16px', borderRadius: 50, border: '1px solid', borderColor: stockEnabled ? 'rgba(76,175,80,0.4)' : 'rgba(255,255,255,0.1)', background: stockEnabled ? 'rgba(76,175,80,0.12)' : 'rgba(255,255,255,0.03)', color: stockEnabled ? '#4CAF50' : '#7A6E58', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+            {stockEnabled ? 'Stock ACTIF' : 'Stock INACTIF'}
+          </button>
       </div>
 
       {/* LISTE PAR SOUS-CATEGORIE */}
