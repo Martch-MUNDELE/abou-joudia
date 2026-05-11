@@ -249,7 +249,7 @@ function ProduitsAdminInner() {
                   <div style={{ fontSize: 11, color: '#C8B99A', marginTop: 2 }}>{p.price} DH</div>
                   {stockEnabled && p.stock !== null && (
                     editingStock?.id === p.id ? (
-                      <input autoFocus type="number" value={editingStock.value}
+                      <input autoFocus type="text" inputMode="numeric" value={editingStock.value}
                         onChange={e => setEditingStock({ id: p.id, value: e.target.value })}
                         onBlur={() => saveStock(p.id, editingStock.value)}
                         onKeyDown={e => e.key === 'Enter' && saveStock(p.id, editingStock.value)}
