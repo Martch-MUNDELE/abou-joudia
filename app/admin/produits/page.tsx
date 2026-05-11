@@ -246,7 +246,25 @@ function ProduitsAdminInner() {
                 {p.image_url && <img src={p.image_url} alt={p.name} style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(232,160,32,0.1)' }} />}
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: 14, color: '#F5EDD6' }}>{p.name}</div>
-                  <div style={{ fontSize: 11, color: '#C8B99A', marginTop: 2 }}>{p.price} DH</div>
+                  <div style={{ fontSize: 11, color: '#C8B99A', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {p.price} DH
+                    {stockEnabled && (
+                      editingStock?.id === p.id ? (
+                        <input autoFocus type="number" value={editingStock.value}
+                          onChange={e => setEditingStock({ id: p.id, value: e.target.value })}
+                          onBlur={() => saveStock(p.id, editingStock.value)}
+                          onKeyDown={e => e.key === 'Enter' && saveStock(p.id, editingStock.value)}
+                          style={{ width: 50, fontSize: 10, padding: '1px 4px', borderRadius: 6, border: '1px solid rgba(245,200,66,0.4)', background: 'rgba(245,200,66,0.08)', color: '#F5C842', outline: 'none' }} />
+                      ) : (
+                        <span onClick={() => setEditingStock({ id: p.id, value: p.stock !== null ? String(p.stock) : '' })}
+                          style={{ padding: '2px 7px', borderRadius: 20, fontSize: 10, fontWeight: 700, cursor: 'pointer',
+                            background: p.stock === null ? 'rgba(255,255,255,0.06)' : p.stock === 0 ? 'rgba(255,100,100,0.15)' : 'rgba(91,197,122,0.12)',
+                            color: p.stock === null ? '#7A6E58' : p.stock === 0 ? '#FF6B6B' : '#5BC57A' }}>
+                          {p.stock === null ? '∞' : p.stock}
+                        </span>
+                      )
+                    )}
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <button onClick={() => setFeatured(p.id)} title="Mettre à la une" style={{ width: 34, height: 34, borderRadius: 8, border: p.featured ? '1px solid rgba(245,200,66,0.6)' : '1px solid rgba(255,255,255,0.08)', background: p.featured ? 'rgba(245,200,66,0.15)' : 'transparent', color: p.featured ? '#F5C842' : '#555', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
