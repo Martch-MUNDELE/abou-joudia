@@ -16,6 +16,7 @@ export interface Product {
   featured?: boolean
   popular?: boolean
   discount?: number | null
+  variants?: { type: string; options: string[] }[] | null
 }
 
 export interface DeliverySlot {
@@ -74,4 +75,5 @@ export interface OrderItem {
 export interface CartItem {
   product: Product
   quantity: number
+  selectedVariants?: Record<string, string>
 }

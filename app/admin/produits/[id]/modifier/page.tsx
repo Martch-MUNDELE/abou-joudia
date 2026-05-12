@@ -12,7 +12,9 @@ const FALLBACK_SUBCATS = [
   { slug: 'salades', name: 'Salades' },
 ]
 const inputStyle = { width: '100%', padding: '13px 14px', borderRadius: 12, border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(255,255,255,0.03)', color: '#F5EDD6', fontSize: 16, outline: 'none', fontFamily: 'DM Sans, sans-serif', boxSizing: 'border-box' as const }
-const labelStyle = { fontSize: 11, fontWeight: 700, color: '#C8B99A', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.8px' }
+const labelStyle = { fontSize: 11, fontWeight: 700, color: '#C8B99A', display: 'block', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.8px' }
+
+type Variant = { type: string; options: string[] }
 
 export default function ModifierProduit() {
   const router = useRouter()
@@ -22,6 +24,8 @@ export default function ModifierProduit() {
   const [form, setForm] = useState<{ name: string, description: string, ingredients: string, price: number, subcategory: string, image_url: string, active: boolean, discount: number | null }>({ name: '', description: '', ingredients: '', price: 0, subcategory: 'sandwichs_chauds', image_url: '', active: true, discount: null })
   const [subcats, setSubcats] = useState<{ slug: string; name: string; label: string }[]>(FALLBACK_SUBCATS.map(s => ({ ...s, label: s.name })))
   const [saving, setSaving] = useState(false)
+  const [variants, setVariants] = useState<Variant[]>([])
+  const [newOptionInputs, setNewOptionInputs] = useState<string[]>([])
 
   useEffect(() => {
     supabase.from('menu_categories').select('slug,name,level,parent_id,id').eq('active', true).order('display_order').then(({ data }) => {
@@ -40,19 +44,49 @@ export default function ModifierProduit() {
 
   useEffect(() => {
     supabase.from('products').select('*').eq('id', params.id).single().then(({ data }) => {
-      if (data) setForm({ name: data.name || '', description: data.description || '', ingredients: data.ingredients || '', price: data.price || 0, subcategory: data.subcategory || 'sandwichs_chauds', image_url: data.image_url || '', active: data.active ?? true, discount: data.discount ?? null })
+      if (data) {
+        setForm({ name: data.name || '', description: data.description || '', ingredients: data.ingredients || '', price: data.price || 0, subcategory: data.subcategory || 'sandwichs_chauds', image_url: data.image_url || '', active: data.active ?? true, discount: data.discount ?? null })
+        const loaded: Variant[] = Array.isArray(data.variants) ? data.variants : []
+        setVariants(loaded)
+        setNewOptionInputs(loaded.map(() => ''))
+      }
     })
   }, [])
 
+  const addVariantType = () => {
+    setVariants(v => [...v, { type: '', options: [] }])
+    setNewOptionInputs(i => [...i, ''])
+  }
+
+  const updateVariantType = (idx: number, val: string) => {
+    setVariants(v => v.map((vt, i) => i === idx ? { ...vt, type: val } : vt))
+  }
+
+  const removeVariant = (idx: number) => {
+    setVariants(v => v.filter((_, i) => i !== idx))
+    setNewOptionInputs(i => i.filter((_, j) => j !== idx))
+  }
+
+  const addOption = (idx: number) => {
+    const val = newOptionInputs[idx]?.trim()
+    if (!val) return
+    setVariants(v => v.map((vt, i) => i === idx ? { ...vt, options: [...vt.options, val] } : vt))
+    setNewOptionInputs(i => i.map((v, j) => j === idx ? '' : v))
+  }
+
+  const removeOption = (vIdx: number, oIdx: number) => {
+    setVariants(v => v.map((vt, i) => i === vIdx ? { ...vt, options: vt.options.filter((_, j) => j !== oIdx) } : vt))
+  }
+
+  const updateOptionInput = (idx: number, val: string) => {
+    setNewOptionInputs(i => i.map((v, j) => j === idx ? val : v))
+  }
 
   const save = async () => {
     setSaving(true)
-    const { error } = await admin.from('products').update({ ...form }).eq('id', params.id)
-    if (error) {
-      alert('Erreur: ' + error.message)
-      setSaving(false)
-      return
-    }
+    const cleanVariants = variants.filter(v => v.type.trim() && v.options.length > 0)
+    const { error } = await admin.from('products').update({ ...form, variants: cleanVariants.length > 0 ? cleanVariants : null }).eq('id', params.id)
+    if (error) { alert('Erreur: ' + error.message); setSaving(false); return }
     window.location.href = '/admin/produits'
   }
 
@@ -83,20 +117,46 @@ export default function ModifierProduit() {
             {subcats.map(s => <option key={s.slug} value={s.slug}>{s.label}</option>)}
           </select>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 10, border: '1px solid rgba(232,160,32,0.1)' }}>
-          <input type="checkbox" id="active" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} style={{ accentColor: '#E8A020', width: 18, height: 18 }} />
-          <label htmlFor="active" style={{ fontSize: 14, color: '#C8B890', cursor: 'pointer' }}>Produit actif (visible sur le site)</label>
+
+        {/* VARIANTES */}
+        <div style={{ background: 'rgba(245,200,66,0.04)', border: '1px solid rgba(245,200,66,0.15)', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#F5EDD6', fontFamily: 'DM Sans, sans-serif' }}>Variantes</div>
+              <div style={{ fontSize: 11, color: '#7A6E58', marginTop: 2 }}>Taille, goût, couleur...</div>
+            </div>
+            <button onClick={addVariantType} style={{ padding: '7px 14px', borderRadius: 20, border: '1px solid rgba(245,200,66,0.4)', background: 'rgba(245,200,66,0.08)', color: '#F5C842', cursor: 'pointer', fontSize: 12, fontFamily: 'DM Sans, sans-serif', fontWeight: 700 }}>+ Ajouter</button>
+          </div>
+          {variants.map((vt, vIdx) => (
+            <div key={vIdx} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: '12px 14px', border: '1px solid rgba(245,200,66,0.1)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input placeholder="Type (ex: Taille, Goût...)" value={vt.type} onChange={e => updateVariantType(vIdx, e.target.value)} style={{ ...inputStyle, fontSize: 13, padding: '9px 12px' }} />
+                <button onClick={() => removeVariant(vIdx)} style={{ padding: '9px 12px', borderRadius: 8, border: '1px solid rgba(255,80,80,0.3)', background: 'rgba(255,80,80,0.06)', color: '#FF8080', cursor: 'pointer', fontSize: 13, fontFamily: 'DM Sans, sans-serif', flexShrink: 0 }}>✕</button>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6 }}>
+                {vt.options.map((opt, oIdx) => (
+                  <span key={oIdx} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 20, background: 'rgba(245,200,66,0.1)', border: '1px solid rgba(245,200,66,0.25)', fontSize: 12, color: '#F5C842', fontFamily: 'DM Sans, sans-serif' }}>
+                    {opt}
+                    <span onClick={() => removeOption(vIdx, oIdx)} style={{ cursor: 'pointer', color: '#7A6E58', fontWeight: 700 }}>×</span>
+                  </span>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input placeholder="Ajouter une option..." value={newOptionInputs[vIdx] || ''} onChange={e => updateOptionInput(vIdx, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addOption(vIdx) } }} style={{ ...inputStyle, fontSize: 13, padding: '9px 12px' }} />
+                <button onClick={() => addOption(vIdx)} style={{ padding: '9px 14px', borderRadius: 8, border: '1px solid rgba(245,200,66,0.3)', background: 'rgba(245,200,66,0.08)', color: '#F5C842', cursor: 'pointer', fontSize: 13, fontFamily: 'DM Sans, sans-serif', flexShrink: 0 }}>+</button>
+              </div>
+            </div>
+          ))}
         </div>
+
+        {/* PROMOTION */}
         <div style={{ background: 'rgba(255,80,80,0.04)', border: '1px solid rgba(255,80,80,0.15)', borderRadius: 12, padding: '14px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#F5EDD6', fontFamily: 'DM Sans, sans-serif' }}>Promotion</div>
               <div style={{ fontSize: 11, color: '#7A6E58', marginTop: 2 }}>Réduction sur ce produit</div>
             </div>
-            <div
-              onClick={() => setForm(f => ({ ...f, discount: promoOn ? null : 10 }))}
-              style={{ width: 44, height: 24, borderRadius: 12, background: promoOn ? 'rgba(255,80,80,0.3)' : 'rgba(255,255,255,0.08)', border: promoOn ? '1px solid rgba(255,80,80,0.5)' : '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', position: 'relative', flexShrink: 0 }}
-            >
+            <div onClick={() => setForm(f => ({ ...f, discount: promoOn ? null : 10 }))} style={{ width: 44, height: 24, borderRadius: 12, background: promoOn ? 'rgba(255,80,80,0.3)' : 'rgba(255,255,255,0.08)', border: promoOn ? '1px solid rgba(255,80,80,0.5)' : '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', position: 'relative', flexShrink: 0 }}>
               <div style={{ position: 'absolute', top: 3, left: promoOn ? 23 : 3, width: 18, height: 18, borderRadius: '50%', background: promoOn ? '#FF5050' : '#555' }} />
             </div>
           </div>
@@ -104,12 +164,7 @@ export default function ModifierProduit() {
             <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div>
                 <label style={labelStyle}>Réduction (%)</label>
-                <input
-                  type="number" min={5} max={80}
-                  value={form.discount ?? ''}
-                  onChange={e => { const v = parseInt(e.target.value); setForm(f => ({ ...f, discount: isNaN(v) ? 5 : Math.min(80, Math.max(5, v)) })) }}
-                  style={inputStyle}
-                />
+                <input type="number" min={5} max={80} value={form.discount ?? ''} onChange={e => { const v = parseInt(e.target.value); setForm(f => ({ ...f, discount: isNaN(v) ? 5 : Math.min(80, Math.max(5, v)) })) }} style={inputStyle} />
               </div>
               {discountedPreview !== null && savingsPreview !== null && (
                 <div style={{ padding: '10px 14px', background: 'rgba(255,80,80,0.06)', borderRadius: 8, border: '1px solid rgba(255,80,80,0.12)' }}>
@@ -119,6 +174,11 @@ export default function ModifierProduit() {
               )}
             </div>
           )}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 10, border: '1px solid rgba(232,160,32,0.1)' }}>
+          <input type="checkbox" id="active" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} style={{ accentColor: '#E8A020', width: 18, height: 18 }} />
+          <label htmlFor="active" style={{ fontSize: 14, color: '#C8B890', cursor: 'pointer' }}>Produit actif (visible sur le site)</label>
         </div>
         <div style={{ display: 'flex', gap: 10, paddingTop: 8 }}>
           <button onClick={() => router.push('/admin/produits')} style={{ flex: 1, padding: '14px', borderRadius: 50, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#C8B99A', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14 }}>Annuler</button>

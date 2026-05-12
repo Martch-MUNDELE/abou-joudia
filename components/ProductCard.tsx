@@ -32,6 +32,10 @@ export default function ProductCard({ product, featured = false, isOpen, allProd
 
   const handleAdd = () => {
     if (!isOpen || !canAdd) return
+    if (product.variants && product.variants.length > 0) {
+      setShowOverlay(true)
+      return
+    }
     add(product)
     setAdded(true)
     setTimeout(() => setAdded(false), 1500)

@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
 
   if (error || !order) return NextResponse.json({ error: 'Erreur création commande' }, { status: 500 })
 
-  await supabase.from('order_items').insert(items.map((item: any) => ({ order_id: order.id, product_id: item.product_id, product_name: item.product_name, quantity: item.quantity, unit_price: item.unit_price })))
+  await supabase.from('order_items').insert(items.map((item: any) => ({ order_id: order.id, product_id: item.product_id, product_name: item.product_name, quantity: item.quantity, unit_price: item.unit_price, selected_variants: item.selected_variants ?? null })))
 
   // Decrement stock if enabled
   if (stockEnabled) {

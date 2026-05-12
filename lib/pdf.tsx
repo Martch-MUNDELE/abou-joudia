@@ -126,7 +126,17 @@ export function FacturePDF({ order, items, slot, siteName, siteBaseline, facture
             {items.map((item: any, i: number) => (
               <View key={i} style={i < items.length - 1 ? styles.itemRow : styles.itemRowLast}>
                 <Text style={styles.itemQty}>{item.quantity}x</Text>
-                <Text style={styles.itemName}>{item.product_name}</Text>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flex: 1 }}>
+                  <Text style={styles.itemName}>{item.product_name}</Text>
+                  {item.selected_variants && Object.keys(item.selected_variants).length > 0 && (
+                    <Text style={{ fontSize: 8, color: '#C8B99A', marginTop: 2 }}>{Object.entries(item.selected_variants).map(([t, o]) => `${t}: ${o}`).join(' · ')}</Text>
+                  )}
+                </View>
+                  {item.selected_variants && Object.keys(item.selected_variants).length > 0 && (
+                    <Text style={{ fontSize: 8, color: '#C8B99A', marginTop: 2 }}>{Object.entries(item.selected_variants).map(([t, o]) => `${t}: ${o}`).join(' · ')}</Text>
+                  )}
+                </View>
                 <Text style={styles.itemPrice}>{(item.quantity * item.unit_price).toFixed(2)} DH</Text>
               </View>
             ))}
