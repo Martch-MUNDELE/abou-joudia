@@ -35,8 +35,8 @@ const styles = StyleSheet.create({
   infoValue: { fontSize: 9, color: cream, fontFamily: 'Helvetica-Bold', maxWidth: 280, textAlign: 'right' },
 
   // ITEMS
-  itemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottom: `1px solid ${border}` },
-  itemRowLast: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10 },
+  itemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 10, borderBottom: `1px solid ${border}` },
+  itemRowLast: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 10 },
   itemQty: { fontSize: 9, color: gold, fontFamily: 'Helvetica-Bold', backgroundColor: '#2A1F08', padding: '3 8', borderRadius: 4, marginRight: 8 },
   itemName: { fontSize: 10, color: cream, flex: 1 },
   itemPrice: { fontSize: 10, fontFamily: 'Helvetica-Bold', color: muted },
