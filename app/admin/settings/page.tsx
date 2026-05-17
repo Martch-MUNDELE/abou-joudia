@@ -35,6 +35,10 @@ function SettingsContent() {
   const router = useRouter()
   const activeTab = searchParams.get('tab') || 'statut'
   const [currency, setCurrency] = useState('DH')
+  const [feature1Active, setFeature1Active] = useState(true)
+  const [feature2Active, setFeature2Active] = useState(true)
+  const [feature3Active, setFeature3Active] = useState(true)
+  const [siteDescription, setSiteDescription] = useState('')
   const [notificationEmail, setNotificationEmail] = useState('')
   const [footerLine1, setFooterLine1] = useState('Saveurs du')
   const [footerLine2, setFooterLine2] = useState('Souss.')
@@ -80,8 +84,12 @@ function SettingsContent() {
         if (s.key === 'background_image') setBackgroundImage(s.value)
         if (s.key === 'site_name') setSiteName(s.value)
         if (s.key === 'site_baseline') setSiteBaseline(s.value)
+        if (s.key === 'site_description') setSiteDescription(s.value)
         if (s.key === 'site_logo') setSiteLogo(s.value)
         if (s.key === 'feature_1') { try { setFeature1(JSON.parse(s.value)) } catch {} }
+        if (s.key === 'feature_1_active') setFeature1Active(s.value !== 'false')
+        if (s.key === 'feature_2_active') setFeature2Active(s.value !== 'false')
+        if (s.key === 'feature_3_active') setFeature3Active(s.value !== 'false')
         if (s.key === 'feature_2') { try { setFeature2(JSON.parse(s.value)) } catch {} }
         if (s.key === 'feature_3') { try { setFeature3(JSON.parse(s.value)) } catch {} }
         if (s.key === 'background_image_active') setBgImageActive(s.value)
@@ -151,8 +159,12 @@ function SettingsContent() {
       supabase.from('settings').upsert({ key: 'background_image', value: backgroundImage }),
       supabase.from('settings').upsert({ key: 'site_name', value: siteName }),
       supabase.from('settings').upsert({ key: 'site_baseline', value: siteBaseline }),
+      supabase.from('settings').upsert({ key: 'site_description', value: siteDescription }),
       supabase.from('settings').upsert({ key: 'site_logo', value: siteLogo }),
       supabase.from('settings').upsert({ key: 'feature_1', value: JSON.stringify(feature1) }),
+      supabase.from('settings').upsert({ key: 'feature_1_active', value: String(feature1Active) }),
+      supabase.from('settings').upsert({ key: 'feature_2_active', value: String(feature2Active) }),
+      supabase.from('settings').upsert({ key: 'feature_3_active', value: String(feature3Active) }),
       supabase.from('settings').upsert({ key: 'feature_2', value: JSON.stringify(feature2) }),
       supabase.from('settings').upsert({ key: 'feature_3', value: JSON.stringify(feature3) }),
       supabase.from('settings').upsert({ key: 'background_image_active', value: bgImageActive }),
@@ -208,7 +220,9 @@ function SettingsContent() {
           <label style={labelStyle}>Nom du site</label>
           <input type="text" value={siteName} onChange={e => setSiteName(e.target.value)} style={{ ...inputStyle, marginBottom: 14 }} />
           <label style={labelStyle}>Baseline</label>
-          <input type="text" value={siteBaseline} onChange={e => setSiteBaseline(e.target.value)} style={inputStyle} />
+          <input type="text" value={siteBaseline} onChange={e => setSiteBaseline(e.target.value)} style={{ ...inputStyle, marginBottom: 14 }} />
+          <label style={labelStyle}>Description (WhatsApp / réseaux sociaux)</label>
+          <textarea value={siteDescription} onChange={e => setSiteDescription(e.target.value)} rows={3} placeholder="Ex: Livraison de sandwichs frais à Agadir, directement chez vous." style={{ ...inputStyle, resize: 'vertical' as const }} />
         </div>
       )}
 
@@ -359,9 +373,18 @@ function SettingsContent() {
       {activeTab === 'arguments' && (
         <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Arguments produit</div>
-          {([{ feat: feature1, setFeat: setFeature1, label: 'Argument 1' }, { feat: feature2, setFeat: setFeature2, label: 'Argument 2' }, { feat: feature3, setFeat: setFeature3, label: 'Argument 3' }] as const).map(({ feat, setFeat, label }, idx) => (
+          {([
+              { feat: feature1, setFeat: setFeature1, label: 'Argument 1', active: feature1Active, setActive: setFeature1Active },
+              { feat: feature2, setFeat: setFeature2, label: 'Argument 2', active: feature2Active, setActive: setFeature2Active },
+              { feat: feature3, setFeat: setFeature3, label: 'Argument 3', active: feature3Active, setActive: setFeature3Active },
+            ] as const).map(({ feat, setFeat, label, active, setActive }, idx) => (
             <div key={label} style={{ marginBottom: idx < 2 ? 20 : 0, paddingBottom: idx < 2 ? 20 : 0, borderBottom: idx < 2 ? '1px solid rgba(232,160,32,0.08)' : 'none' }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#E8A020', marginBottom: 10 }}>{label}</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#E8A020' }}>{label}</div>
+                <button onClick={() => setActive(!active)} style={{ padding: '4px 14px', borderRadius: 50, border: '1px solid', borderColor: active ? 'rgba(91,197,122,0.4)' : 'rgba(255,107,107,0.4)', background: active ? 'rgba(91,197,122,0.12)' : 'rgba(255,107,107,0.12)', color: active ? '#5BC57A' : '#FF6B6B', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 11, cursor: 'pointer' }}>
+                  {active ? 'ON' : 'OFF'}
+                </button>
+              </div>
               <label style={labelStyle}>Icône</label>
               <select value={feat.icon} onChange={e => setFeat({ ...feat, icon: e.target.value })} style={{ ...inputStyle, marginBottom: 10, cursor: 'pointer' }}>
                 {ICON_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}

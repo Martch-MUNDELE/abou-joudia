@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { createClient } from '@/lib/supabase/server'
 
 export const viewport = {
   width: 'device-width',
@@ -8,25 +9,33 @@ export const viewport = {
   userScalable: false,
 }
 
-export const metadata: Metadata = {
-  title: 'Abou Joudia — Sandwichs & Boissons Agadir',
-  description: 'Sandwichs frais, salades et boissons. Livraison à Agadir. Paiement à la livraison.',
-  openGraph: {
-    title: 'Abou Joudia — Sandwichs & Boissons Agadir',
-    description: 'Sandwichs frais, salades et boissons. Livraison à Agadir. Paiement à la livraison.',
-    url: 'https://abou-joudia.vercel.app',
-    siteName: 'Abou Joudia',
-    images: [
-      {
-        url: 'https://nrpsqvmdmsfekemtrbcz.supabase.co/storage/v1/object/public/products/logo-abou-joudia-1776546998985.png',
-        width: 508,
-        height: 433,
-        alt: 'Abou Joudia — Livraison Agadir',
-      }
-    ],
-    locale: 'fr_FR',
-    type: 'website',
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  const supabase = await createClient()
+  const { data } = await supabase.from('settings').select('key, value').in('key', ['site_name', 'site_description', 'site_logo'])
+  const s: Record<string, string> = {}
+  data?.forEach((r: any) => { s[r.key] = r.value })
+  const title = s['site_name'] || 'Abou Joudia'
+  const description = s['site_description'] || 'Abou Joudia — Livraison food à Agadir'
+  const ogImage = 'https://abou-joudia.vercel.app/og-image.png'
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: 'https://abou-joudia.vercel.app',
+      siteName: title,
+      images: [{ url: ogImage, width: 800, height: 800, alt: title }],
+      locale: 'fr_FR',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [ogImage],
+    },
+  }
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
