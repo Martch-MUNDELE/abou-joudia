@@ -135,11 +135,14 @@ function SettingsContent() {
   const uploadHeroImage = async (file: File) => {
     setUploading(true)
     const ext = file.name.split('.').pop()
-    const fileName = `hero.${ext}`
+    const ts = Date.now()
+    const fileName = `hero-${ts}.${ext}`
     const { error } = await supabase.storage.from('products').upload(fileName, file, { upsert: true })
     if (!error) {
       const { data } = supabase.storage.from('products').getPublicUrl(fileName)
-      setHeroImage(data.publicUrl)
+      const urlWithBuster = `${data.publicUrl}?t=${ts}`
+      setHeroImage(urlWithBuster)
+      await supabase.from('settings').upsert({ key: 'hero_image', value: urlWithBuster })
     }
     setUploading(false)
   }
