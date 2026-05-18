@@ -98,29 +98,29 @@ Aucun bug documenté corrigé dans cette session.
 
 ---
 
-## Session — 2026-05-15 01:44 : Résumé de session — Tours 1 & 2
-
-**Projet :** abou-joudia
-**Date :** 2026-05-15 01:44
-**Session :** 2 tours — push git sur branche `main` (projet `black-deew`, flag `--trust-sensitive --allow-push`)
-**Fichier modifié :** `components/PhoneInput.tsx` — 1 fichier, +32 lignes, -3 lignes
-
-La session a porté exclusivement sur l'extension de la liste des pays dans le composant `PhoneInput`. Le tableau `COUNTRIES` a été enrichi de nouveaux pays africains, du Moyen-Orient et européens, portant la couverture internationale du sélecteur téléphonique à un périmètre élargi (la liste visible dans le diff inclut 49+ entrées).
+## Session — 2026-05-17 23:33 : Correction bug uploadHeroImage + métadonnées dynamiques
 
 ### Travaux validés
 
-- **`components/PhoneInput.tsx`** — Extension du tableau `COUNTRIES` :
-  - Ajout de pays africains subsahariens : Sénégal (+221), Mali (+223), Guinée (+224), Côte d'Ivoire (+225), Burkina Faso (+226), Niger (+227), Togo (+228), Bénin (+229), Cameroun (+237), RD Congo (+243), Congo (+242), Gabon (+241), Guinée Équatoriale (+240), Angola (+244), Burundi (+257), Rwanda (+250), Kenya (+254), Éthiopie (+251), Madagascar (+261)
-  - Ajout de pays du Moyen-Orient : Arabie Saoudite (+966), Émirats (+971), Qatar (+974), Koweït (+965)
-  - Ajout de pays européens supplémentaires : Turquie (+90) (liste tronquée dans le diff fourni)
-  - Pays déjà présents conservés : Maroc, France, Belgique, Suisse, Luxembourg, Espagne, Italie, Allemagne, Pays-Bas, Portugal, Royaume-Uni, Suède, Norvège, Danemark, Autriche, Irlande, Pologne, États-Unis, Canada, Algérie, Tunisie, Égypte, Libye, Mauritanie
-  - Structure du composant inchangée (`useState`, `useRef`, `useEffect`, `'use client'`)
+**Tours :** 25 | **Commits :** 2
+
+Deux commits livrés en production. Le premier corrige le bug de cache sur l'image hero en remplaçant le nom de fichier fixe par un nom horodaté et en ajoutant un upsert immédiat en base. Le second ajoute la gestion des métadonnées OG/favicon dynamiques, un champ `site_description` en admin, et le toggle visibilité des arguments.
+
+#### Commit `a422920` — fix: uploadHeroImage timestamp + cache-buster + upsert immédiat
+
+- **Nom de fichier dynamique :** `hero.ext` remplacé par `hero-{timestamp}.ext` dans la fonction `uploadHeroImage` — élimine le cache navigateur et CDN sur les remplacements successifs
+- **Upsert immédiat :** après upload réussi dans Supabase Storage, un upsert est exécuté immédiatement dans la table `settings` avec la clé `hero_image` et l'URL publique de la nouvelle image — évite l'état désynchronisé si l'utilisateur quitte sans sauvegarder
+- **Cache-buster URL :** paramètre `?t={timestamp}` ajouté à l'URL retournée pour forcer le rechargement côté client
+
+#### Commit `c95fd4c` — feat: OG image, favicon, generateMetadata dynamique, site_description admin, toggle arguments
+
+- **`generateMetadata` dynamique :** lecture de `site_name`, `site_description`, `hero_image` depuis `settings` pour générer les balises Open Graph et Twitter Card côté serveur
+- **OG image :** `hero_image` depuis `settings` utilisée comme `og:image` si présente
+- **Favicon :** configurable depuis les settings (clé non précisée dans le diff disponible)
+- **Champ `site_description` :** ajouté dans `app/admin/settings/page.tsx` onglet Identité — état `siteDescription` + `setSiteDescription` + champ de saisie admin
+- **Toggle arguments :** les 3 features (arguments marketing) ont chacune un toggle actif/inactif — états `feature1Active`, `feature2Active`, `feature3Active` déjà présents, interface de bascule ajoutée dans l'onglet Arguments
+- **Fichier modifié :** `app/admin/settings/page.tsx` — +5 lignes / -2 lignes
 
 ### Bugs corrigés
 
-Aucun bug corrigé durant cette session. La modification est un ajout de données (liste pays) sans correction de logique existante.
-
-### Dette technique mise à jour
-
-**Dette existante non modifiée :**
-- `admin_
+| # | Bug |

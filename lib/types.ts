@@ -15,6 +15,7 @@ export interface Product {
   active: boolean
   featured?: boolean
   popular?: boolean
+  is_coup_de_coeur?: boolean
   discount?: number | null
   variants?: { type: string; options: string[] }[] | null
 }
