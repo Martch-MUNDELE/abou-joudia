@@ -50,6 +50,8 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [hoveredBar, setHoveredBar] = useState<number | null>(null)
+  const [hoveredWeekBar, setHoveredWeekBar] = useState<number | null>(null)
+  const [hoveredDayBar, setHoveredDayBar] = useState<number | null>(null)
   const [toast, setToast] = useState<{ name: string; total: number } | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const prevOrderIds = useRef<Set<string>>(new Set())
@@ -340,6 +342,117 @@ export default function AdminDashboard() {
             )
           })}
         </svg>
+      </div>
+
+
+      {/* CA par semaine — 4 dernières semaines */}
+      <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.08)', borderRadius: 16, padding: '20px 20px 14px', marginBottom: 24 }}>
+        <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 16, fontWeight: 700, color: '#F5EDD6', margin: '0 0 16px', letterSpacing: '-0.3px' }}>
+          Chiffre d'affaires — 4 dernières semaines
+        </h2>
+        {(() => {
+          const weeks = Array.from({ length: 4 }, (_, i) => {
+            const endMs = Date.now() - i * 7 * 86400000
+            const startMs = endMs - 7 * 86400000
+            const start = new Date(startMs).toISOString().slice(0, 10)
+            const end = new Date(endMs).toISOString().slice(0, 10)
+            const ca = orders.filter(o => {
+              const d = o.created_at.slice(0, 10)
+              return d >= start && d < end
+            }).reduce((s, o) => s + (o.total || 0), 0)
+            const label = `S-${i === 0 ? 'curr' : i}`
+            const labelFull = i === 0 ? 'Cette sem.' : i === 1 ? 'Sem. -1' : i === 2 ? 'Sem. -2' : 'Sem. -3'
+            return { label: labelFull, ca }
+          }).reverse()
+          const maxW = Math.max(...weeks.map(w => w.ca), 1)
+          const SLOT_W = 62
+          const BAR_W = 38
+          const BASE_Y = 90
+          const MAX_H = 78
+          return (
+            <svg viewBox="0 0 248 118" style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}>
+              {weeks.map((w, i) => {
+                const xBar = i * SLOT_W + (SLOT_W - BAR_W) / 2
+                const barH = w.ca > 0 ? Math.max((w.ca / maxW) * MAX_H, 2) : 0
+                const barY = BASE_Y - barH
+                const xCenter = xBar + BAR_W / 2
+                const tipY = Math.max(barY - 26, 2)
+                return (
+                  <g key={i} onMouseEnter={() => setHoveredWeekBar(i)} onMouseLeave={() => setHoveredWeekBar(null)} style={{ cursor: 'default' }}>
+                    <rect x={xBar} y={12} width={BAR_W} height={MAX_H} rx={5} fill="rgba(245,200,66,0.08)" />
+                    {barH > 0 && (
+                      <rect x={xBar} y={barY} width={BAR_W} height={barH} rx={5} fill={hoveredWeekBar === i ? '#FFD76A' : '#F5C842'} />
+                    )}
+                    <text x={xCenter} y={106} textAnchor="middle" fill="#6A5A40" fontSize="9" fontFamily="DM Sans, sans-serif">
+                      {w.label}
+                    </text>
+                    {hoveredWeekBar === i && (
+                      <g>
+                        <rect x={xBar - 10} y={tipY} width={BAR_W + 20} height={20} rx={4} fill="#1F1A10" stroke="rgba(245,200,66,0.35)" strokeWidth={1} />
+                        <text x={xCenter} y={tipY + 13.5} textAnchor="middle" fill="#F5C842" fontSize="9.5" fontFamily="DM Sans, sans-serif" fontWeight="700">
+                          {w.ca.toFixed(0)} DH
+                        </text>
+                      </g>
+                    )}
+                  </g>
+                )
+              })}
+            </svg>
+          )
+        })()}
+      </div>
+
+      {/* Commandes par jour — 30 derniers jours */}
+      <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.08)', borderRadius: 16, padding: '20px 20px 14px', marginBottom: 24 }}>
+        <h2 style={{ fontFamily: 'Playfair Display, serif', fontSize: 16, fontWeight: 700, color: '#F5EDD6', margin: '0 0 16px', letterSpacing: '-0.3px' }}>
+          Commandes par jour — 30 derniers jours
+        </h2>
+        {(() => {
+          const days = Array.from({ length: 30 }, (_, i) => {
+            const d = new Date(Date.now() - (29 - i) * 86400000)
+            const key = d.toISOString().slice(0, 10)
+            const count = orders.filter(o => o.created_at.slice(0, 10) === key).length
+            const label = i % 7 === 0 ? d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''
+            return { key, count, label }
+          })
+          const maxD = Math.max(...days.map(d => d.count), 1)
+          const W = 280
+          const BAR_W = Math.floor(W / 30) - 1
+          const BASE_Y = 90
+          const MAX_H = 70
+          return (
+            <svg viewBox={`0 0 ${W} 118`} style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}>
+              {days.map((d, i) => {
+                const xBar = i * (BAR_W + 1)
+                const barH = d.count > 0 ? Math.max((d.count / maxD) * MAX_H, 2) : 0
+                const barY = BASE_Y - barH
+                const xCenter = xBar + BAR_W / 2
+                const tipY = Math.max(barY - 26, 2)
+                return (
+                  <g key={i} onMouseEnter={() => setHoveredDayBar(i)} onMouseLeave={() => setHoveredDayBar(null)} style={{ cursor: 'default' }}>
+                    <rect x={xBar} y={20} width={BAR_W} height={MAX_H} rx={2} fill="rgba(255,107,32,0.07)" />
+                    {barH > 0 && (
+                      <rect x={xBar} y={barY} width={BAR_W} height={barH} rx={2} fill={hoveredDayBar === i ? '#FF9050' : '#FF6B20'} />
+                    )}
+                    {d.label && (
+                      <text x={xCenter} y={108} textAnchor="middle" fill="#6A5A40" fontSize="7.5" fontFamily="DM Sans, sans-serif">
+                        {d.label}
+                      </text>
+                    )}
+                    {hoveredDayBar === i && (
+                      <g>
+                        <rect x={Math.min(xBar - 8, W - 54)} y={tipY} width={48} height={20} rx={4} fill="#1F1A10" stroke="rgba(255,107,32,0.4)" strokeWidth={1} />
+                        <text x={Math.min(xBar - 8, W - 54) + 24} y={tipY + 13.5} textAnchor="middle" fill="#FF6B20" fontSize="9.5" fontFamily="DM Sans, sans-serif" fontWeight="700">
+                          {d.count} cmd
+                        </text>
+                      </g>
+                    )}
+                  </g>
+                )
+              })}
+            </svg>
+          )
+        })()}
       </div>
 
       {/* Activité récente */}
