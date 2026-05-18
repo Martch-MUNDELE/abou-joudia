@@ -106,6 +106,7 @@ export default function AdminDashboard() {
   const todayO = orders.filter(o => o.created_at.slice(0, 10) === today)
   const yestO  = orders.filter(o => o.created_at.slice(0, 10) === yesterday)
   const caToday = todayO.reduce((s, o) => s + (o.total || 0), 0)
+  const avgToday = todayO.length > 0 ? caToday / todayO.length : 0
   const caYest  = yestO.reduce((s, o) => s + (o.total || 0), 0)
 
   const nouvelles   = orders.filter(o => o.status === 'nouvelle')
@@ -224,7 +225,7 @@ export default function AdminDashboard() {
           value={`${caToday.toFixed(0)} DH`}
           valueColor="#F5C842"
           trend={caToday >= caYest ? 'up' : 'down'}
-          sub={`vs ${caYest.toFixed(0)} DH hier`}
+          sub={`${todayO.length} cmd · moy ${avgToday.toFixed(0)} DH · vs ${caYest.toFixed(0)} DH hier`}
         />
         <KpiCard
           label="Commandes aujourd'hui"
