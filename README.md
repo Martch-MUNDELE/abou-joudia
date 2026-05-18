@@ -98,29 +98,42 @@ Aucun bug documenté corrigé dans cette session.
 
 ---
 
-## Session — 2026-05-17 23:33 : Correction bug uploadHeroImage + métadonnées dynamiques
+## Session — 2026-05-18 : Fonctionnalité Coup de coeur + layout dual-card
+
+### Objectif initial
+
+Vérifier et appliquer le patch timeout `aria_agent.py` (WATCH_TIMEOUT=600, MAX_RETRIES=2, polling 1s) puis pusher.
 
 ### Travaux validés
 
-**Tours :** 25 | **Commits :** 2
+Les modifications effectuées portent exclusivement sur des composants frontend Next.js. Aucun fichier `aria_agent.py` ni patch timeout ne figure dans les changements enregistrés.
 
-Deux commits livrés en production. Le premier corrige le bug de cache sur l'image hero en remplaçant le nom de fichier fixe par un nom horodaté et en ajoutant un upsert immédiat en base. Le second ajoute la gestion des métadonnées OG/favicon dynamiques, un champ `site_description` en admin, et le toggle visibilité des arguments.
+#### Nouveau composant — `components/CoupDeCoeurCard.tsx` (créé, +63 lignes)
+- Composant client autonome affichant un produit marqué `is_coup_de_coeur`
+- Badge ❤️ "Coup de coeur" en overlay top-left
+- Ouvre `ProductOverlay` au clic, bouton panier isolé via `e.stopPropagation()`
+- Hauteur responsive : `clamp(180px, 50vw, 280px)`
+- Gradient dark-to-bottom, border rose `rgba(255,100,130,0.3)`
 
-#### Commit `a422920` — fix: uploadHeroImage timestamp + cache-buster + upsert immédiat
+#### Refonte — `components/FeaturedCard.tsx`
+- Fetch parallèle ajouté : `is_coup_de_coeur` depuis `products` en plus du produit `featured`
+- Filtrage stock appliqué aux deux produits (`filterStock`)
+- Merge des subcategories pour fetch `allProducts` couvrant les deux cartes
+- Passage de `coupProduct` à `FeaturedCardClient`
 
-- **Nom de fichier dynamique :** `hero.ext` remplacé par `hero-{timestamp}.ext` dans la fonction `uploadHeroImage` — élimine le cache navigateur et CDN sur les remplacements successifs
-- **Upsert immédiat :** après upload réussi dans Supabase Storage, un upsert est exécuté immédiatement dans la table `settings` avec la clé `hero_image` et l'URL publique de la nouvelle image — évite l'état désynchronisé si l'utilisateur quitte sans sauvegarder
-- **Cache-buster URL :** paramètre `?t={timestamp}` ajouté à l'URL retournée pour forcer le rechargement côté client
+#### Refonte — `components/FeaturedCardClient.tsx`
+- Layout conditionnel : si `coupProduct` présent → layout dual flex (68% / 32%)
+- Carte gauche : produit `featured` avec badge "Signature du moment" ✦ doré
+- Carte droite : `CoupDeCoeurCard` intégrée
+- Fallback : affichage pleine largeur si pas de `coupProduct` (comportement antérieur conservé)
 
-#### Commit `c95fd4c` — feat: OG image, favicon, generateMetadata dynamique, site_description admin, toggle arguments
+#### Refonte — `components/PopularCard.tsx`
+- Import et intégration de `CoupDeCoeurCard`
+- Fetch `is_coup_de_coeur` ajouté dans l'effet Supabase client-side
+- Layout dual identique à `FeaturedCardClient` si `coupProduct` disponible
+- Badge 🔥 "Populaire" sur carte principale
 
-- **`generateMetadata` dynamique :** lecture de `site_name`, `site_description`, `hero_image` depuis `settings` pour générer les balises Open Graph et Twitter Card côté serveur
-- **OG image :** `hero_image` depuis `settings` utilisée comme `og:image` si présente
-- **Favicon :** configurable depuis les settings (clé non précisée dans le diff disponible)
-- **Champ `site_description` :** ajouté dans `app/admin/settings/page.tsx` onglet Identité — état `siteDescription` + `setSiteDescription` + champ de saisie admin
-- **Toggle arguments :** les 3 features (arguments marketing) ont chacune un toggle actif/inactif — états `feature1Active`, `feature2Active`, `feature3Active` déjà présents, interface de bascule ajoutée dans l'onglet Arguments
-- **Fichier modifié :** `app/admin/settings/page.tsx` — +5 lignes / -2 lignes
+#### Mise à jour — `lib/types.ts` (+1 ligne)
+- Ajout du champ optionnel `is_coup_de_coeur?: boolean` dans l'interface `Product`
 
-### Bugs corrigés
-
-| # | Bug |
+#### Mise à jour

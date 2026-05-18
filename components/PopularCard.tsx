@@ -27,7 +27,7 @@ export default function PopularCard({ fallback }: { fallback?: React.ReactNode }
       if (stockEnabled) all = all.filter(p => p.stock === null || p.stock > 0)
       setAllProducts(all)
       setProduct(all.find(p => p.popular) || null)
-      const { data: coupRaw } = await supabase.from('products').select('*').eq('is_coup_de_coeur', true).eq('active', true).single()
+      const { data: coupRaw } = await supabase.from('products').select('*').eq('is_coup_de_coeur', true).eq('active', true).maybeSingle()
       setCoupProduct(coupRaw as Product | null)
     })
   }, [activeSous, hasSelected])
