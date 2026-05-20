@@ -187,7 +187,10 @@ async function updateDriverStatus(id: string, status: string) {
       .eq('id', sessionId)
     setSettleLoading(null)
     load()
-    const driver = drivers.find(d => d.open_session?.id === sessionId)
+    const driver = drivers.find(d =>
+      d.open_session?.id === sessionId ||
+      (driverClosedSessions[d.id] || []).some(s => s.id === sessionId)
+    )
     if (driver) loadDriverDetails(driver.id)
   }
 
