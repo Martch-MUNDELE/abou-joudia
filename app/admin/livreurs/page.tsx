@@ -489,6 +489,14 @@ async function updateDriverStatus(id: string, status: string) {
                                     <div><div style={{ fontSize: 9, color: '#7A6E58', textTransform: 'uppercase', marginBottom: 2 }}>Net remis</div><div style={{ fontSize: 12, color: '#F5C842', fontWeight: 600 }}>{(cs.net_to_remit || 0).toFixed(0)} {currency}</div></div>
                                   </div>
                                   {cs.settled_at && <div style={{ marginTop: 6, fontSize: 10, color: '#5BC57A' }}>Regle le {formatDate(cs.settled_at)} a {formatTime(cs.settled_at)}</div>}
+                                  {cs.session_status === 'closed' && !cs.settled_at && (
+                                    <button
+                                      onClick={e => { e.stopPropagation(); handleSettle(cs.id) }}
+                                      disabled={settleLoading === cs.id}
+                                      style={{ marginTop: 10, width: '100%', background: 'linear-gradient(135deg,rgba(91,197,122,0.2),rgba(91,197,122,0.1))', color: '#5BC57A', border: '1px solid rgba(91,197,122,0.3)', borderRadius: 8, padding: '10px 16px', fontSize: 13, fontWeight: 700, cursor: settleLoading === cs.id ? 'wait' : 'pointer', fontFamily: 'DM Sans, sans-serif', opacity: settleLoading === cs.id ? 0.6 : 1 }}>
+                                      {settleLoading === cs.id ? 'Traitement...' : '✅ Argent remis'}
+                                    </button>
+                                  )}
                                 </div>
                               ))}
                             </div>
