@@ -18,6 +18,7 @@ type Driver = {
     collected_cash: number
     expected_cash: number
     net_to_remit: number
+    driver_fee_total?: number
   } | null
 }
 
@@ -284,8 +285,17 @@ async function updateDriverStatus(id: string, status: string) {
   async function handleCloseSession() {
     if (!closeDriver?.open_session) return
     setCloseLoading(true)
+    const { data: deliveries } = await supabase
+      .from('order_deliveries')
+      .select('amount_collected')
+      .eq('driver_id', closeDriver.id)
+      .in('status', ['pending', 'delivered'])
+    const collected_cash = (deliveries || []).reduce((sum: number, d: any) => sum + (d.amount_collected || 0), 0)
+    const opening_cash = closeDriver.open_session.opening_cash || 0
+    const driver_fee_total = closeDriver.open_session.driver_fee_total || 0
+    const net_to_remit = opening_cash + collected_cash - driver_fee_total
     await supabase.from('driver_sessions')
-      .update({ session_status: 'closed', closed_at: new Date().toISOString() })
+      .update({ session_status: 'closed', closed_at: new Date().toISOString(), collected_cash, net_to_remit })
       .eq('id', closeDriver.open_session.id)
     await updateDriverStatus(closeDriver.id, "inactive")
     setCloseLoading(false); setCloseDriver(null); load()
