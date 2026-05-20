@@ -156,6 +156,13 @@ function DispatchModal({ order, onClose, onDispatched }: { order: any, onClose: 
       setErrorMsg('Aucune ligne mise à jour — vérifie les permissions (RLS).')
       return
     }
+    await supabase.from('order_deliveries').insert({
+      order_id: order.id,
+      driver_id: selectedDriver,
+      status: 'pending',
+      amount_collected: order.total,
+      delivery_fee: order.delivery_fee || 0,
+    })
     setSaving(false)
     const driverInfo = driver ? { full_name: driver.full_name, phone: driver.phone } : null
     const formatDateLocal = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
