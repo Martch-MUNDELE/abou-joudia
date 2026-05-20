@@ -262,6 +262,8 @@ async function updateDriverStatus(id: string, status: string) {
   async function handleDeleteDriver() {
     if (!deleteDriver) return
     setDeleteLoading(true)
+    await supabase.from('order_deliveries').delete().eq('driver_id', deleteDriver.id)
+    await supabase.from('driver_sessions').delete().eq('driver_id', deleteDriver.id)
     await supabase.from('delivery_drivers').delete().eq('id', deleteDriver.id)
     setDeleteLoading(false); setDeleteDriver(null); load()
   }
