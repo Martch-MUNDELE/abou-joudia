@@ -28,11 +28,12 @@ type GroupeItem = { id: string; label: string; emoji: string; icon_type: string;
 interface MenuCat {
   id: string; slug: string; name: string; parent_id: string | null
   display_order: number; active: boolean; icon_type: string; icon_value: string | null; level: number
+  is_visible?: boolean
 }
 
 function buildGroupes(cats: MenuCat[]): GroupeItem[] {
-  const l0 = cats.filter(c => c.level === 0 && c.active).sort((a, b) => a.display_order - b.display_order)
-  const l1 = cats.filter(c => c.level === 1 && c.active).sort((a, b) => a.display_order - b.display_order)
+  const l0 = cats.filter(c => c.level === 0 && c.active && c.is_visible !== false).sort((a, b) => a.display_order - b.display_order)
+  const l1 = cats.filter(c => c.level === 1 && c.active && c.is_visible !== false).sort((a, b) => a.display_order - b.display_order)
   return l0.map(g => ({
     id: g.slug, label: g.name, emoji: g.icon_value ?? g.slug, icon_type: g.icon_type,
     sous: l1.filter(s => s.parent_id === g.id).map(s => ({ id: s.slug, label: s.name, emoji: s.icon_value ?? s.slug, icon_type: s.icon_type }))
