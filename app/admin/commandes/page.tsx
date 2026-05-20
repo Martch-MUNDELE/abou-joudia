@@ -126,11 +126,11 @@ function DispatchModal({ order, onClose, onDispatched }: { order: any, onClose: 
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase
-        .from('delivery_drivers')
-        .select('id, full_name, phone, vehicle_type, zone')
-        .eq('status', 'active')
-        .order('full_name')
-      setDrivers(data || [])
+        .from('driver_sessions')
+        .select('driver_id, delivery_drivers(id, full_name, phone, vehicle_type, zone)')
+        .eq('session_status', 'open')
+      const mapped = (data || []).map((s: any) => s.delivery_drivers).filter(Boolean)
+      setDrivers(mapped)
       setLoading(false)
     }
     load()
