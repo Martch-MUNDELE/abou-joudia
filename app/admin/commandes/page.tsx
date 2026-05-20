@@ -156,13 +156,16 @@ function DispatchModal({ order, onClose, onDispatched }: { order: any, onClose: 
       setErrorMsg('Aucune ligne mise à jour — vérifie les permissions (RLS).')
       return
     }
-    await supabase.from('order_deliveries').insert({
+    const { error: insErr } = await supabase.from('order_deliveries').insert({
       order_id: order.id,
       driver_id: selectedDriver,
       status: 'pending',
       amount_collected: order.total,
       delivery_fee: order.delivery_fee || 0,
     })
+    if (insErr) {
+      console.error('[order_deliveries insert failed]', insErr.message)
+    }
     setSaving(false)
     const driverInfo = driver ? { full_name: driver.full_name, phone: driver.phone } : null
     const formatDateLocal = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -351,6 +354,13 @@ function CommandesAdminInner() {
   }
 
   const applyStatusChange = (orderId: string, newStatus: string) => {
+    if (newStatus === 'livrée') {
+      supabase.from('order_deliveries')
+        .update({ status: 'delivered' })
+        .eq('order_id', orderId)
+        .eq('status', 'pending')
+        .then(({ error }) => { if (error) console.error('[order_deliveries update delivered]', error.message) })
+    }
     setOrders(prev => prev.filter(o => o.id !== orderId))
     setPendingStatuses(prev => { const n = { ...prev }; delete n[orderId]; return n })
     setTimeout(() => load(), 2000)

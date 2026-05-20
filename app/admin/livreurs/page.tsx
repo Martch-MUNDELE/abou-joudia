@@ -126,7 +126,7 @@ async function updateDriverStatus(id: string, status: string) {
     const { data: deliveries } = await supabase
       .from('order_deliveries')
       .select('driver_id, amount_collected, driver_fee_total')
-      .eq('status', 'delivered')
+      .in('status', ['pending', 'delivered'])
       .in('driver_id', driverIds)
     const kpis: Record<string, DriverKPIs> = {}
     for (const id of driverIds) {
