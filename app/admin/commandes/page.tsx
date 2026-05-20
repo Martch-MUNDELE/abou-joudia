@@ -208,7 +208,11 @@ function DispatchModal({ order, onClose, onDispatched }: { order: any, onClose: 
             {loading ? (
               <div style={{ color: '#7A6E58', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>Chargement...</div>
             ) : drivers.length === 0 ? (
-              <div style={{ color: '#FF6B6B', fontSize: 13, textAlign: 'center', padding: '20px 0', background: 'rgba(255,107,107,0.07)', borderRadius: 10, border: '1px solid rgba(255,107,107,0.15)' }}>Aucun livreur actif</div>
+              <div style={{ textAlign: 'center', padding: '32px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                <div style={{ fontSize: 36 }}>🛵</div>
+                <div style={{ color: '#C8B99A', fontSize: 15, fontWeight: 700, fontFamily: 'Playfair Display, serif' }}>Aucun livreur disponible</div>
+                <div style={{ color: 'rgba(200,185,154,0.6)', fontSize: 12, fontFamily: 'DM Sans, sans-serif' }}>Ouvrez une session livreur avant de dispatcher.</div>
+              </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
                 {drivers.map(d => (
