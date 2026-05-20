@@ -39,7 +39,7 @@ function cleanPhone(phone: string) {
   return p.startsWith('+') ? p : p.replace(/^0/, '212')
 }
 
-function buildWhatsAppUrl(order: any, slot: any, targetStatus: string, formatDate: (d: string) => string, shopAddress?: string, factureUrl?: string): string | null {
+function buildWhatsAppUrl(order: any, slot: any, targetStatus: string, formatDate: (d: string) => string, shopAddress?: string, factureUrl?: string, driverInfo?: { full_name: string; phone: string } | null): string | null {
   const name = order.customer_name
   let msg: string | null = null
 
@@ -63,7 +63,8 @@ function buildWhatsAppUrl(order: any, slot: any, targetStatus: string, formatDat
   } else if (targetStatus === 'en_preparation') {
     msg = `Bonjour ${name}, votre commande Abou Joudia est en cours de préparation. Encore un peu de patience !`
   } else if (targetStatus === 'en_livraison') {
-    msg = `Bonjour ${name}, votre commande Abou Joudia est en route ! Notre livreur arrive bientôt chez vous.`
+    const driverLine = driverInfo ? `\n\nVotre livreur : ${driverInfo.full_name} - Tel : ${driverInfo.phone}` : ''
+    msg = `Bonjour ${name}, votre commande Abou Joudia est en route ! Notre livreur arrive bientôt chez vous.${driverLine}`
   } else if (targetStatus === 'livrée') {
     const factureLine = factureUrl ? `\n\n🧾 Votre facture (72h) : ${factureUrl}` : ''
     msg = `Merci ${name} ! Votre commande a bien été livrée. Bon appétit et à très bientôt chez Abou Joudia !${factureLine}`
@@ -105,6 +106,126 @@ const IconCal = () => (
   </svg>
 )
 
+type DispatchedPayload = {
+  orderId: string
+  driverId: string
+  driverInfo: { full_name: string; phone: string } | null
+}
+
+function DispatchModal({ order, onClose, onDispatched }: { order: any, onClose: () => void, onDispatched: (info: DispatchedPayload) => void }) {
+  const [drivers, setDrivers] = useState<any[]>([])
+  const [selectedDriver, setSelectedDriver] = useState<string>('')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [errorMsg, setErrorMsg] = useState<string>('')
+  const [successWaUrl, setSuccessWaUrl] = useState<string | null>(null)
+  const [pendingPayload, setPendingPayload] = useState<DispatchedPayload | null>(null)
+  const [phase, setPhase] = useState<'form' | 'success'>('form')
+  const supabase = createClient()
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from('delivery_drivers')
+        .select('id, full_name, phone, vehicle_type, zone')
+        .eq('status', 'active')
+        .order('full_name')
+      setDrivers(data || [])
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  const handleConfirm = async () => {
+    if (!selectedDriver) return
+    setErrorMsg('')
+    setSaving(true)
+    const driver = drivers.find(d => d.id === selectedDriver)
+    const { data: updatedRows, error: updErr } = await supabase
+      .from('orders')
+      .update({ driver_id: selectedDriver })
+      .eq('id', order.id)
+      .select('id, driver_id')
+    if (updErr) {
+      setSaving(false)
+      setErrorMsg(`Mise à jour commande échouée : ${updErr.message}`)
+      return
+    }
+    if (!updatedRows || updatedRows.length === 0) {
+      setSaving(false)
+      setErrorMsg('Aucune ligne mise à jour — vérifie les permissions (RLS).')
+      return
+    }
+    setSaving(false)
+    const driverInfo = driver ? { full_name: driver.full_name, phone: driver.phone } : null
+    const formatDateLocal = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+    const waUrl = buildWhatsAppUrl(order, null, 'en_livraison', formatDateLocal, undefined, undefined, driverInfo)
+    const dispatched: DispatchedPayload = { orderId: order.id, driverId: selectedDriver, driverInfo }
+    setPendingPayload(dispatched)
+    setSuccessWaUrl(waUrl)
+    setPhase('success')
+  }
+
+  const finishDispatch = () => {
+    sendStatusBeacon(order.id, 'en_livraison')
+    if (pendingPayload) onDispatched(pendingPayload)
+    onClose()
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={phase === 'success' ? finishDispatch : onClose}>
+      <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.2)', borderRadius: 16, padding: 24, width: '100%', maxWidth: 420, fontFamily: 'DM Sans, sans-serif' }} onClick={e => e.stopPropagation()}>
+        <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 18, fontWeight: 800, color: '#F5EDD6', marginBottom: 6 }}>{phase === 'success' ? 'Livreur dispatché' : 'Dispatcher vers un livreur'}</div>
+        <div style={{ fontSize: 12, color: '#C8B99A', marginBottom: 20 }}>Commande #{order.id.slice(0,8).toUpperCase()} - {order.customer_name} - {order.total.toFixed(2)} DH</div>
+        {phase === 'success' ? (
+          <>
+            <div style={{ marginBottom: 20, padding: '12px 14px', borderRadius: 10, background: 'rgba(91,197,122,0.08)', border: '1px solid rgba(91,197,122,0.25)', color: '#5BC57A', fontSize: 12, fontFamily: 'DM Sans, sans-serif' }}>Commande dispatchée. Prévenez le client par WhatsApp avec les infos du livreur.</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {successWaUrl && (
+                <a
+                  href={successWaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={finishDispatch}
+                  style={{ display: 'block', textAlign: 'center', padding: '12px 0', borderRadius: 50, background: '#25D366', color: '#0A0804', fontSize: 13, fontWeight: 700, textDecoration: 'none', fontFamily: 'DM Sans, sans-serif' }}
+                >Envoyer message WhatsApp au client</a>
+              )}
+              <button onClick={finishDispatch} style={{ padding: '10px 0', borderRadius: 50, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#C8B99A', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Fermer</button>
+            </div>
+          </>
+        ) : (
+          <>
+            {loading ? (
+              <div style={{ color: '#7A6E58', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>Chargement...</div>
+            ) : drivers.length === 0 ? (
+              <div style={{ color: '#FF6B6B', fontSize: 13, textAlign: 'center', padding: '20px 0', background: 'rgba(255,107,107,0.07)', borderRadius: 10, border: '1px solid rgba(255,107,107,0.15)' }}>Aucun livreur actif</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+                {drivers.map(d => (
+                  <button key={d.id} onClick={() => setSelectedDriver(d.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderRadius: 10, border: `1px solid ${selectedDriver === d.id ? 'rgba(56,182,255,0.5)' : 'rgba(255,255,255,0.08)'}`, background: selectedDriver === d.id ? 'rgba(56,182,255,0.08)' : 'rgba(255,255,255,0.02)', cursor: 'pointer', textAlign: 'left' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: selectedDriver === d.id ? '#38B6FF' : '#F5EDD6' }}>{d.full_name}</div>
+                      <div style={{ fontSize: 11, color: '#C8B99A', marginTop: 2 }}>{d.phone}</div>
+                    </div>
+                    {selectedDriver === d.id && <span style={{ color: '#38B6FF' }}>OK</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+            {errorMsg && (
+              <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 8, background: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.25)', color: '#FF6B6B', fontSize: 11, fontFamily: 'DM Sans, sans-serif' }}>{errorMsg}</div>
+            )}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={onClose} style={{ flex: 1, padding: '10px 0', borderRadius: 50, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#C8B99A', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Annuler</button>
+              <button onClick={handleConfirm} disabled={!selectedDriver || saving} style={{ flex: 2, padding: '10px 0', borderRadius: 50, border: 'none', background: selectedDriver && !saving ? '#38B6FF' : 'rgba(56,182,255,0.2)', color: selectedDriver && !saving ? '#0A0804' : 'rgba(56,182,255,0.4)', fontSize: 13, fontWeight: 700, cursor: selectedDriver && !saving ? 'pointer' : 'not-allowed', fontFamily: 'DM Sans, sans-serif' }}>{saving ? 'Enregistrement...' : 'Confirmer la livraison'}</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function CommandesAdminInner() {
   const [orders, setOrders] = useState<any[]>([])
   const searchParams = useSearchParams()
@@ -118,6 +239,9 @@ function CommandesAdminInner() {
   const [highlightId, setHighlightId] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
+  const [livreursEnabled, setLivreursEnabled] = useState(false)
+  const [dispatchOrder, setDispatchOrder] = useState<any | null>(null)
+  const [driverInfos, setDriverInfos] = useState<Record<string, { full_name: string; phone: string }>>({})
   const supabase = createClient()
 
   const load = async () => {
@@ -161,11 +285,25 @@ function CommandesAdminInner() {
         setSlots(map)
       }
     }
+
+    const driverIds = [...new Set(ordersData.filter((o: any) => o.driver_id).map((o: any) => o.driver_id as string))]
+    if (driverIds.length > 0) {
+      const { data: driverData } = await supabase.from('delivery_drivers').select('id, full_name, phone').in('id', driverIds)
+      if (driverData) {
+        setDriverInfos(prev => {
+          const map = { ...prev }
+          driverData.forEach((d: any) => { map[d.id] = { full_name: d.full_name, phone: d.phone } })
+          return map
+        })
+      }
+    }
   }
 
   useEffect(() => {
     supabase.from('settings').select('value').eq('key', 'delivery_shop_address').single()
       .then(({ data }) => { if (data) setShopAddress(data.value || '') })
+    supabase.from('settings').select('value').eq('key', 'module_livreurs').single()
+      .then(({ data }) => { setLivreursEnabled(data?.value === 'true' || data?.value === true) })
   }, [])
 
   useEffect(() => {
@@ -211,10 +349,21 @@ function CommandesAdminInner() {
     setTimeout(() => load(), 2000)
   }
 
+  const handleDispatched = (info: DispatchedPayload) => {
+    setOrders(prev => prev.map(o => o.id === info.orderId ? { ...o, driver_id: info.driverId } : o))
+    if (info.driverInfo) {
+      setDriverInfos(prev => ({ ...prev, [info.driverId]: info.driverInfo! }))
+    }
+    setTimeout(() => load(), 2000)
+  }
+
   const formatDate = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto' }}>
+      {dispatchOrder && (
+        <DispatchModal order={dispatchOrder} onClose={() => setDispatchOrder(null)} onDispatched={handleDispatched} />
+      )}
       <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 900, color: '#F5EDD6', marginBottom: 24 }}>
         Commandes
       </h1>
@@ -246,6 +395,7 @@ function CommandesAdminInner() {
           const sc = STATUS_COLORS[order.status] || STATUS_COLORS['nouvelle']
           const transitions = STATUS_TRANSITIONS[order.status] || []
           const pending = pendingStatuses[order.id] || ''
+          const showDriverFlow = livreursEnabled && order.status === 'en_preparation' && order.delivery_mode !== 'pickup'
           return (
             <div key={order.id} id={`order-${order.id}`} style={{ background: '#131009', border: highlightId === order.id ? '2px solid #F5C842' : '1px solid rgba(232,160,32,0.1)', borderRadius: 16, padding: '18px 20px', transition: 'border 0.3s', boxShadow: highlightId === order.id ? '0 0 20px rgba(245,200,66,0.2)' : 'none' }}>
 
@@ -305,58 +455,80 @@ function CommandesAdminInner() {
               </div>
 
               {/* STATUT */}
-              <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 11, color: '#7A6E58', fontFamily: 'DM Sans, sans-serif' }}>Statut</span>
-                  {transitions.length > 0 ? (
-                    <div style={{ position: 'relative' }}>
-                      <select
-                        value={pending}
-                        onChange={e => {
-                          const newStatus = e.target.value
-                          setPendingStatuses(prev => ({ ...prev, [order.id]: newStatus }))
-                          if (newStatus === 'livrée') prefetchFactureUrl(order.id)
-                        }}
-                        style={{ background: '#1A1510', border: '1px solid rgba(232,160,32,0.25)', color: pending ? (STATUS_COLORS[pending]?.color || '#E8A020') : '#7A6E58', borderRadius: 8, padding: '7px 32px 7px 12px', fontSize: 12, fontWeight: 700, outline: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', appearance: 'none', WebkitAppearance: 'none' }}
-                      >
-                        <option value="" disabled style={{ background: '#131009', color: '#7A6E58' }}>— Changer statut —</option>
-                        {transitions.map(s => (
-                          <option key={s} value={s} style={{ background: '#131009', color: '#F5EDD6' }}>{STATUS_LABELS[s]}</option>
-                        ))}
-                      </select>
-                      <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: pending ? (STATUS_COLORS[pending]?.color || '#E8A020') : '#7A6E58', fontSize: 10 }}>▾</span>
-                    </div>
+              {showDriverFlow ? (
+                <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  {!order.driver_id ? (
+                    <button onClick={() => setDispatchOrder(order)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 50, border: '1px solid rgba(56,182,255,0.35)', background: 'rgba(56,182,255,0.1)', color: '#38B6FF', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+                      🛵 Sélectionner un livreur
+                    </button>
                   ) : (
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 50, background: sc.bg, color: sc.color, border: `1px solid ${sc.border}` }}>{STATUS_LABELS[order.status]}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 12, color: '#38B6FF', fontWeight: 700, fontFamily: 'DM Sans, sans-serif' }}>
+                        🛵 {driverInfos[order.driver_id]?.full_name || 'Livreur assigné'}
+                      </span>
+                      {driverInfos[order.driver_id]?.phone && (
+                        <a href={`https://wa.me/${cleanPhone(driverInfos[order.driver_id].phone)}`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 50, border: '1px solid rgba(37,211,102,0.35)', background: 'rgba(37,211,102,0.08)', color: '#25D366', textDecoration: 'none', fontSize: 11, fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}>
+                          <IconChat /> WA Livreur
+                        </a>
+                      )}
+                    </div>
                   )}
                 </div>
-                {pending && pending !== order.status && (() => {
-                  const btnStyle = { marginTop: 10, display: 'inline-block', float: 'right' as const, background: '#25D366', color: '#0A0804', borderRadius: 50, padding: '6px 16px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', textDecoration: 'none', border: 'none' }
-                  const waUrl = buildWhatsAppUrl(
-                    order,
-                    slots[order.slot_id] ?? null,
-                    pending,
-                    formatDate,
-                    shopAddress,
-                    pending === 'livrée' ? factureUrls[order.id] : undefined
-                  )
-                  if (!waUrl) return null
-                  return (
-                    <a
-                      href={waUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        sendStatusBeacon(order.id, pending)
-                        applyStatusChange(order.id, pending)
-                      }}
-                      style={btnStyle}
-                    >
-                      {WA_BUTTON_LABELS[pending] || 'Envoyer message WhatsApp'}
-                    </a>
-                  )
-                })()}
-              </div>
+              ) : (
+                <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 11, color: '#7A6E58', fontFamily: 'DM Sans, sans-serif' }}>Statut</span>
+                    {transitions.length > 0 ? (
+                      <div style={{ position: 'relative' }}>
+                        <select
+                          value={pending}
+                          onChange={e => {
+                            const newStatus = e.target.value
+                            setPendingStatuses(prev => ({ ...prev, [order.id]: newStatus }))
+                            if (newStatus === 'livrée') prefetchFactureUrl(order.id)
+                          }}
+                          style={{ background: '#1A1510', border: '1px solid rgba(232,160,32,0.25)', color: pending ? (STATUS_COLORS[pending]?.color || '#E8A020') : '#7A6E58', borderRadius: 8, padding: '7px 32px 7px 12px', fontSize: 12, fontWeight: 700, outline: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', appearance: 'none', WebkitAppearance: 'none' }}
+                        >
+                          <option value="" disabled style={{ background: '#131009', color: '#7A6E58' }}>— Changer statut —</option>
+                          {transitions.map(s => (
+                            <option key={s} value={s} style={{ background: '#131009', color: '#F5EDD6' }}>{STATUS_LABELS[s]}</option>
+                          ))}
+                        </select>
+                        <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: pending ? (STATUS_COLORS[pending]?.color || '#E8A020') : '#7A6E58', fontSize: 10 }}>▾</span>
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 50, background: sc.bg, color: sc.color, border: `1px solid ${sc.border}` }}>{STATUS_LABELS[order.status]}</span>
+                    )}
+                  </div>
+                  {pending && pending !== order.status && (() => {
+                    const btnStyle = { marginTop: 10, display: 'inline-block', float: 'right' as const, background: '#25D366', color: '#0A0804', borderRadius: 50, padding: '6px 16px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', textDecoration: 'none', border: 'none' }
+                    const waUrl = buildWhatsAppUrl(
+                      order,
+                      slots[order.slot_id] ?? null,
+                      pending,
+                      formatDate,
+                      shopAddress,
+                      pending === 'livrée' ? factureUrls[order.id] : undefined,
+                      livreursEnabled && order.driver_id ? (driverInfos[order.driver_id] ?? null) : null
+                    )
+                    if (!waUrl) return null
+                    return (
+                      <a
+                        href={waUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => {
+                          sendStatusBeacon(order.id, pending)
+                          applyStatusChange(order.id, pending)
+                        }}
+                        style={btnStyle}
+                      >
+                        {WA_BUTTON_LABELS[pending] || 'Envoyer message WhatsApp'}
+                      </a>
+                    )
+                  })()}
+                </div>
+              )}
 
             </div>
           )

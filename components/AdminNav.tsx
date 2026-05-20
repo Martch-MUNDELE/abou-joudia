@@ -30,6 +30,8 @@ const NAV_GROUPS = [
     label: 'CONFIGURATION',
     links: [
       { href: '/admin/menu', label: 'Menu' },
+      { href: '/admin/livreurs', label: 'Livreurs' },
+
       { href: '/admin/livraison', label: 'Livraison', sub: [
         { label: 'Mode', anchor: 'mode', url: '/admin/livraison?tab=mode' },
         { label: 'Position boutique', anchor: 'position', url: '/admin/livraison?tab=position' },
@@ -67,6 +69,8 @@ export default function AdminNav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [expandedHref, setExpandedHref] = useState<string | null>(null)
   const [toast, setToast] = useState<{ name: string; total: number } | null>(null)
+  const [livreursEnabled, setLivreursEnabled] = useState(false)
+
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const prevOrderIds = useRef<Set<string>>(new Set())
   const isFirstLoad = useRef(true)
@@ -84,6 +88,7 @@ export default function AdminNav() {
       data?.forEach((s: any) => {
         if (s.key === 'site_name') setSiteName(s.value)
         if (s.key === 'site_logo') setSiteLogo(s.value || '')
+        if (s.key === 'module_livreurs') setLivreursEnabled(s.value === 'true')
       })
     })
 
@@ -168,7 +173,7 @@ export default function AdminNav() {
   const close = () => { setMenuOpen(false); setExpandedHref(null) }
 
   const allGroups = [
-    ...NAV_GROUPS,
+    ...NAV_GROUPS.map(g => ({ ...g, links: g.links.filter((l: any) => l.href !== '/admin/livreurs' || livreursEnabled) })),
     { label: 'FACTURATION', links: [{ href: '/admin/abonnement', label: 'Mon abonnement' }] },
     ...(isSuperAdmin
       ? [{ label: 'ADMIN', links: [{ href: '/admin/superadmin', label: 'Super Admin', sub: [
