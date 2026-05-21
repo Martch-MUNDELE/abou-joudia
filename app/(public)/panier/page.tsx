@@ -422,7 +422,7 @@ export default function PanierPage() {
   const canProceedFromInfo = !!(
     form.name &&
     form.phone &&
-    (isPickup || (form.address && (!deliveryLoaded || !deliveryResult || deliveryResult.inZone))) &&
+    (isPickup || (form.address && form.lat !== null && form.lng !== null && (!deliveryLoaded || !deliveryResult || deliveryResult.inZone))) &&
     !(isBelowMinOrder && !isPickup)
   )
 
