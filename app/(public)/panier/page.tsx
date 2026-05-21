@@ -371,7 +371,7 @@ export default function PanierPage() {
           lng: finalLng,
           geo_address: finalGeoAddress,
           slot_id: selectedSlot,
-          items: items.map(i => ({ product_id: i.product.id, product_name: i.product.name, quantity: i.quantity, unit_price: i.product.price, selected_variants: i.selectedVariants ?? null })),
+          items: items.map(i => ({ product_id: i.product.id, product_name: i.product.name, quantity: i.quantity, unit_price: (i.product.discount ?? 0) > 0 ? Math.round(i.product.price * (1 - (i.product.discount ?? 0) / 100)) : i.product.price, selected_variants: i.selectedVariants ?? null })),
           total: total() + fee,
           delivery_mode: chosenMode,
           delivery_fee: fee,
