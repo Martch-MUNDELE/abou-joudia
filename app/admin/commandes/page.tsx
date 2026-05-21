@@ -112,7 +112,7 @@ type DispatchedPayload = {
   driverInfo: { full_name: string; phone: string } | null
 }
 
-function DispatchModal({ order, onClose, onDispatched }: { order: any, onClose: () => void, onDispatched: (info: DispatchedPayload) => void }) {
+function DispatchModal({ order, zones, onClose, onDispatched }: { order: any, zones: any[], onClose: () => void, onDispatched: (info: DispatchedPayload) => void }) {
   const [drivers, setDrivers] = useState<any[]>([])
   const [selectedDriver, setSelectedDriver] = useState<string>('')
   const [loading, setLoading] = useState(true)
@@ -156,12 +156,20 @@ function DispatchModal({ order, onClose, onDispatched }: { order: any, onClose: 
       setErrorMsg('Aucune ligne mise à jour — vérifie les permissions (RLS).')
       return
     }
+    let driver_fee_total = 0
+    if (order.delivery_fee > 0) {
+      driver_fee_total = order.delivery_fee
+    } else if (order.delivery_fee === 0) {
+      const zone = zones.find((z: any) => order.distance_km >= z.min_km && order.distance_km < z.max_km)
+      driver_fee_total = zone ? zone.price : 0
+    }
     const { error: insErr } = await supabase.from('order_deliveries').insert({
       order_id: order.id,
       driver_id: selectedDriver,
       status: 'pending',
       amount_collected: order.total,
       delivery_fee: order.delivery_fee || 0,
+      driver_fee_total,
     })
     if (insErr) {
       console.error('[order_deliveries insert failed]', insErr.message)
@@ -256,6 +264,7 @@ function CommandesAdminInner() {
   const [livreursEnabled, setLivreursEnabled] = useState(false)
   const [dispatchOrder, setDispatchOrder] = useState<any | null>(null)
   const [driverInfos, setDriverInfos] = useState<Record<string, { full_name: string; phone: string }>>({})
+  const [deliveryZones, setDeliveryZones] = useState<any[]>([])
   const supabase = createClient()
 
   const load = async () => {
@@ -299,6 +308,9 @@ function CommandesAdminInner() {
         setSlots(map)
       }
     }
+
+    const { data: zonesData } = await supabase.from('delivery_zones').select('*').eq('active', true).order('min_km')
+    if (zonesData) setDeliveryZones(zonesData)
 
     const driverIds = [...new Set(ordersData.filter((o: any) => o.driver_id).map((o: any) => o.driver_id as string))]
     if (driverIds.length > 0) {
@@ -383,7 +395,7 @@ function CommandesAdminInner() {
   return (
     <div style={{ maxWidth: 720, margin: '0 auto' }}>
       {dispatchOrder && (
-        <DispatchModal order={dispatchOrder} onClose={() => setDispatchOrder(null)} onDispatched={handleDispatched} />
+        <DispatchModal order={dispatchOrder} zones={deliveryZones} onClose={() => setDispatchOrder(null)} onDispatched={handleDispatched} />
       )}
       <h1 style={{ fontFamily: 'Playfair Display, serif', fontSize: 26, fontWeight: 900, color: '#F5EDD6', marginBottom: 24 }}>
         Commandes
