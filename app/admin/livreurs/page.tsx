@@ -124,16 +124,21 @@ async function updateDriverStatus(id: string, status: string) {
     })
     setDrivers(driversList)
     const driverIds = driversRaw.map((d: any) => d.id)
-    const { data: deliveries } = await supabase
-      .from('order_deliveries')
-      .select('driver_id, amount_collected, driver_fee_total')
-      .in('status', ['pending', 'delivered'])
-      .in('driver_id', driverIds)
     const kpis: Record<string, DriverKPIs> = {}
     for (const id of driverIds) {
-      const dd = (deliveries || []).filter((d: any) => d.driver_id === id)
       const openSess = sessionMap[id] || null
-      const openingCashCurrent = openSess ? (openSess.opening_cash || 0) : 0
+      if (!openSess) {
+        kpis[id] = { deliveries: 0, caCollected: 0, totalToRemit: 0 }
+        continue
+      }
+      const { data: driverDels } = await supabase
+        .from('order_deliveries')
+        .select('driver_id, amount_collected, driver_fee_total')
+        .in('status', ['pending', 'delivered'])
+        .eq('driver_id', id)
+        .gte('created_at', openSess.started_at)
+      const dd = driverDels || []
+      const openingCashCurrent = openSess.opening_cash || 0
       const caCollected = dd.reduce((sum: number, d: any) => sum + (d.amount_collected || 0), 0)
       const sumDriverFee = dd.reduce((sum: number, d: any) => sum + (d.driver_fee_total || 0), 0)
       kpis[id] = {
