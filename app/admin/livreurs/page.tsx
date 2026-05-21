@@ -100,6 +100,7 @@ export default function LivreursPage() {
   const [expandedDeliveries, setExpandedDeliveries] = useState<Set<string>>(new Set())
   const [settleLoading, setSettleLoading] = useState<string | null>(null)
   const [driverDailyCA, setDriverDailyCA] = useState<Record<string, number>>({})
+  const [driverDailyWin, setDriverDailyWin] = useState<Record<string, number>>({})
 
 async function updateDriverStatus(id: string, status: string) {
   await supabase.from('delivery_drivers').update({ status: status }).eq('id', id)
@@ -151,21 +152,24 @@ async function updateDriverStatus(id: string, status: string) {
       }
     }
     setDriverKPIs(kpis)
-    // Daily CA query
+    // Daily CA + WIN query (last 24h)
     const now = new Date()
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
     const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
     const dailyCA: Record<string, number> = {}
+    const dailyWin: Record<string, number> = {}
     for (const id of driverIds) {
       const { data: dayDels } = await supabase
         .from('order_deliveries')
-        .select('amount_collected')
+        .select('amount_collected, driver_fee_total')
         .eq('driver_id', id)
         .gte('created_at', startOfDay.toISOString())
         .lte('created_at', endOfDay.toISOString())
       dailyCA[id] = (dayDels || []).reduce((sum: number, d: any) => sum + (d.amount_collected || 0), 0)
+      dailyWin[id] = (dayDels || []).reduce((sum: number, d: any) => sum + (d.driver_fee_total || 0), 0)
     }
     setDriverDailyCA(dailyCA)
+    setDriverDailyWin(dailyWin)
     setLoading(false)
   }
 
@@ -441,7 +445,7 @@ async function updateDriverStatus(id: string, status: string) {
                       {kpi && (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginTop: 12, background: 'rgba(0,0,0,0.15)', borderRadius: 10, padding: '10px 12px' }}>
                           <div><div style={{ fontSize: 9, color: '#7A6E58', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Livraisons</div><div style={{ fontSize: 16, color: '#F5C842', fontWeight: 700 }}>{kpi.deliveries}</div></div>
-                          <div><div style={{ fontSize: 9, color: '#7A6E58', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>WIN</div><div style={{ fontSize: 13, color: '#5BC57A', fontWeight: 700 }}>{kpi.win.toFixed(0)} {currency}</div></div>
+                          <div><div style={{ fontSize: 9, color: '#7A6E58', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>WIN</div><div style={{ fontSize: 13, color: '#5BC57A', fontWeight: 700 }}>{(driverDailyWin[driver.id] || 0).toFixed(0)} {currency}</div></div>
                           <div><div style={{ fontSize: 9, color: '#7A6E58', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>A remettre</div><div style={{ fontSize: 13, color: kpi.totalToRemit > 0 ? '#FF6B6B' : '#7A6E58', fontWeight: 700 }}>{kpi.totalToRemit.toFixed(0)} {currency}</div></div>
                           <div><div style={{ fontSize: 9, color: '#7A6E58', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>CA/j.</div><div style={{ fontSize: 13, color: '#C8B99A', fontWeight: 700 }}>{(driverDailyCA[driver.id] || 0).toFixed(0)} {currency}</div></div>
                         </div>
