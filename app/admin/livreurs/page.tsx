@@ -298,6 +298,7 @@ async function updateDriverStatus(id: string, status: string) {
       .select('amount_collected')
       .eq('driver_id', closeDriver.id)
       .in('status', ['pending', 'delivered'])
+      .gte('created_at', closeDriver.open_session.started_at)
     const collected_cash = (deliveries || []).reduce((sum: number, d: any) => sum + (d.amount_collected || 0), 0)
     const opening_cash = closeDriver.open_session.opening_cash || 0
     const driver_fee_total = closeDriver.open_session.driver_fee_total || 0
