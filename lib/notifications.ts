@@ -3,7 +3,7 @@ import { Resend } from 'resend'
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function sendOrderNotification(order: any, currency = 'DH', siteName = 'NOM_CLIENT', adminEmail?: string) {
-  const standardItems = order.items?.filter((i: any) => !i.isVip) ?? order.items ?? []
+  const standardItems = order.items ?? []
 
   const itemsHtml = standardItems.map((i: any) => `
     <tr>
@@ -15,17 +15,6 @@ export async function sendOrderNotification(order: any, currency = 'DH', siteNam
   const deliveryFee = order.delivery_fee ?? 0
   const standardTotal = standardItems.reduce((s: number, i: any) => s + i.unit_price * i.quantity, 0)
   const totalWithDelivery = standardTotal + deliveryFee
-
-  const vipItems = order.vipItems ?? []
-  const vipTotal = order.vipTotal ?? 0
-  const vipHtml = vipItems.length > 0 ? `
-    <tr>
-      <td colspan="2" style="padding:12px 16px;border-bottom:1px solid rgba(245,200,66,0.1)">
-        <span style="background:rgba(245,200,66,0.15);color:#F5C842;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:0.5px">VIP</span>
-        <span style="color:#C8B99A;font-size:13px;margin-left:8px">${vipItems.length} article(s) — ${vipTotal.toFixed(2)} ${currency}</span>
-      </td>
-    </tr>` : ''
-
   const mapsBtn = order.lat && order.lng
     ? `<a href="https://www.google.com/maps?q=${order.lat},${order.lng}" style="display:inline-block;background:linear-gradient(135deg,#F5C842,#E8A020);color:#080603;padding:11px 22px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px;margin:16px 0">Voir sur Google Maps</a>`
     : ''
@@ -81,7 +70,6 @@ export async function sendOrderNotification(order: any, currency = 'DH', siteNam
       <table style="width:100%;border-collapse:collapse">
         <tbody>
           ${itemsHtml}
-          ${vipHtml}
           ${deliveryFee > 0 ? `<tr><td style="padding:12px 16px;color:#C8B99A;font-size:13px">Livraison</td><td style="padding:12px 16px;color:#C8B99A;font-size:13px;text-align:right">${deliveryFee.toFixed(2)} ${currency}</td></tr>` : ''}
         </tbody>
         <tfoot>
