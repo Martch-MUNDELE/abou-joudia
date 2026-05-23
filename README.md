@@ -98,28 +98,31 @@ Aucun bug documenté corrigé dans cette session.
 
 ---
 
-## Session — 2026-05-15 : Icônes Lucide React — Page admin menu
+## Session — 2026-05-15 : Fix pickup mode — page admin commandes
 
-### Travaux en cours (non commités)
+### Travaux validés
 
-**Fichier modifié :** `app/admin/menu/page.tsx`
-**Statut :** Modification non commitée — build non vérifié
+**Commit :** `ff441c8`
+**Branche :** `main`
+**Fichier modifié :** page admin commandes
 
-- Intégration d'une bibliothèque d'icônes Lucide React étendue dans la page admin menu.
-- Icônes importées : `UtensilsCrossed`, `ChefHat`, `Pizza`, `Sandwich`, `Coffee`, `Wine`, `Beer`, `Soup`, `Salad`, `Beef`, `Fish`, `Egg`, `Cookie`, `Cake`, `IceCream`, `Candy`, `Carrot`, `Wheat`, `Flame`, `Snowflake`, `Droplets`, `Star`, `Heart`, `Leaf`, `Sun`, `Moon`, `Clock`, `MapPin`, `ShoppingBag`, `ShoppingCart`, `Package`, `Tag`, `Percent`, `Gift`, `Award`, `Zap`, `Sparkles`, `ThumbsUp`, etc.
-- Objectif fonctionnel à confirmer avec Martial : sélecteur d'icône par produit/catégorie (hypothèse).
-- Aucun commit validé sur cette session — diff vide, log vide.
+- Ajout `WA_BUTTON_LABELS_PICKUP` : libellé "Envoyer message Retrait confirmé" pour status `livrée` en mode pickup.
+- Message WhatsApp `livrée` conditionnel : détecte `order.delivery_mode === 'pickup'` → envoie "a bien été retirée" au lieu de "a bien été livrée".
+- Transitions statut pickup : suppression de l'étape `en_livraison` pour les commandes pickup (remplacée directement par `livrée`).
+- Labels select admin : affichage correct selon mode pickup/livraison.
+- Fix aligné avec le même correctif déjà appliqué sur `black-deew`.
 
 ### Dette technique
 
-- Page menu admin en cours de modification non commitée — statut inconnu (build non vérifié).
-- Import massif d'icônes Lucide sans confirmation que le bundle est optimisé (tree-shaking à vérifier).
-- Documentation maître non mise à jour (toujours v6.5 — 14 mai 2026).
+- `package-lock.json` modifié dans le commit — vérifier si c'est intentionnel ou bruit de diff.
+- Doc maître (ARIA_DOC) en v6.5 du 14 mai 2026 — non mise à jour depuis la session livreurs ni ce fix pickup.
+- Vérifier que `WA_BUTTON_LABELS_PICKUP` est effectivement utilisé dans le rendu (diff tronqué, utilisation non confirmée).
+- Template projet : s'assurer que le même fix a bien été propagé (mentionné dans la tâche mais non visible dans le diff).
 
 ### Prochaines étapes
 
-1. Valider le build local (`npm run dev` / `npm run build`) après modification `app/admin/menu/page.tsx`.
-2. Confirmer avec Martial l'objectif fonctionnel de l'ajout des icônes Lucide (sélecteur d'icône par produit/catégorie ?).
-3. Commiter uniquement après build vert et accord Martial.
-4. Mettre à jour la documentation maître (version, changelog, section Annexe A si nouveaux composants).
+1. Confirmer propagation du fix sur le **template projet** (second objectif de la session, non visible dans le diff fourni).
+2. Mettre à jour ARIA_DOC v6.6 : documenter le comportement pickup dans la section admin commandes.
+3. Tester en local les deux chemins (pickup / livraison) avant push prod.
+4. Vérifier l'utilisation de `WA_BUTTON_LABELS_PICKUP` dans le JSX complet (diff tronqué à 3000 chars).
 ```
