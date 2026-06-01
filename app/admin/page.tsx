@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/purity, react/no-unescaped-entities -- Legacy Abou Joudia lint baseline, à refactorer progressivement. */
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { isBusinessActiveOrder } from '@/lib/order-status'
 import type { Order } from '@/lib/types'
 
 function timeAgo(dateStr: string): string {
@@ -107,22 +108,22 @@ export default function AdminDashboard() {
   const today     = new Date().toISOString().slice(0, 10)
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
 
-  const todayO = orders.filter(o => o.created_at.slice(0, 10) === today)
-  const yestO  = orders.filter(o => o.created_at.slice(0, 10) === yesterday)
+  const businessOrders = orders.filter(isBusinessActiveOrder)
+  const todayO = businessOrders.filter(o => o.created_at.slice(0, 10) === today)
+  const yestO  = businessOrders.filter(o => o.created_at.slice(0, 10) === yesterday)
   const caToday = todayO.reduce((s, o) => s + (o.total || 0), 0)
   const avgToday = todayO.length > 0 ? caToday / todayO.length : 0
   const caYest  = yestO.reduce((s, o) => s + (o.total || 0), 0)
 
-  const nouvelles   = orders.filter(o => o.status === 'nouvelle')
-  const livrees     = orders.filter(o => o.status === 'livrée')
-  const annulees    = orders.filter(o => o.status === 'annulée')
-  const validTotal  = orders.length - annulees.length
+  const nouvelles   = businessOrders.filter(o => o.status === 'nouvelle')
+  const livrees     = businessOrders.filter(o => o.status === 'livrée')
+  const validTotal  = businessOrders.length
   const taux        = validTotal > 0 ? Math.round((livrees.length / validTotal) * 100) : 0
 
   const chartData = Array.from({ length: 7 }, (_, i) => {
     const d   = new Date(Date.now() - (6 - i) * 86400000)
     const key = d.toISOString().slice(0, 10)
-    const ca  = orders.filter(o => o.created_at.slice(0, 10) === key).reduce((s, o) => s + (o.total || 0), 0)
+    const ca  = businessOrders.filter(o => o.created_at.slice(0, 10) === key).reduce((s, o) => s + (o.total || 0), 0)
     return { label: d.toLocaleDateString('fr-FR', { weekday: 'short' }), total: ca }
   })
   const maxCA = Math.max(...chartData.map(d => d.total), 1)
@@ -358,7 +359,7 @@ export default function AdminDashboard() {
             const startMs = endMs - 7 * 86400000
             const start = new Date(startMs).toISOString().slice(0, 10)
             const end = new Date(endMs).toISOString().slice(0, 10)
-            const ca = orders.filter(o => {
+            const ca = businessOrders.filter(o => {
               const d = o.created_at.slice(0, 10)
               return d >= start && d < end
             }).reduce((s, o) => s + (o.total || 0), 0)
