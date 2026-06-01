@@ -8,6 +8,9 @@ import FeaturesBar from '@/components/FeaturesBar'
 import SlotPicker from '@/components/SlotPicker'
 import PhoneInput from '@/components/PhoneInput'
 import LeafletMap from '@/components/LeafletMap'
+import CartInvoiceSummary from '@/components/cart/CartInvoiceSummary'
+import type { TaxSettings } from '@/lib/types/tax'
+import { calculateOrderTaxSummary, getTaxSettingsFromRows } from '@/lib/tax'
 import type { Product } from '@/lib/types'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -117,6 +120,7 @@ export default function PanierPage() {
   })
   const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([])
   const [deliveryLoaded, setDeliveryLoaded] = useState(false)
+  const [taxSettings, setTaxSettings] = useState<TaxSettings>({ taxEnabled: false, taxRate: 0 })
   const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([])
   const wasAutoSwitchedRef = useRef(false)
   const initialCalcDoneRef = useRef(false)
@@ -145,10 +149,12 @@ export default function PanierPage() {
 
   useEffect(() => {
     async function loadDelivery() {
-      const [{ data: settingsData }, { data: zonesData }] = await Promise.all([
+      const [{ data: settingsData }, { data: zonesData }, { data: taxData }] = await Promise.all([
         supabase.from('settings').select('key, value').like('key', 'delivery_%'),
         supabase.from('delivery_zones').select('*').eq('active', true).order('min_km', { ascending: true }),
+        supabase.from('settings').select('key, value').in('key', ['tax_enabled', 'tax_rate']),
       ])
+      setTaxSettings(getTaxSettingsFromRows(taxData))
       if (settingsData) {
         const map: Record<string, string> = {}
         settingsData.forEach((s: any) => { map[s.key] = s.value })
@@ -417,6 +423,24 @@ export default function PanierPage() {
 
   const deliveryFee = isPickup ? 0 : step === 'cart' ? (step1LiveFeeResult ?? 0) : (deliveryResult?.fee ?? 0)
   const grandTotal = total() + deliveryFee
+
+  const taxLines = items.map(item => ({
+    quantity: item.quantity,
+    unit_price: (item.product.discount ?? 0) > 0
+      ? Math.ceil(item.product.price * (1 - (item.product.discount ?? 0) / 100))
+      : item.product.price,
+    invoiceable: true,
+    taxable: true,
+  }))
+  const taxSummary = calculateOrderTaxSummary(taxLines, taxSettings, {
+    deliveryFee,
+    deliveryInvoiceable: true,
+    deliveryTaxable: true,
+  })
+  const invoiceableDeliveryFee = deliveryFee
+  const invoiceableProductsTtc = Math.max(0, taxSummary.ttc - invoiceableDeliveryFee)
+  const showTaxBreakdown = taxSettings.taxEnabled && taxSettings.taxRate > 0 && taxSummary.tax > 0
+
   const showModeSelector = deliverySettings.mode === 'all'
   const showAddressSection = !isPickup
   const canProceedFromInfo = !!(
@@ -514,20 +538,20 @@ export default function PanierPage() {
           </div>
 
           {/* Récapitulatif livraison dans le panier */}
-          <div style={{ marginTop: 4 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '11px 0', borderBottom: '1px solid rgba(232,160,32,0.06)', fontSize: 13, color: '#C8B99A' }}>
-              <span>Sous-total produits</span>
-              <span style={{ color: '#F5EDD6', fontWeight: 600 }}>{total().toFixed(2)} DH</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '11px 0', borderBottom: '1px solid rgba(232,160,32,0.06)', fontSize: 13, color: '#C8B99A' }}>
-              <span>Frais de livraison</span>
-              <span style={{ color: step1FeeColor, fontWeight: 600 }}>{step1FeeText}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '13px 0', fontSize: 15, fontWeight: 800, fontFamily: 'DM Sans, sans-serif' }}>
-              <span style={{ color: '#C8B99A' }}>Total</span>
-              <span style={{ color: '#F5C842' }}>{grandTotal.toFixed(2)} DH</span>
-            </div>
-          </div>
+          <CartInvoiceSummary
+            mode="cart"
+            currency="DH"
+            totalProductsTtc={total()}
+            deliveryFee={deliveryFee}
+            deliveryLabel={step1FeeText}
+            deliveryTextColor={step1FeeColor}
+            grandTotal={grandTotal}
+            showTaxBreakdown={showTaxBreakdown}
+            taxRate={taxSettings.taxRate}
+            taxSummary={taxSummary}
+            invoiceableProductsTtc={invoiceableProductsTtc}
+            invoiceableDeliveryFee={invoiceableDeliveryFee}
+          />
 
           {/* Badge livraison gratuite */}
           {deliverySettings.freeAbove > 0 && deliverySettings.mode !== 'pickup_only' && subTotal < deliverySettings.minOrder && subTotal < deliverySettings.freeAbove && (
