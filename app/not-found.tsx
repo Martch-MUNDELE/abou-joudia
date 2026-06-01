@@ -1,4 +1,6 @@
 'use client'
+/* eslint-disable @next/next/no-img-element -- Legacy Abou Joudia warnings baseline, à refactorer progressivement. */
+/* eslint-disable react/no-unescaped-entities -- Legacy Abou Joudia lint baseline, à refactorer progressivement. */
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'

@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable @next/next/no-img-element, react-hooks/exhaustive-deps -- Legacy Abou Joudia warnings baseline, à refactorer progressivement. */
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {

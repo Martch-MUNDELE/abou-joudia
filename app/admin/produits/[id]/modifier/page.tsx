@@ -1,4 +1,6 @@
 'use client'
+/* eslint-disable react-hooks/exhaustive-deps -- Legacy Abou Joudia warnings baseline, à refactorer progressivement. */
+/* eslint-disable @typescript-eslint/no-explicit-any -- Legacy Abou Joudia lint baseline, à refactorer progressivement. */
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'

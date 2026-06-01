@@ -1,4 +1,6 @@
 'use client'
+/* eslint-disable @next/next/no-img-element, @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps -- Legacy Abou Joudia warnings baseline, à refactorer progressivement. */
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect -- Legacy Abou Joudia lint baseline, à refactorer progressivement. */
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'

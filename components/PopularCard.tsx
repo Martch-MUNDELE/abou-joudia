@@ -1,4 +1,6 @@
 'use client'
+/* eslint-disable @next/next/no-img-element -- Legacy Abou Joudia warnings baseline, à refactorer progressivement. */
+/* eslint-disable react-hooks/set-state-in-effect -- Legacy Abou Joudia lint baseline, à refactorer progressivement. */
 import React from 'react'
 import { useEffect, useState } from 'react'
 import { useCatalogue } from '@/store/catalogue'

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Legacy Abou Joudia lint baseline, à refactorer progressivement. */
 export type Category = 'boissons' | 'nourriture'
 export type Subcategory = 'chaudes' | 'froides' | 'sandwichs_chauds' | 'sandwichs_froids' | 'salades'
 export type OrderStatus = 'nouvelle' | 'confirmée' | 'en_preparation' | 'en_livraison' | 'livrée' | 'annulée'

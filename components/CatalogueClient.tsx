@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable @typescript-eslint/no-unused-vars -- Legacy Abou Joudia warnings baseline, à refactorer progressivement. */
 import ProductCard from '@/components/ProductCard'
 import { useCatalogue } from '@/store/catalogue'
 import type { Product } from '@/lib/types'

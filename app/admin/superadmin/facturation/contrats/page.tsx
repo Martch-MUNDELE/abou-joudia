@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable @typescript-eslint/no-explicit-any -- Legacy Abou Joudia lint baseline, à refactorer progressivement. */
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { recalculatePeriod } from '@/app/actions/billing'

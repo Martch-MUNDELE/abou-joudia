@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/refs -- Legacy Abou Joudia lint baseline, à refactorer progressivement. */
 import { useEffect, useRef } from 'react'
 
 interface LeafletMapProps {

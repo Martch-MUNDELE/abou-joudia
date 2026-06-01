@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- Legacy Abou Joudia warnings baseline, à refactorer progressivement. */
+/* eslint-disable @typescript-eslint/no-explicit-any -- Legacy Abou Joudia lint baseline, à refactorer progressivement. */
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)

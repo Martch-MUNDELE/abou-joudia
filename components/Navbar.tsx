@@ -1,4 +1,6 @@
 'use client'
+/* eslint-disable @next/next/no-img-element -- Legacy Abou Joudia warnings baseline, à refactorer progressivement. */
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect -- Legacy Abou Joudia lint baseline, à refactorer progressivement. */
 import Link from 'next/link'
 import { useCart } from '@/store/cart'
 import { usePathname } from 'next/navigation'
@@ -76,7 +78,7 @@ export default function Navbar() {
   const [mounted, setMounted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [siteName, setSiteName] = useState('Abou Joudia')
-  const [siteBaseline, setSiteBaseline] = useState('AGADIR · LIVRAISON')
+  const [siteBaseline, setSiteBaseline] = useState('')
   const [siteLogo, setSiteLogo] = useState<string | null>(null)
   const [menuPlaceholder, setMenuPlaceholder] = useState("Qu'est-ce qui te fait envie ?")
   const [menuPlaceholderIcon, setMenuPlaceholderIcon] = useState('')

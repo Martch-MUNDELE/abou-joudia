@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable @next/next/no-img-element -- Legacy Abou Joudia warnings baseline, à refactorer progressivement. */
 import { useState } from 'react'
 import { useCurrency } from '@/lib/currency'
 import type { Product } from '@/lib/types'

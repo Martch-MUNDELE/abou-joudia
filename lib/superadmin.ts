@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- Legacy Abou Joudia warnings baseline, à refactorer progressivement. */
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(

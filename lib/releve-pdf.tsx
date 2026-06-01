@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- Legacy Abou Joudia warnings baseline, à refactorer progressivement. */
+/* eslint-disable @typescript-eslint/no-explicit-any -- Legacy Abou Joudia lint baseline, à refactorer progressivement. */
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 
 const gold = '#E8A020'

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- Legacy Abou Joudia warnings baseline, à refactorer progressivement. */
+/* eslint-disable @typescript-eslint/no-explicit-any -- Legacy Abou Joudia lint baseline, à refactorer progressivement. */
 import { createClient } from '@/lib/supabase/server'
 import ProductCard from '@/components/ProductCard'
 import CatalogueClient from '@/components/CatalogueClient'

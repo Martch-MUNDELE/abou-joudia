@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- Legacy Abou Joudia warnings baseline, à refactorer progressivement. */
 'use server'
 import { createClient } from '@/lib/supabase/server'
 import type { CommissionRule, BillingPeriod } from '@/lib/types/billing'

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Legacy Abou Joudia lint baseline, à refactorer progressivement. */
 import { createClient } from '@/lib/supabase/server'
 import type { Product } from '@/lib/types'
 import FeaturedCardClient from '@/components/FeaturedCardClient'

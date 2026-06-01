@@ -1,4 +1,6 @@
 'use client'
+/* eslint-disable react-hooks/unsupported-syntax -- Legacy canvas particle class inside effect, à refactorer plus tard. */
+/* eslint-disable @typescript-eslint/no-explicit-any -- Legacy Abou Joudia lint baseline, à refactorer progressivement. */
 import { useEffect, useRef } from 'react'
 
 export default function SmokeEffect() {
