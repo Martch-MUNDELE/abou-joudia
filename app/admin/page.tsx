@@ -109,8 +109,9 @@ export default function AdminDashboard() {
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
 
   const businessOrders = orders.filter(isBusinessActiveOrder)
-  const todayO = businessOrders.filter(o => o.created_at.slice(0, 10) === today)
-  const yestO  = businessOrders.filter(o => o.created_at.slice(0, 10) === yesterday)
+  const deliveredBusinessOrders = businessOrders.filter(o => o.status === 'livrée')
+  const todayO = deliveredBusinessOrders.filter(o => o.created_at.slice(0, 10) === today)
+  const yestO  = deliveredBusinessOrders.filter(o => o.created_at.slice(0, 10) === yesterday)
   const caToday = todayO.reduce((s, o) => s + (o.total || 0), 0)
   const avgToday = todayO.length > 0 ? caToday / todayO.length : 0
   const caYest  = yestO.reduce((s, o) => s + (o.total || 0), 0)
@@ -123,7 +124,7 @@ export default function AdminDashboard() {
   const chartData = Array.from({ length: 7 }, (_, i) => {
     const d   = new Date(Date.now() - (6 - i) * 86400000)
     const key = d.toISOString().slice(0, 10)
-    const ca  = businessOrders.filter(o => o.created_at.slice(0, 10) === key).reduce((s, o) => s + (o.total || 0), 0)
+    const ca  = deliveredBusinessOrders.filter(o => o.created_at.slice(0, 10) === key).reduce((s, o) => s + (o.total || 0), 0)
     return { label: d.toLocaleDateString('fr-FR', { weekday: 'short' }), total: ca }
   })
   const maxCA = Math.max(...chartData.map(d => d.total), 1)
@@ -261,7 +262,8 @@ export default function AdminDashboard() {
         <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8 }}>
           {PIPELINE.map(status => {
             const cfg = STATUS[status]
-            const col = orders.filter(o => o.status === status)
+            const col = businessOrders.filter(o => o.status === status)
+                  if (col.length === 0) return null
             return (
               <div
                 key={status}
@@ -359,7 +361,7 @@ export default function AdminDashboard() {
             const startMs = endMs - 7 * 86400000
             const start = new Date(startMs).toISOString().slice(0, 10)
             const end = new Date(endMs).toISOString().slice(0, 10)
-            const ca = businessOrders.filter(o => {
+            const ca = deliveredBusinessOrders.filter(o => {
               const d = o.created_at.slice(0, 10)
               return d >= start && d < end
             }).reduce((s, o) => s + (o.total || 0), 0)
