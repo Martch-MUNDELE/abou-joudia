@@ -59,7 +59,7 @@ export default function CartInvoiceSummary({
   const isCart = mode === 'cart'
   const deliveryText = isCart ? deliveryLabel : `${deliveryFee.toFixed(2)} ${currency}`
   const totalLabel = isCart ? 'Total provisoire' : 'Total final à payer'
-  const totalAmount = isCart ? totalProductsTtc : grandTotal
+  const totalAmount = grandTotal || taxSummary.ttc || totalProductsTtc
 
   return (
     <div style={{ marginTop: 4 }}>
@@ -78,7 +78,7 @@ export default function CartInvoiceSummary({
         <span style={{ color: '#F5C842' }}>{totalAmount.toFixed(2)} {currency}</span>
       </div>
 
-      {!isCart && showTaxBreakdown && (
+      {(showTaxBreakdown || taxRate > 0) && (
         <div style={{ marginTop: 8, padding: '12px 14px', marginBottom: 14, borderRadius: 12, background: 'linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.015))', border: '1px solid rgba(232,160,32,0.14)', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ fontSize: 12, color: '#F5C842', fontWeight: 800, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 2 }}>Détail facture</div>
 

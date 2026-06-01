@@ -80,7 +80,12 @@ export async function POST(req: NextRequest) {
 
   if (wantFacture && email) {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/facture`, {
+      const requestOrigin = req.headers.get('origin')
+      const requestHost = req.headers.get('host')
+      const requestProto = req.headers.get('x-forwarded-proto') ?? 'http'
+      const factureBaseUrl = requestOrigin ?? (requestHost ? `${requestProto}://${requestHost}` : process.env.NEXT_PUBLIC_SITE_URL)
+      if (!factureBaseUrl) throw new Error('Facture base URL introuvable')
+      await fetch(`${factureBaseUrl}/api/facture`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ order_id: order.id })

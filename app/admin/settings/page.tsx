@@ -14,7 +14,7 @@ const TABS = [
   { key: 'fond', label: 'Fond de page' },
   { key: 'hero', label: 'Image hero' },
   { key: 'arguments', label: 'Arguments' },
-  { key: 'devise', label: 'Devise' },
+  { key: 'devise', label: 'Devise et TVA' },
   { key: 'notifications', label: 'Notifications' },
   { key: 'footer', label: 'Footer' },
 ]
@@ -35,6 +35,8 @@ function SettingsContent() {
   const router = useRouter()
   const activeTab = searchParams.get('tab') || 'statut'
   const [currency, setCurrency] = useState('DH')
+  const [taxEnabled, setTaxEnabled] = useState('false')
+  const [taxRate, setTaxRate] = useState('')
   const [feature1Active, setFeature1Active] = useState(true)
   const [feature2Active, setFeature2Active] = useState(true)
   const [feature3Active, setFeature3Active] = useState(true)
@@ -60,7 +62,7 @@ function SettingsContent() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [siteName, setSiteName] = useState('Abou Joudia')
-  const [siteBaseline, setSiteBaseline] = useState('AGADIR · LIVRAISON')
+  const [siteBaseline, setSiteBaseline] = useState('')
   const [siteLogo, setSiteLogo] = useState('')
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [logoDimensions, setLogoDimensions] = useState<{w:number,h:number}|null>(null)
@@ -74,6 +76,8 @@ function SettingsContent() {
       data?.forEach((s: any) => {
         if (s.key === 'status') setStatus(s.value)
         if (s.key === 'currency') setCurrency(s.value)
+        if (s.key === 'tax_enabled') setTaxEnabled((s.value ?? '') || 'false')
+        if (s.key === 'tax_rate') setTaxRate(s.value ?? '')
         if (s.key === 'notification_email') setNotificationEmail(s.value)
         if (s.key === 'footer_line1') setFooterLine1(s.value)
         if (s.key === 'footer_line2') setFooterLine2(s.value)
@@ -152,6 +156,8 @@ function SettingsContent() {
     await Promise.all([
       supabase.from('settings').upsert({ key: 'status', value: status }),
       supabase.from('settings').upsert({ key: 'currency', value: currency }),
+      supabase.from('settings').upsert({ key: 'tax_enabled', value: taxEnabled }),
+      supabase.from('settings').upsert({ key: 'tax_rate', value: taxRate }),
       supabase.from('settings').upsert({ key: 'notification_email', value: notificationEmail }),
       supabase.from('settings').upsert({ key: 'footer_line1', value: footerLine1 }),
       supabase.from('settings').upsert({ key: 'footer_line2', value: footerLine2 }),
@@ -359,20 +365,52 @@ function SettingsContent() {
         </div>
       )}
       {activeTab === 'devise' && (
-        <div>
+        <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Devise et TVA</div>
+
           <label style={labelStyle}>Sélectionner la devise</label>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-            {(['DH', 'USD', 'FC', 'EUR', 'XOF', 'GBP'] as const).map(opt => (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+            {['DH', '€', '$', 'FCFA'].map(opt => (
               <button key={opt} onClick={() => setCurrency(opt)} style={{ padding: '9px 20px', borderRadius: 50, border: '1px solid', borderColor: currency === opt ? 'rgba(232,160,32,0.5)' : 'rgba(255,255,255,0.08)', background: currency === opt ? 'rgba(232,160,32,0.12)' : 'transparent', color: currency === opt ? '#E8A020' : '#C8B99A', cursor: 'pointer', fontSize: 13, fontWeight: currency === opt ? 700 : 500, fontFamily: 'DM Sans, sans-serif' }}>
                 {opt}
               </button>
             ))}
           </div>
-          <p style={{ fontSize: 12, color: '#7A6E58', marginTop: 12 }}>
+
+          <div style={{ marginTop: 6, marginBottom: 22, padding: '11px 14px', borderRadius: 10, background: 'rgba(232,160,32,0.05)', border: '1px solid rgba(232,160,32,0.12)', fontSize: 13, color: '#C8B99A' }}>
             Devise actuellement sélectionnée : <strong style={{ color: '#E8A020' }}>{currency}</strong>
-          </p>
+          </div>
+
+          <div style={{ height: 1, background: 'rgba(232,160,32,0.12)', margin: '4px 0 22px' }} />
+
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>TVA</div>
+
+          <label style={labelStyle}>Appliquer la TVA</label>
+          <button
+            type="button"
+            onClick={() => setTaxEnabled(taxEnabled === 'true' ? 'false' : 'true')}
+            style={{ width: '100%', padding: '12px 18px', borderRadius: 50, border: '1px solid', borderColor: taxEnabled === 'true' ? 'rgba(91,197,122,0.5)' : 'rgba(255,255,255,0.1)', background: taxEnabled === 'true' ? 'rgba(91,197,122,0.12)' : 'rgba(255,255,255,0.04)', color: taxEnabled === 'true' ? '#5BC57A' : '#7A6E58', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 13, cursor: 'pointer', marginBottom: 18 }}
+          >
+            TVA {taxEnabled === 'true' ? 'ACTIVE' : 'INACTIVE'}
+          </button>
+
+          <label style={labelStyle}>Taux de TVA global (%)</label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={taxRate}
+            onChange={e => setTaxRate(e.target.value)}
+            placeholder="Ex : 20"
+            style={{ ...inputStyle, marginBottom: 12 }}
+          />
+
+          <div style={{ fontSize: 12, lineHeight: 1.6, color: '#A89880', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(232,160,32,0.08)', borderRadius: 10, padding: '12px 14px' }}>
+            Les prix affichés restent des prix TTC. La TVA est extraite du TTC et n&apos;est détaillée que dans les récapitulatifs panier et facture.
+          </div>
         </div>
       )}
+
       {activeTab === 'arguments' && (
         <div style={{ background: '#131009', border: '1px solid rgba(232,160,32,0.12)', borderRadius: 16, padding: '22px 24px', marginBottom: 14 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#C8B99A', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 16 }}>Arguments produit</div>

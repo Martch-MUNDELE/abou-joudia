@@ -1,5 +1,35 @@
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 
+type OrderData = {
+  id?: string
+  customer_name: string
+  customer_phone: string
+  customer_address?: string
+  delivery_mode?: string
+  delivery_fee: number
+  total: number
+}
+
+type SlotData = {
+  date?: string
+  time_start?: string
+  time_end?: string
+}
+
+type ItemData = {
+  quantity: number
+  product_name: string
+  unit_price: number
+}
+
+type TaxData = {
+  enabled: boolean
+  rate: number
+  ht: number
+  tax: number
+  ttc: number
+}
+
 const gold = '#E8A020'
 const dark = '#0F0B04'
 const card = '#1A1510'
@@ -35,8 +65,8 @@ const styles = StyleSheet.create({
   infoValue: { fontSize: 9, color: cream, fontFamily: 'Helvetica-Bold', maxWidth: 280, textAlign: 'right' },
 
   // ITEMS
-  itemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 10, borderBottom: `1px solid ${border}` },
-  itemRowLast: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 10 },
+  itemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottom: `1px solid ${border}` },
+  itemRowLast: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10 },
   itemQty: { fontSize: 9, color: gold, fontFamily: 'Helvetica-Bold', backgroundColor: '#2A1F08', padding: '3 8', borderRadius: 4, marginRight: 8 },
   itemName: { fontSize: 10, color: cream, flex: 1 },
   itemPrice: { fontSize: 10, fontFamily: 'Helvetica-Bold', color: muted },
@@ -53,7 +83,12 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: border, marginHorizontal: 32, marginBottom: 20 },
 })
 
-export function FacturePDF({ order, items, slot, siteName, siteBaseline, factureNum }: { order: any, items: any[], slot: any, siteName?: string, siteBaseline?: string, factureNum?: string }) {
+export function FacturePDF({ order, items, slot, siteName, siteBaseline, factureNum, currency = 'DH', tax }: { order: OrderData, items: ItemData[], slot: SlotData | null, siteName?: string, siteBaseline?: string, factureNum?: string, currency?: string, tax?: TaxData }) {
+  // La facture porte uniquement sur les lignes facturables : son total
+  // s'aligne sur le récapitulatif TVA quand il est fourni.
+  const invoiceTtc = tax?.ttc ?? order.total
+  const subtotalTtc = invoiceTtc - (order.delivery_fee || 0)
+  const showTax = !!tax && tax.enabled && tax.tax > 0
   const date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
   const slotDate = slot?.date
     ? new Date(slot.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -68,8 +103,8 @@ export function FacturePDF({ order, items, slot, siteName, siteBaseline, facture
         <View style={styles.header}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View>
-              <Text style={styles.logoText}>{siteName ?? 'ABOU JOUDIA'}</Text>
-              <Text style={styles.logoSub}>{siteBaseline ?? 'Agadir · Livraison à domicile'}</Text>
+              <Text style={styles.logoText}>{siteName ?? 'NOM_CLIENT'}</Text>
+              <Text style={styles.logoSub}>{siteBaseline ?? 'NOM_CLIENT · Livraison à domicile'}</Text>
             </View>
             <View style={styles.headerRight}>
               <Text style={styles.factureLabel}>Facture</Text>
@@ -123,11 +158,11 @@ export function FacturePDF({ order, items, slot, siteName, siteBaseline, facture
           {/* COMMANDE */}
           <Text style={styles.sectionTitle}>Commande</Text>
           <View style={styles.sectionCard}>
-            {items.map((item: any, i: number) => (
+            {items.map((item, i: number) => (
               <View key={i} style={i < items.length - 1 ? styles.itemRow : styles.itemRowLast}>
                 <Text style={styles.itemQty}>{item.quantity}x</Text>
-                <Text style={styles.itemName}>{item.product_name}{item.selected_variants && Object.keys(item.selected_variants).length > 0 ? '\n' + Object.entries(item.selected_variants).map(([t, o]) => `${t}: ${o}`).join(' · ') : ''}</Text>
-                <Text style={styles.itemPrice}>{(item.quantity * item.unit_price).toFixed(2)} DH</Text>
+                <Text style={styles.itemName}>{item.product_name}</Text>
+                <Text style={styles.itemPrice}>{(item.quantity * item.unit_price).toFixed(2)} {currency}</Text>
               </View>
             ))}
           </View>
@@ -143,11 +178,11 @@ export function FacturePDF({ order, items, slot, siteName, siteBaseline, facture
             <View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
                 <Text style={{ fontSize: 10, color: '#C8B99A', fontFamily: 'Helvetica' }}>Sous-total</Text>
-                <Text style={{ fontSize: 10, color: '#F5EDD6', fontFamily: 'Helvetica' }}>{(order.total - order.delivery_fee).toFixed(2)} DH</Text>
+                <Text style={{ fontSize: 10, color: '#F5EDD6', fontFamily: 'Helvetica' }}>{subtotalTtc.toFixed(2)} {currency}</Text>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
                 <Text style={{ fontSize: 10, color: '#C8B99A', fontFamily: 'Helvetica' }}>Frais de livraison</Text>
-                <Text style={{ fontSize: 10, color: '#F5C842', fontFamily: 'Helvetica-Bold' }}>{order.delivery_fee.toFixed(2)} DH</Text>
+                <Text style={{ fontSize: 10, color: '#F5C842', fontFamily: 'Helvetica-Bold' }}>{order.delivery_fee.toFixed(2)} {currency}</Text>
               </View>
             </View>
           ) : (
@@ -156,9 +191,22 @@ export function FacturePDF({ order, items, slot, siteName, siteBaseline, facture
               <Text style={{ fontSize: 10, color: '#5BC57A', fontFamily: 'Helvetica-Bold' }}>Gratuit</Text>
             </View>
           )}
+          {/* DÉTAIL TVA — uniquement dans le récapitulatif facture */}
+          {showTax && tax && (
+            <View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
+                <Text style={{ fontSize: 10, color: '#C8B99A', fontFamily: 'Helvetica' }}>Total HT</Text>
+                <Text style={{ fontSize: 10, color: '#F5EDD6', fontFamily: 'Helvetica' }}>{tax.ht.toFixed(2)} {currency}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
+                <Text style={{ fontSize: 10, color: '#C8B99A', fontFamily: 'Helvetica' }}>TVA ({tax.rate}%)</Text>
+                <Text style={{ fontSize: 10, color: '#F5EDD6', fontFamily: 'Helvetica' }}>{tax.tax.toFixed(2)} {currency}</Text>
+              </View>
+            </View>
+          )}
           <View style={styles.totalCard}>
-            <Text style={styles.totalLabel}>Total à payer</Text>
-            <Text style={styles.totalValue}>{order.total?.toFixed(2)} DH</Text>
+            <Text style={styles.totalLabel}>{showTax ? 'Total TTC à payer' : 'Total à payer'}</Text>
+            <Text style={styles.totalValue}>{invoiceTtc.toFixed(2)} {currency}</Text>
           </View>
 
         </View>
@@ -167,7 +215,7 @@ export function FacturePDF({ order, items, slot, siteName, siteBaseline, facture
         <View style={styles.divider}/>
         <View style={styles.footer}>
           <Text style={styles.footerLeft}>Merci pour votre confiance !</Text>
-          <Text style={styles.footerRight}>{siteName ?? 'Abou Joudia'} — {siteBaseline ?? 'Agadir, Maroc'}</Text>
+          <Text style={styles.footerRight}>{siteName ?? 'NOM_CLIENT'} — {siteBaseline}</Text>
         </View>
 
       </Page>
