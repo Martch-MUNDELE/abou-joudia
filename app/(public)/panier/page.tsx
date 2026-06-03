@@ -13,8 +13,9 @@ import LeafletMap from '@/components/LeafletMap'
 import CartInvoiceSummary from '@/components/cart/CartInvoiceSummary'
 import type { TaxSettings } from '@/lib/types/tax'
 import { calculateOrderTaxSummary, getTaxSettingsFromRows } from '@/lib/tax'
+import { applyPromotions } from '@/lib/promotions'
 import { loadActivePromotionRules } from '@/lib/promotion-rules'
-import type { PromotionProductCandidate, PromotionRule } from '@/lib/types/promotion'
+import type { PromotionCartLine, PromotionProductCandidate, PromotionRule } from '@/lib/types/promotion'
 import type { Product } from '@/lib/types'
 
 const EMPTY_PROMOTION_RULES: PromotionRule[] = []
@@ -588,22 +589,69 @@ export default function PanierPage() {
   const step1FeeColor = step1FeeText === 'Gratuit' || step1FeeText === 'Retrait' ? '#7DD87A' : '#C8B99A'
 
   const deliveryFee = isPickup ? 0 : step === 'cart' ? (step1LiveFeeResult ?? 0) : (deliveryResult?.fee ?? 0)
-  const grandTotal = total() + deliveryFee
 
-  const taxLines = items.map(item => ({
-    quantity: item.quantity,
-    unit_price: (item.product.discount ?? 0) > 0
-      ? Math.ceil(item.product.price * (1 - (item.product.discount ?? 0) / 100))
-      : item.product.price,
+  // BF-P2-001 AJ CART PROMO TOTALS PATCH
+  const promotionCatalogFromCart: PromotionProductCandidate[] = items.map(
+    (item) => item.product as Product & PromotionProductCandidate,
+  )
+  const cartProductIds = new Set(promotionCatalogFromCart.map((product) => String(product.id)))
+  const externalPromotionCatalog = promotionProductCatalog.filter((product) => {
+    const id = product.id == null ? '' : String(product.id)
+    return id.length > 0 && !cartProductIds.has(id)
+  })
+  const promotionCatalog = [...promotionCatalogFromCart, ...externalPromotionCatalog]
+
+  const promotionCartItems: PromotionCartLine[] = items.map((item) => {
+    const productDiscount = Number(item.product.discount ?? 0)
+    const originalUnitPrice = Number(item.product.price ?? 0)
+    const unitPriceAfterProductDiscount = productDiscount > 0
+      ? Math.ceil(originalUnitPrice * (1 - productDiscount / 100))
+      : originalUnitPrice
+
+    return {
+      product_id: String(item.product.id),
+      product_name: item.product.name,
+      quantity: item.quantity,
+      unit_price: unitPriceAfterProductDiscount,
+      original_unit_price: productDiscount > 0 ? originalUnitPrice : undefined,
+      discount_percent: productDiscount > 0 ? productDiscount : null,
+      discount_amount: productDiscount > 0 ? Math.max(0, originalUnitPrice - unitPriceAfterProductDiscount) : null,
+      product: item.product as Product & PromotionProductCandidate,
+      is_vip: false,
+      line_type: 'classic',
+      can_trigger_promotion: true,
+    }
+  })
+
+  const promotionResult = applyPromotions(
+    promotionCartItems,
+    promotionCatalog,
+    promotionRules,
+    { vipEnabled: false },
+  )
+
+  const promotionProductsTotal = promotionResult.items.reduce(
+    (sum, line) => sum + Number(line.unit_price ?? 0) * Number(line.quantity ?? 0),
+    0,
+  )
+
+  const promotionFreeDeliveryApplied = Boolean(promotionResult.free_delivery_applied)
+  const deliveryFeeAfterPromotions = promotionFreeDeliveryApplied ? 0 : deliveryFee
+  const deliveryFeeDisplay = promotionFreeDeliveryApplied ? 'Gratuit' : isPickup ? 'Gratuit' : deliveryFeeAfterPromotions === 0 ? 'Gratuit' : `${deliveryFeeAfterPromotions} DH`
+  const grandTotal = promotionProductsTotal + deliveryFeeAfterPromotions
+
+  const taxLines = promotionResult.items.map(line => ({
+    quantity: line.quantity,
+    unit_price: Number(line.unit_price ?? 0),
     invoiceable: true,
     taxable: true,
   }))
   const taxSummary = calculateOrderTaxSummary(taxLines, taxSettings, {
-    deliveryFee,
+    deliveryFee: deliveryFeeAfterPromotions,
     deliveryInvoiceable: true,
     deliveryTaxable: true,
   })
-  const invoiceableDeliveryFee = deliveryFee
+  const invoiceableDeliveryFee = deliveryFeeAfterPromotions
   const invoiceableProductsTtc = Math.max(0, taxSummary.ttc - invoiceableDeliveryFee)
   const showTaxBreakdown = taxSettings.taxEnabled && taxSettings.taxRate > 0 && taxSummary.tax > 0
 
@@ -707,9 +755,9 @@ export default function PanierPage() {
           <CartInvoiceSummary
             mode="cart"
             currency="DH"
-            totalProductsTtc={total()}
-            deliveryFee={deliveryFee}
-            deliveryLabel={step1FeeText}
+            totalProductsTtc={promotionProductsTotal}
+            deliveryFee={deliveryFeeAfterPromotions}
+            deliveryLabel={promotionFreeDeliveryApplied ? 'Livraison offerte' : step1FeeText}
             deliveryTextColor={step1FeeColor}
             grandTotal={grandTotal}
             showTaxBreakdown={showTaxBreakdown}
@@ -959,11 +1007,11 @@ export default function PanierPage() {
           <div style={{ marginTop: 20, borderRadius: 12, border: '1px solid rgba(232,160,32,0.12)', background: 'rgba(255,255,255,0.02)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#C8B99A' }}>
               <span>Sous-total</span>
-              <span style={{ color: '#F5EDD6', fontWeight: 600 }}>{total().toFixed(2)} DH</span>
+              <span style={{ color: '#F5EDD6', fontWeight: 600 }}>{promotionProductsTotal.toFixed(2)} DH</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#C8B99A' }}>
               <span>{isPickup ? 'Retrait sur place' : 'Frais de livraison'}</span>
-              <span style={{ color: '#7DD87A', fontWeight: 600 }}>{isPickup ? 'Gratuit' : deliveryFee === 0 ? 'Gratuit' : `${deliveryFee} DH`}</span>
+              <span style={{ color: '#7DD87A', fontWeight: 600 }}>{deliveryFeeDisplay}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 800, borderTop: '1px solid rgba(232,160,32,0.1)', paddingTop: 10, fontFamily: 'DM Sans, sans-serif' }}>
               <span style={{ color: '#C8B99A' }}>Total</span>
