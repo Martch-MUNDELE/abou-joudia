@@ -1482,6 +1482,7 @@ export default function AdminPromotionsPage() {
                     </button>
 
                   )}
+                  {promotion.status === 'active' ? (
                   <button
                     type="button"
                     onClick={() => updateStatus(promotion.id, 'inactive')}
@@ -1489,6 +1490,15 @@ export default function AdminPromotionsPage() {
                   >
                     Désactiver
                   </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      className="rounded-full bg-white/10 px-4 py-2 text-sm text-white/50 ring-1 ring-white/10 opacity-80"
+                    >
+                      Déjà inactive ✓
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => deletePromotion(promotion.id)}

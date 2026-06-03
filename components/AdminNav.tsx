@@ -25,6 +25,7 @@ const NAV_GROUPS = [
         { label: '+ Ajouter', anchor: 'nouveau', url: '/admin/produits/nouveau' },
         { label: 'Actifs', anchor: 'actifs', url: '/admin/produits?tab=actifs' },
         { label: 'Inactifs', anchor: 'inactifs', url: '/admin/produits?tab=inactifs' },
+        { label: 'Promotions', anchor: 'promotions', url: '/admin/promotions' },
       ]},
     ],
   },

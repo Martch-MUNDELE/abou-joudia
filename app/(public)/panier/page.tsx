@@ -662,6 +662,40 @@ export default function PanierPage() {
     0,
   )
 
+  // BF-P2-001 PERCENT DISCOUNT DISPLAY CALC
+  const promotionProductsBeforePromotion = promotionCartItems.reduce(
+    (sum, line) => sum + Number(line.unit_price ?? 0) * Number(line.quantity ?? 0),
+    0,
+  )
+  const promotionProductsDiscountAmount = Math.max(0, promotionProductsBeforePromotion - promotionProductsTotal)
+  const showPromotionProductsDiscount = promotionProductsDiscountAmount > 0.004
+  const promotionAppliedBenefits = (
+    (promotionResult as unknown as {
+      applied_benefits?: Array<Record<string, unknown>>
+      applied?: Array<Record<string, unknown>>
+    }).applied_benefits
+    ?? (promotionResult as unknown as {
+      applied_benefits?: Array<Record<string, unknown>>
+      applied?: Array<Record<string, unknown>>
+    }).applied
+    ?? []
+  )
+  const promotionDiscountBenefit = promotionAppliedBenefits.find((benefit) => {
+    return String(benefit.benefit_type ?? benefit.benefitType ?? '') === 'percent_discount'
+  })
+  const promotionDiscountPercent = Number(
+    promotionDiscountBenefit?.discount_percent
+    ?? promotionDiscountBenefit?.discountPercent
+    ?? 0,
+  )
+  const effectivePromotionDiscountPercent = promotionDiscountPercent > 0
+    ? promotionDiscountPercent
+    : promotionProductsBeforePromotion > 0
+      ? (promotionProductsDiscountAmount / promotionProductsBeforePromotion) * 100
+      : 0
+  const promotionDiscountLabel = effectivePromotionDiscountPercent > 0.004
+    ? `Remise promotion ${effectivePromotionDiscountPercent.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} %`
+    : 'Remise promotion'
   const promotionFreeDeliveryApplied = Boolean(promotionResult.free_delivery_applied)
   const deliveryFeeAfterPromotions = promotionFreeDeliveryApplied ? 0 : deliveryFee
   // BF-P2-001 AJ DELIVERY SAVINGS DISPLAY PATCH
@@ -820,6 +854,28 @@ export default function PanierPage() {
           </div>
 
           {/* Récapitulatif livraison dans le panier */}
+
+          {/* BF-P2-001 PERCENT DISCOUNT DISPLAY BLOCK */}
+          {showPromotionProductsDiscount && (
+            <div style={{
+              margin: '10px 0 12px',
+              padding: '12px 14px',
+              borderRadius: 12,
+              background: 'rgba(91,197,122,0.06)',
+              border: '1px solid rgba(91,197,122,0.22)',
+              fontFamily: 'DM Sans, sans-serif',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, color: '#C8B99A', fontSize: 13, marginBottom: 7 }}>
+                <span>Sous-total avant promotion</span>
+                <span>{promotionProductsBeforePromotion.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} DH</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, color: '#7DD87A', fontSize: 13, fontWeight: 800 }}>
+                <span>{promotionDiscountLabel}</span>
+                <span>-{promotionProductsDiscountAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} DH</span>
+              </div>
+            </div>
+          )}
+
           <CartInvoiceSummary
             mode="cart"
             currency="DH"
