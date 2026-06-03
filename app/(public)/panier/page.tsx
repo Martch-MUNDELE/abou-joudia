@@ -754,36 +754,69 @@ export default function PanierPage() {
       {step === 'cart' && (
         <div style={{ padding: '0 20px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {items.map((item) => (
-              <div key={item.product.id + JSON.stringify(item.selectedVariants ?? {})} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '13px 0', borderBottom: '1px solid rgba(232,160,32,0.06)' }}>
-                <div style={{ width: 'clamp(44px,12vw,56px)', height: 'clamp(44px,12vw,56px)', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '2px solid rgba(232,160,32,0.15)' }}>
-                  {item.product.image_url ? <img src={item.product.image_url} alt={item.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1E1A10,#2A2310)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(232,160,32,0.3)" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: '#F5EDD6', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.product.name}</div>
-                  {item.selectedVariants && Object.keys(item.selectedVariants).length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 4 }}>
-                      {Object.entries(item.selectedVariants).map(([type, opt]) => (
-                        <span key={type} style={{ fontSize: 10, color: '#C8B99A', background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.2)', borderRadius: 5, padding: '2px 7px', fontFamily: 'DM Sans, sans-serif' }}>{type} : {opt}</span>
-                      ))}
+            {promotionResult.items.map((line) => {
+              const lineProduct = (line.product ?? {}) as Product & PromotionProductCandidate & {
+                image_url?: string | null
+                selectedVariants?: Record<string, unknown> | null
+                selected_variants?: Record<string, unknown> | null
+              }
+              const imageUrl = typeof lineProduct.image_url === 'string' ? lineProduct.image_url : ''
+              const selectedVariants = (lineProduct.selectedVariants ?? lineProduct.selected_variants ?? null) as Record<string, unknown> | null
+              const isGift = Boolean(line.is_promotion_gift)
+              const lineKey = `${line.product_id}-${line.line_type ?? 'classic'}-${line.promotion_rule_id ?? 'cart'}`
+              const lineTotal = Number(line.unit_price ?? 0) * Number(line.quantity ?? 0)
+
+              return (
+                <div key={lineKey} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '13px 0', borderBottom: '1px solid rgba(232,160,32,0.06)' }}>
+                  <div style={{ width: 'clamp(44px,12vw,56px)', height: 'clamp(44px,12vw,56px)', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '2px solid rgba(232,160,32,0.15)' }}>
+                    {imageUrl ? <img src={imageUrl} alt={line.product_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1E1A10,#2A2310)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(232,160,32,0.3)" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>}
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 14, color: '#F5EDD6', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{line.product_name}</div>
+
+                    {isGift && (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 4, padding: '3px 8px', borderRadius: 999, background: 'rgba(91,197,122,0.12)', border: '1px solid rgba(91,197,122,0.28)', color: '#7DD87A', fontSize: 11, fontWeight: 700 }}>
+                        🎁 Offert par la promotion
+                      </div>
+                    )}
+
+                    {selectedVariants && Object.keys(selectedVariants).length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 4 }}>
+                        {Object.entries(selectedVariants).map(([type, opt]) => (
+                          <span key={type} style={{ fontSize: 10, color: '#C8B99A', background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.2)', borderRadius: 5, padding: '2px 7px', fontFamily: 'DM Sans, sans-serif' }}>{type} : {String(opt)}</span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14, color: isGift ? '#7DD87A' : '#F5C842' }}>
+                      {isGift ? '0 DH' : `${lineTotal} DH`}
+                    </div>
+                  </div>
+
+                  {!isGift ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: 'rgba(255,255,255,0.04)', borderRadius: 50, border: '1px solid rgba(232,160,32,0.15)', flexShrink: 0 }}>
+                      <button onClick={() => update(line.product_id, line.quantity - 1)} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'transparent', color: line.quantity === 1 ? '#FF6B6B' : '#C8B890', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 500, lineHeight: 1 }}>
+                        {line.quantity === 1 ? '×' : '−'}
+                      </button>
+                      <span style={{ fontWeight: 800, fontSize: 14, color: '#F5EDD6', minWidth: 20, textAlign: 'center', fontFamily: 'DM Sans, sans-serif' }}>{line.quantity}</span>
+                      <button onClick={() => update(line.product_id, line.quantity + 1)} disabled={stockWarnings[line.product_id] != null && line.quantity >= stockWarnings[line.product_id]!} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: stockWarnings[line.product_id] != null && line.quantity >= stockWarnings[line.product_id]! ? 'rgba(200,185,154,0.3)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', cursor: stockWarnings[line.product_id] != null && line.quantity >= stockWarnings[line.product_id]! ? 'not-allowed' : 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, lineHeight: 1 }}>+</button>
+                    </div>
+                  ) : (
+                    <div style={{ padding: '7px 12px', borderRadius: 999, background: 'rgba(91,197,122,0.12)', border: '1px solid rgba(91,197,122,0.25)', color: '#7DD87A', fontSize: 12, fontWeight: 800 }}>
+                      x{line.quantity} offert
                     </div>
                   )}
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14, color: '#F5C842' }}>{((item.product.discount ?? 0) > 0 ? Math.ceil(item.product.price * (1 - (item.product.discount ?? 0) / 100)) : item.product.price) * item.quantity} DH</div>
+
+                  {!isGift && stockWarnings[line.product_id] != null && stockWarnings[line.product_id]! <= 5 && (
+                    <div style={{ fontSize: 11, color: '#F5A020', marginTop: 4, padding: '4px 8px', background: 'rgba(245,160,32,0.1)', borderRadius: 6 }}>
+                      ⚠️ Plus que {stockWarnings[line.product_id]} en stock
+                    </div>
+                  )}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: 'rgba(255,255,255,0.04)', borderRadius: 50, border: '1px solid rgba(232,160,32,0.15)', flexShrink: 0 }}>
-                  <button onClick={() => update(item.product.id, item.quantity - 1)} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'transparent', color: item.quantity === 1 ? '#FF6B6B' : '#C8B890', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 500, lineHeight: 1 }}>
-                    {item.quantity === 1 ? '×' : '−'}
-                  </button>
-                  <span style={{ fontWeight: 800, fontSize: 14, color: '#F5EDD6', minWidth: 20, textAlign: 'center', fontFamily: 'DM Sans, sans-serif' }}>{item.quantity}</span>
-                  <button onClick={() => update(item.product.id, item.quantity + 1)} disabled={stockWarnings[item.product.id] != null && item.quantity >= stockWarnings[item.product.id]!} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: stockWarnings[item.product.id] != null && item.quantity >= stockWarnings[item.product.id]! ? 'rgba(200,185,154,0.3)' : 'linear-gradient(135deg,#F5C842,#FF6B20)', color: '#0A0804', cursor: stockWarnings[item.product.id] != null && item.quantity >= stockWarnings[item.product.id]! ? 'not-allowed' : 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, lineHeight: 1 }}>+</button>
-                </div>
-                {stockWarnings[item.product.id] != null && stockWarnings[item.product.id]! <= 5 && (
-                  <div style={{ fontSize: 11, color: '#F5A020', marginTop: 4, padding: '4px 8px', background: 'rgba(245,160,32,0.1)', borderRadius: 6 }}>
-                    ⚠️ Plus que {stockWarnings[item.product.id]} en stock
-                  </div>
-                )}
-              </div>
-            ))}
+              )
+            })}
+
           </div>
 
           {/* Récapitulatif livraison dans le panier */}

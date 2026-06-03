@@ -309,11 +309,84 @@ function isProductSelectable(product: ProductOption): boolean {
   return true
 }
 
+
+function getPromotionStatusLabel(status?: PromotionStatus | string | null): string {
+  switch (status) {
+    case 'active':
+      return 'Active'
+    case 'inactive':
+      return 'Inactive'
+    case 'draft':
+      return 'Brouillon'
+    default:
+      return 'Brouillon'
+  }
+}
+
+function getPromotionScopeLabel(scope?: PromotionScope | string | null): string {
+  switch (scope) {
+    case 'all':
+      return 'Tous les paniers'
+    case 'classic':
+      return 'Ventes classiques'
+    case 'vip':
+      return 'Ventes VIP'
+    case 'mixed':
+      return 'Classique + VIP'
+    default:
+      return 'Ventes classiques'
+  }
+}
+
+function getPromotionTriggerLabel(trigger?: PromotionTriggerType | string | null): string {
+  switch (trigger) {
+    case 'cart_amount':
+      return 'Montant du panier'
+    case 'cart_quantity':
+      return 'Quantité minimum'
+    case 'classic_purchase':
+      return 'Achat classique'
+    case 'vip_purchase':
+      return 'Achat VIP'
+    case 'mixed_purchase':
+      return 'Achat mixte'
+    case 'product':
+      return 'Produit précis'
+    case 'category':
+      return 'Catégorie'
+    default:
+      return 'Déclencheur'
+  }
+}
+
+function getPromotionBenefitLabel(benefit?: PromotionBenefitType | string | null): string {
+  switch (benefit) {
+    case 'gift_product':
+      return 'Produit offert'
+    case 'percent_discount':
+      return 'Remise en pourcentage'
+    case 'free_delivery':
+      return 'Livraison offerte'
+    default:
+      return 'Avantage promotionnel'
+  }
+}
+
+function formatPromotionSummary(promotion: PromotionRow): string {
+  return [
+    getPromotionScopeLabel(promotion.scope),
+    getPromotionTriggerLabel(promotion.trigger_type),
+    getPromotionBenefitLabel(promotion.benefit_type),
+    `Priorité ${promotion.priority ?? 100}`,
+  ].join(' • ')
+}
+
 export default function AdminPromotionsPage() {
   const [promotions, setPromotions] = useState<PromotionRow[]>([])
   const [categories, setCategories] = useState<PromotionCategoryOption[]>([])
   const [products, setProducts] = useState<ProductOption[]>([])
   const [form, setForm] = useState<PromotionFormState>(initialForm)
+  const [editingPromotionId, setEditingPromotionId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -411,7 +484,7 @@ export default function AdminPromotionsPage() {
     setNotice(null)
 
     if (shouldBlockRemoteAdminWrites()) {
-      setError('Création bloquée : localhost pointe vers une base Supabase distante non déclarée comme staging.')
+      setError('Enregistrement bloqué : localhost pointe vers une base Supabase distante non déclarée comme staging.')
       setSaving(false)
       return
     }
@@ -471,9 +544,7 @@ export default function AdminPromotionsPage() {
       payload.customer_message = payload.customer_message || 'Livraison offerte'
     }
 
-    const ruleId = crypto.randomUUID()
-    payload.id = ruleId
-
+    const ruleId = editingPromotionId ?? crypto.randomUUID()
     const benefitRows = buildPromotionBenefitRows(form, ruleId)
 
     if (benefitRows.length === 0) {
@@ -482,7 +553,9 @@ export default function AdminPromotionsPage() {
       return
     }
 
-    const result = await db().from('promotion_rules').insert(payload)
+    const result = editingPromotionId
+      ? await db().from('promotion_rules').update(payload).eq('id', editingPromotionId)
+      : await db().from('promotion_rules').insert({ ...payload, id: ruleId })
 
     if (result.error) {
       setError(result.error.message || "Impossible d'enregistrer la promotion.")
@@ -490,22 +563,106 @@ export default function AdminPromotionsPage() {
       return
     }
 
+    if (editingPromotionId) {
+      const cleanupResult = await db()
+        .from('promotion_benefits')
+        .delete()
+        .eq('promotion_rule_id', editingPromotionId)
+
+      if (cleanupResult.error) {
+        setError(cleanupResult.error.message || "Impossible de préparer la mise à jour de l'avantage.")
+        setSaving(false)
+        return
+      }
+    }
+
     for (const benefitRow of benefitRows) {
       const benefitResult = await db().from('promotion_benefits').insert(benefitRow)
 
       if (benefitResult.error) {
-        await db().from('promotion_rules').delete().eq('id', ruleId)
+        if (!editingPromotionId) {
+          await db().from('promotion_rules').delete().eq('id', ruleId)
+        }
         setError(benefitResult.error.message || "Impossible d'enregistrer l'avantage de la promotion.")
         setSaving(false)
         return
       }
     }
 
-    setNotice('Promotion créée.')
+    setNotice(editingPromotionId ? 'Promotion modifiée.' : 'Promotion créée.')
+    setEditingPromotionId(null)
     setForm(initialForm)
     await loadPromotions()
 
     setSaving(false)
+  }
+
+  function cancelPromotionEdit() {
+    setEditingPromotionId(null)
+    setError(null)
+    setNotice(null)
+    setForm(initialForm)
+  }
+
+  function startPromotionEdit(promotion: PromotionRow) {
+    const triggerCategoryId = promotion.trigger_category_ids?.[0] ?? ''
+    const triggerProductId = promotion.trigger_product_ids?.[0] ?? ''
+    const giftProductId = promotion.gift_product_ids?.[0] ?? ''
+
+    const findCategory = (value: string) => categories.find((category) => (
+      category.id === value || category.slug === value
+    ))
+
+    const getParentSlug = (value: string) => {
+      const category = findCategory(value)
+      if (!category) return ''
+      if (category.level === 1 && category.parent_id) {
+        const parent = categories.find((candidate) => candidate.id === category.parent_id)
+        return parent?.slug ?? parent?.id ?? ''
+      }
+      return category.slug ?? category.id
+    }
+
+    const getProductCategorySlug = (productId: string) => {
+      const product = selectableProducts.find((candidate) => candidate.id === productId)
+      return product?.subcategory
+        ?? product?.category_slug
+        ?? product?.category
+        ?? product?.subcategory_id
+        ?? product?.category_id
+        ?? ''
+    }
+
+    const triggerProductCategorySlug = getProductCategorySlug(triggerProductId)
+    const giftProductCategorySlug = getProductCategorySlug(giftProductId)
+
+    setEditingPromotionId(promotion.id)
+    setForm({
+      name: promotion.name ?? '',
+      status: promotion.status ?? 'draft',
+      scope: promotion.scope ?? 'classic',
+      trigger_type: promotion.trigger_type ?? 'cart_amount',
+      benefit_type: promotion.benefit_type ?? 'gift_product',
+      priority: String(promotion.priority ?? 100),
+      minimum_order_amount: promotion.minimum_order_amount == null ? '' : String(promotion.minimum_order_amount),
+      minimum_quantity: promotion.minimum_quantity == null ? '' : String(promotion.minimum_quantity),
+      trigger_category_parent_slug: triggerCategoryId ? getParentSlug(triggerCategoryId) : '',
+      trigger_category_id: triggerCategoryId,
+      trigger_product_parent_slug: triggerProductCategorySlug ? getParentSlug(triggerProductCategorySlug) : '',
+      trigger_product_category_slug: triggerProductCategorySlug,
+      trigger_product_id: triggerProductId,
+      gift_product_parent_slug: giftProductCategorySlug ? getParentSlug(giftProductCategorySlug) : '',
+      gift_product_category_slug: giftProductCategorySlug,
+      gift_product_id: giftProductId,
+      discount_percent: promotion.discount_percent == null ? '' : String(promotion.discount_percent),
+      stacking_mode: promotion.stacking_mode ?? 'best_offer',
+      exclude_discounted_products: promotion.exclude_discounted_products ?? true,
+      customer_message: promotion.customer_message ?? '',
+      admin_note: promotion.admin_note ?? '',
+    })
+
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setNotice('Promotion chargée en modification.')
   }
 
   async function updateStatus(id: string, status: PromotionStatus) {
@@ -686,7 +843,20 @@ export default function AdminPromotionsPage() {
       ) : null}
 
       <section className="rounded-3xl border border-amber-500/20 bg-black/30 p-6">
-        <h2 className="text-xl font-semibold">Créer une promotion</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl font-semibold">
+            {editingPromotionId ? 'Modifier une promotion' : 'Créer une promotion'}
+          </h2>
+          {editingPromotionId ? (
+            <button
+              type="button"
+              onClick={cancelPromotionEdit}
+              className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white/70 hover:border-amber-400/40 hover:text-amber-100"
+            >
+              Annuler la modification
+            </button>
+          ) : null}
+        </div>
 
         <div className="mt-6 space-y-5">
           <div className="rounded-2xl border border-amber-500/20 bg-black/20 p-5">
@@ -1216,6 +1386,7 @@ export default function AdminPromotionsPage() {
                 )}
 
                 <div className="mt-5 flex flex-wrap gap-3">
+                  
                   {/* BF-P2-001 AJ HIDE MOCK LOCAL BUTTON V2
 
                       Bouton mock local masque sur Abou Joudia : les tests passent maintenant par Supabase controlee. */}
@@ -1226,7 +1397,7 @@ export default function AdminPromotionsPage() {
                     disabled={saving || remoteWriteBlocked || !canSubmitPromotionForm}
                     className="rounded-full bg-amber-400 px-6 py-3 font-semibold text-black disabled:opacity-50"
                   >
-                    {saving ? 'Enregistrement...' : remoteWriteBlocked ? 'Création bloquée' : 'Créer la promotion'}
+                    {saving ? 'Enregistrement...' : remoteWriteBlocked ? 'Création bloquée' : editingPromotionId ? 'Enregistrer les modifications' : 'Créer la promotion'}
                   </button>
                 </div>
               </>
@@ -1260,16 +1431,22 @@ export default function AdminPromotionsPage() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <h3 className="text-lg font-semibold">{promotion.name}</h3>
-                    <p className="mt-1 text-sm text-white/50">
-                      {promotion.scope} | {promotion.trigger_type} | {promotion.benefit_type} | priorité {promotion.priority ?? 100}
-                    </p>
+                    <p className="mt-1 text-sm text-white/50">{formatPromotionSummary(promotion)}</p>
                   </div>
                   <span className="rounded-full border border-amber-400/30 px-3 py-1 text-xs uppercase text-amber-200">
-                    {promotion.status}
+                    {getPromotionStatusLabel(promotion.status)}
                   </span>
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => startPromotionEdit(promotion)}
+                    title={formatPromotionSummary(promotion)}
+                    className="rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm font-semibold text-amber-100 hover:bg-amber-400/20"
+                  >
+                    Modifier
+                  </button>
                   {promotion.status === 'active' ? (
 
                     <button

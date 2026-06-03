@@ -155,22 +155,32 @@ function lineMatchesCategory(line: PromotionCartLine, categoryIds: string[]): bo
     product.sub_category,
     product.subSubcategory,
     product.sub_subcategory,
-  ]
+  ].filter((value): value is string => typeof value === 'string' && value.length > 0)
 
-  return values.some((value) => typeof value === 'string' && categoryIds.includes(value))
+  return categoryIds.some((categoryId) => values.some((value) => (
+    value === categoryId
+    || value.startsWith(`${categoryId}_`)
+    || value.startsWith(`${categoryId}-`)
+  )))
 }
 
 function ruleTriggerMatches(rule: PromotionEngineInputRule, items: PromotionCartLine[]): boolean {
   const triggerableItems = items.filter(canLineTriggerPromotion)
 
+  if ((rule.minimum_order_amount ?? 0) > 0 && getSubtotal(triggerableItems) < (rule.minimum_order_amount ?? 0)) {
+    return false
+  }
+
+  if ((rule.minimum_quantity ?? 0) > 0 && getQuantity(triggerableItems) < (rule.minimum_quantity ?? 0)) {
+    return false
+  }
+
   if (rule.trigger_type === 'cart_amount') {
-    const minimum = rule.minimum_order_amount ?? 0
-    return getSubtotal(triggerableItems) >= minimum
+    return true
   }
 
   if (rule.trigger_type === 'cart_quantity') {
-    const minimum = rule.minimum_quantity ?? 0
-    return getQuantity(triggerableItems) >= minimum
+    return true
   }
 
   if (rule.trigger_type === 'classic_purchase') return hasClassic(triggerableItems)
@@ -277,6 +287,33 @@ function makeAppliedBenefit(
   }
 }
 
+function getGiftBenefitQuantity(
+  items: PromotionCartLine[],
+  rule: PromotionEngineInputRule,
+  benefit: PromotionBenefit,
+): number {
+  const baseQuantity = Math.max(1, Math.floor(toNumber(benefit.quantity, 1)))
+  const triggerableItems = items.filter(canLineTriggerPromotion)
+
+  if (rule.trigger_type === 'category') {
+    const eligibleQuantity = triggerableItems
+      .filter((line) => lineMatchesCategory(line, rule.trigger_category_ids ?? []))
+      .reduce((sum, line) => sum + toNumber(line.quantity, 0), 0)
+
+    return Math.max(baseQuantity, baseQuantity * Math.max(1, Math.floor(eligibleQuantity)))
+  }
+
+  if (rule.trigger_type === 'product') {
+    const eligibleQuantity = triggerableItems
+      .filter((line) => lineMatchesProduct(line, rule.trigger_product_ids ?? []))
+      .reduce((sum, line) => sum + toNumber(line.quantity, 0), 0)
+
+    return Math.max(baseQuantity, baseQuantity * Math.max(1, Math.floor(eligibleQuantity)))
+  }
+
+  return baseQuantity
+}
+
 function applyGiftProductBenefit(
   items: PromotionCartLine[],
   productCatalog: PromotionProductCandidate[],
@@ -300,7 +337,7 @@ function applyGiftProductBenefit(
     return { items, giftValue: 0 }
   }
 
-  const quantity = Math.max(1, Math.floor(toNumber(benefit.quantity, 1)))
+  const quantity = getGiftBenefitQuantity(items, rule, benefit)
   const giftValue = roundMoney(getProductPrice(product) * quantity)
 
   const giftLine: PromotionCartLine = {
