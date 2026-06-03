@@ -163,9 +163,12 @@ function shouldBlockRemoteAdminWrites(): boolean {
   try {
     const supabaseHost = new URL(supabaseUrl).hostname
     const isRemoteSupabase = supabaseHost.endsWith('.supabase.co')
+    // BF-P2-001 AJ LOCAL TEST GUARD
+    const explicitLocalTestTargetAllowed =
+      supabaseTarget === 'staging' || supabaseTarget === 'abou-joudia-local-test'
     const stagingExplicitlyAllowed =
       allowRemoteWrites &&
-      supabaseTarget === 'staging' &&
+      explicitLocalTestTargetAllowed &&
       stagingHost.length > 0 &&
       supabaseHost === stagingHost
 
