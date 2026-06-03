@@ -69,7 +69,24 @@ export async function POST(req: NextRequest) {
 
   if (error || !order) return NextResponse.json({ error: 'Erreur création commande' }, { status: 500 })
 
-  await supabase.from('order_items').insert(items.map((item: any) => ({ order_id: order.id, product_id: item.product_id, product_name: item.product_name, quantity: item.quantity, unit_price: item.unit_price, selected_variants: item.selected_variants ?? null })))
+  // BF-P2-001 AJ ORDER API PROMO FIELDS PATCH
+  await supabase.from('order_items').insert(items.map((item: any) => ({
+    order_id: order.id,
+    product_id: item.product_id,
+    product_name: item.product_name,
+    quantity: item.quantity,
+    unit_price: item.unit_price,
+    selected_variants: item.selected_variants ?? null,
+    line_type: item.line_type ?? 'classic',
+    original_unit_price: item.original_unit_price ?? null,
+    discount_percent: item.discount_percent ?? null,
+    discount_amount: item.discount_amount ?? null,
+    is_promotion_gift: item.is_promotion_gift ?? false,
+    promotion_rule_id: item.promotion_rule_id ?? null,
+    promotion_label: item.promotion_label ?? null,
+    can_trigger_promotion: item.can_trigger_promotion ?? true,
+    is_vip: item.is_vip ?? false,
+  })))
 
   // Decrement stock if enabled
   if (stockEnabled) {
