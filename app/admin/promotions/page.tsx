@@ -316,7 +316,6 @@ export default function AdminPromotionsPage() {
   const [form, setForm] = useState<PromotionFormState>(initialForm)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [mockSaving, setMockSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
@@ -405,56 +404,7 @@ export default function AdminPromotionsPage() {
     }
   }, [])
 
-  async function createPromotionMock() {
-    setError(null)
-    setNotice(null)
-    setMockSaving(true)
-
-    try {
-      const ruleId = `mock-promotion-${Date.now()}`
-      const name = form.name.trim()
-
-      if (!name) {
-        setError('Mock local : promotion_rules simulée puis rollback simulé car le nom est obligatoire.')
-        return
-      }
-
-      if (form.trigger_type === 'category' && !form.trigger_category_id) {
-        setError('Mock local : promotion_rules simulée puis rollback simulé car aucune catégorie concernée n’a été sélectionnée.')
-        return
-      }
-
-      if (form.trigger_type === 'product' && !form.trigger_product_id) {
-        setError('Mock local : promotion_rules simulée puis rollback simulé car aucun produit déclencheur n’a été sélectionné.')
-        return
-      }
-
-      if (form.benefit_type === 'gift_product' && !form.gift_product_id) {
-        setError('Mock local : promotion_rules simulée puis rollback simulé car aucun produit cadeau actif n’a été sélectionné.')
-        return
-      }
-
-      const benefitRows = buildPromotionBenefitRows(form, ruleId)
-
-      if (benefitRows.length === 0) {
-        setError('Mock local : promotion_rules simulée puis rollback simulé car aucun promotion_benefits valide n’a été généré.')
-        return
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 250))
-
-      setNotice(
-        `Mock local réussi : promotion_rules simulée (${name}), promotion_benefits simulés (${benefitRows.length}), rollback non nécessaire. Aucune écriture Supabase.`
-      )
-    } catch (mockError) {
-      setError(
-        `Mock local : rollback simulé après erreur (${mockError instanceof Error ? mockError.message : 'erreur inconnue'}). Aucune écriture Supabase.`
-      )
-    } finally {
-      setMockSaving(false)
-    }
-  }
-
+  // BF-P2-001 AJ ADMIN MOCK CLEANUP
   async function createPromotion() {
     setSaving(true)
     setError(null)
@@ -1266,19 +1216,14 @@ export default function AdminPromotionsPage() {
                 )}
 
                 <div className="mt-5 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={createPromotionMock}
-                    disabled={saving || mockSaving || !canSubmitPromotionForm}
-                    className="rounded-xl border border-amber-400/60 px-4 py-3 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/10 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {mockSaving ? 'Test mock local...' : 'Tester en mock local'}
-                  </button>
+                  {/* BF-P2-001 AJ HIDE MOCK LOCAL BUTTON V2
+
+                      Bouton mock local masque sur Abou Joudia : les tests passent maintenant par Supabase controlee. */}
 
                   <button
                     type="button"
                     onClick={createPromotion}
-                    disabled={saving || mockSaving || remoteWriteBlocked || !canSubmitPromotionForm}
+                    disabled={saving || remoteWriteBlocked || !canSubmitPromotionForm}
                     className="rounded-full bg-amber-400 px-6 py-3 font-semibold text-black disabled:opacity-50"
                   >
                     {saving ? 'Enregistrement...' : remoteWriteBlocked ? 'Création bloquée' : 'Créer la promotion'}
@@ -1325,13 +1270,41 @@ export default function AdminPromotionsPage() {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => updateStatus(promotion.id, 'active')}
-                    className="rounded-full bg-emerald-500/20 px-4 py-2 text-sm text-emerald-100"
-                  >
-                    Activer
-                  </button>
+                  {promotion.status === 'active' ? (
+
+                    <button
+
+                      type="button"
+
+                      disabled
+
+                      className="rounded-full bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-300 ring-1 ring-emerald-400/25 opacity-90"
+
+                    >
+
+                      Déjà active ✓
+
+                    </button>
+
+                  ) : (
+
+                    <button
+
+                      type="button"
+
+                      onClick={() => updateStatus(promotion.id, 'active')}
+
+                      className="rounded-full bg-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-500/30"
+
+                    >
+
+                      {/* BF-P2-001 AJ ADMIN ACTIVE BUTTON FIX V3 */}
+
+                      Activer
+
+                    </button>
+
+                  )}
                   <button
                     type="button"
                     onClick={() => updateStatus(promotion.id, 'inactive')}
