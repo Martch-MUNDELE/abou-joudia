@@ -1181,13 +1181,19 @@ export default function AdminPromotionsPage() {
             )}
 
             {zone3Accessible && isPercentBenefit && (
-              <label className="mt-4 flex items-center gap-3 text-sm text-white/70">
+              <label className="flex items-start gap-3 rounded-2xl border border-[rgba(212,175,55,0.28)] bg-[rgba(212,175,55,0.06)] px-4 py-3 text-sm leading-relaxed text-white/80">
                 <input
-                  type="checkbox"
+                  type="checkbox" style={{ accentColor: "#d6a21e" }}
                   checked={form.exclude_discounted_products}
                   onChange={(event) => setForm((current) => ({ ...current, exclude_discounted_products: event.target.checked }))}
                 />
-                Exclure les produits déjà remisés
+                {/* BF-P2-001 AJ DISCOUNTED PRODUCTS CHECKBOX UI */}
+                    <span className="block">
+                      <span className="block font-semibold text-white">Exclure les produits déjà remisés</span>
+                      <span className="mt-1 block text-xs leading-relaxed text-white/55">
+                        Évite de cumuler cette remise avec un produit déjà en promotion.
+                      </span>
+                    </span>
               </label>
             )}
           </div>
