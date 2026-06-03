@@ -527,8 +527,35 @@ export default function PanierPage() {
     setLoading(true)
     try {
       const isPickup = chosenMode === 'pickup'
-      const fee = deliveryResult?.fee ?? 0
+      const rawFee = isPickup ? 0 : (deliveryResult?.fee ?? 0)
+      const fee = promotionFreeDeliveryApplied ? 0 : rawFee
       const distance = deliveryResult?.distance ?? null
+
+      // BF-P2-001 AJ CART PROMO ORDER PAYLOAD PATCH
+      const promotionOrderItems = promotionResult.items.map((line) => {
+        const productWithPromotion = (line.product ?? {}) as Product & PromotionProductCandidate & {
+          selectedVariants?: unknown
+          selected_variants?: unknown
+        }
+
+        return {
+          product_id: line.product_id,
+          product_name: line.product_name,
+          quantity: line.quantity,
+          unit_price: line.unit_price,
+          selected_variants: productWithPromotion.selectedVariants ?? productWithPromotion.selected_variants ?? null,
+          line_type: line.line_type ?? 'classic',
+          original_unit_price: line.original_unit_price ?? null,
+          discount_percent: line.discount_percent ?? null,
+          discount_amount: line.discount_amount ?? null,
+          is_promotion_gift: line.is_promotion_gift ?? false,
+          promotion_rule_id: line.promotion_rule_id ?? null,
+          promotion_label: line.promotion_label ?? null,
+          can_trigger_promotion: line.can_trigger_promotion ?? true,
+          is_vip: line.is_vip ?? false,
+        }
+      })
+
       const finalAddress = isPickup ? deliverySettings.shopAddress : form.address
       const finalLat = isPickup ? deliverySettings.shopLat : form.lat
       const finalLng = isPickup ? deliverySettings.shopLng : form.lng
@@ -544,8 +571,8 @@ export default function PanierPage() {
           lng: finalLng,
           geo_address: finalGeoAddress,
           slot_id: selectedSlot,
-          items: items.map(i => ({ product_id: i.product.id, product_name: i.product.name, quantity: i.quantity, unit_price: (i.product.discount ?? 0) > 0 ? Math.ceil(i.product.price * (1 - (i.product.discount ?? 0) / 100)) : i.product.price, selected_variants: i.selectedVariants ?? null })),
-          total: total() + fee,
+          items: promotionOrderItems,
+          total: promotionProductsTotal + fee,
           delivery_mode: chosenMode,
           delivery_fee: fee,
           distance_km: distance,
