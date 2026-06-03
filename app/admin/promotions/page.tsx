@@ -716,7 +716,6 @@ export default function AdminPromotionsPage() {
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8 text-white">
       <section>
-        <p className="text-xs uppercase tracking-[0.3em] text-amber-300/70">Base food</p>
         <h1 className="mt-2 text-3xl font-bold">Promotions</h1>
         <p className="mt-3 max-w-3xl text-sm text-white/60">
           Module V1 pour gérer des produits offerts et des remises en pourcentage.
