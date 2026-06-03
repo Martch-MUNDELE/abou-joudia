@@ -1178,21 +1178,31 @@ export default function AdminPromotionsPage() {
             ) : (
               <p className="text-sm text-white/50">Complétez la zone 2 pour choisir l’avantage.</p>
             )}
-
             {zone3Accessible && isPercentBenefit && (
-              <label className="flex items-start gap-3 rounded-2xl border border-[rgba(212,175,55,0.28)] bg-[rgba(212,175,55,0.06)] px-4 py-3 text-sm leading-relaxed text-white/80">
-                <input
-                  type="checkbox" style={{ accentColor: "#d6a21e" }}
-                  checked={form.exclude_discounted_products}
-                  onChange={(event) => setForm((current) => ({ ...current, exclude_discounted_products: event.target.checked }))}
-                />
-                {/* BF-P2-001 AJ DISCOUNTED PRODUCTS CHECKBOX UI */}
-                    <span className="block">
-                      <span className="block font-semibold text-white">Exclure les produits déjà remisés</span>
-                      <span className="mt-1 block text-xs leading-relaxed text-white/55">
-                        Évite de cumuler cette remise avec un produit déjà en promotion.
-                      </span>
-                    </span>
+              <label className="mt-3 flex w-full cursor-pointer items-start gap-3 rounded-2xl border border-[rgba(212,175,55,0.24)] bg-[rgba(212,175,55,0.045)] px-4 py-4 transition hover:border-[rgba(212,175,55,0.42)] hover:bg-[rgba(212,175,55,0.075)]">
+                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-[rgba(212,175,55,0.42)] bg-black/30">
+                  <input
+                    type="checkbox"
+                    checked={form.exclude_discounted_products}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        exclude_discounted_products: event.target.checked,
+                      }))
+                    }
+                    className="h-4 w-4 cursor-pointer"
+                    style={{ accentColor: '#d6a21e' }}
+                  />
+                </span>
+                {/* BF-P2-001 AJ DISCOUNTED PRODUCTS CHECKBOX UI V4 */}
+                <span className="block min-w-0">
+                  <span className="block text-sm font-semibold text-white">
+                    Exclure les produits déjà remisés
+                  </span>
+                  <span className="mt-1 block max-w-xl text-xs leading-relaxed text-white/55">
+                    La remise ne s’appliquera pas aux produits qui ont déjà un prix barré ou une promotion.
+                  </span>
+                </span>
               </label>
             )}
           </div>
