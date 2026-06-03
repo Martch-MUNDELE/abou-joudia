@@ -1,6 +1,6 @@
 'use client'
 /* eslint-disable @next/next/no-img-element, @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps -- Legacy Abou Joudia warnings baseline, à refactorer progressivement. */
-/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect -- Legacy Abou Joudia lint baseline, à refactorer progressivement. */
+/* eslint-disable @typescript-eslint/no-explicit-any -- Legacy Abou Joudia lint baseline, à refactorer progressivement. */
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -13,7 +13,11 @@ import LeafletMap from '@/components/LeafletMap'
 import CartInvoiceSummary from '@/components/cart/CartInvoiceSummary'
 import type { TaxSettings } from '@/lib/types/tax'
 import { calculateOrderTaxSummary, getTaxSettingsFromRows } from '@/lib/tax'
+import { loadActivePromotionRules } from '@/lib/promotion-rules'
+import type { PromotionProductCandidate, PromotionRule } from '@/lib/types/promotion'
 import type { Product } from '@/lib/types'
+
+const EMPTY_PROMOTION_RULES: PromotionRule[] = []
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -182,6 +186,8 @@ export default function PanierPage() {
   const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([])
   const [deliveryLoaded, setDeliveryLoaded] = useState(false)
   const [taxSettings, setTaxSettings] = useState<TaxSettings>({ taxEnabled: false, taxRate: 0 })
+  const [promotionRules, setPromotionRules] = useState<PromotionRule[]>(EMPTY_PROMOTION_RULES)
+  const [promotionProductCatalog, setPromotionProductCatalog] = useState<PromotionProductCandidate[]>([])
   const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([])
   const wasAutoSwitchedRef = useRef(false)
   const initialCalcDoneRef = useRef(false)
@@ -191,6 +197,54 @@ export default function PanierPage() {
 
   // Delivery calculation result
   const [deliveryResult, setDeliveryResult] = useState<DeliveryResult | null>(null)
+
+  // BF-P2-001 AJ CART PROMO LOADER PATCH
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadPromotionRules() {
+      try {
+        const rules = await loadActivePromotionRules(supabase)
+        if (!cancelled) setPromotionRules(rules)
+      } catch {
+        if (!cancelled) setPromotionRules(EMPTY_PROMOTION_RULES)
+      }
+    }
+
+    loadPromotionRules()
+
+    return () => {
+      cancelled = true
+    }
+  }, [supabase])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadPromotionProductCatalog() {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('active', true)
+
+        if (error) throw error
+
+        if (!cancelled) {
+          setPromotionProductCatalog((data ?? []) as unknown as PromotionProductCandidate[])
+        }
+      } catch {
+        if (!cancelled) setPromotionProductCatalog([])
+      }
+    }
+
+    loadPromotionProductCatalog()
+
+    return () => {
+      cancelled = true
+    }
+  }, [supabase])
+
 
   const [form, setForm] = useState(() => {
     if (typeof window === 'undefined') return { name: '', phone: '', address: '', note: '', email: '', wantFacture: false, lat: null as number | null, lng: null as number | null, geo_address: '' }
