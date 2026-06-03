@@ -664,7 +664,15 @@ export default function PanierPage() {
 
   const promotionFreeDeliveryApplied = Boolean(promotionResult.free_delivery_applied)
   const deliveryFeeAfterPromotions = promotionFreeDeliveryApplied ? 0 : deliveryFee
-  const deliveryFeeDisplay = promotionFreeDeliveryApplied ? 'Gratuit' : isPickup ? 'Gratuit' : deliveryFeeAfterPromotions === 0 ? 'Gratuit' : `${deliveryFeeAfterPromotions} DH`
+  // BF-P2-001 AJ DELIVERY SAVINGS DISPLAY PATCH
+  const deliverySavingsAmount = promotionFreeDeliveryApplied ? Math.max(0, deliveryFee) : 0
+  const deliverySavingsFormatted = deliverySavingsAmount.toLocaleString('fr-FR', {
+    maximumFractionDigits: 2,
+  })
+  const deliverySavingsLabel = deliverySavingsAmount > 0
+    ? `Livraison offerte, vous économisez ${deliverySavingsFormatted} DH`
+    : 'Livraison offerte'
+  const deliveryFeeDisplay = promotionFreeDeliveryApplied ? deliverySavingsLabel : isPickup ? 'Gratuit' : deliveryFeeAfterPromotions === 0 ? 'Gratuit' : `${deliveryFeeAfterPromotions} DH`
   const grandTotal = promotionProductsTotal + deliveryFeeAfterPromotions
 
   const taxLines = promotionResult.items.map(line => ({
@@ -784,7 +792,7 @@ export default function PanierPage() {
             currency="DH"
             totalProductsTtc={promotionProductsTotal}
             deliveryFee={deliveryFeeAfterPromotions}
-            deliveryLabel={promotionFreeDeliveryApplied ? 'Livraison offerte' : step1FeeText}
+            deliveryLabel={promotionFreeDeliveryApplied ? deliverySavingsLabel : step1FeeText}
             deliveryTextColor={step1FeeColor}
             grandTotal={grandTotal}
             showTaxBreakdown={showTaxBreakdown}
@@ -934,8 +942,9 @@ export default function PanierPage() {
                   {deliveryResult.reason !== 'out_of_zone' && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: 12, color: '#A89880' }}>Frais de livraison</span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: deliveryResult.fee === 0 ? '#7DD87A' : '#F5C842' }}>
-                        {deliveryResult.fee === 0 ? 'Gratuit' : `${deliveryResult.fee} DH`}
+                      {/* BF-P2-001 AJ DELIVERY CARD PROMO DISPLAY FIX */}
+                      <span style={{ fontSize: 13, fontWeight: 700, color: deliveryFeeAfterPromotions === 0 ? '#7DD87A' : '#F5C842' }}>
+                        {promotionFreeDeliveryApplied ? deliverySavingsLabel : deliveryFeeAfterPromotions === 0 ? 'Gratuit' : `${deliveryFeeAfterPromotions} DH`}
                       </span>
                     </div>
                   )}
